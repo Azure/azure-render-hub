@@ -1,0 +1,26 @@
+﻿@{
+    var step = ViewBag.Step;
+    var showLinks = ViewBag.Type == "view";
+}
+<div class="nav-table sub-menu">    
+    <span class="@(step == 1 ? "current" : "")">
+        @await Html.PartialAsync("Menu/SubMenuItemLink", Model, new ViewDataDictionary(ViewData)
+        {
+            { "Id", ViewBag.RepoId },
+            { "LinkText", "Details" },
+            { "Controller", "Storage" },
+            { "Action", "Details" },
+            { "IsLink", showLinks }
+        })
+    </span>
+    <span class="@(step == 2 ? "current" : "")">
+        @await Html.PartialAsync("Menu/SubMenuItemLink", Model, new ViewDataDictionary(ViewData)
+        {
+            { "Id", ViewBag.RepoId },
+            { "LinkText", "Configuration" },
+            { "Controller", "Storage" },
+            { "Action", "Configuration" },
+            { "IsLink", showLinks }
+        })
+    </span>
+</div>

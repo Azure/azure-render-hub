@@ -1,0 +1,137 @@
+﻿@model WebApp.Models.Environments.Details.EnvironmentConfigurationModel
+@{
+    ViewBag.Title = "Configuration";
+}
+
+@section Breadcrumb
+    {
+    <a asp-controller="Environments" asp-action="Index">Environments</a> &gt;
+    <a asp-controller="Environments" asp-action="Details" asp-route-envId="@Model.EnvironmentName">@Model.EnvironmentName</a> &gt;
+    <span>Configuration</span>
+}
+
+<div class="page-header">
+    <h2>@Model.EnvironmentName - configuration</h2>
+    <p>Configuration settings for the selected environment.</p>
+</div>
+@await Html.PartialAsync("Menu/EnvironmentMainMenu", Model, new ViewDataDictionary(ViewData) { { "Step", "config" } })
+
+<form method="post">
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(model => model.EnvironmentName)
+
+    <div class="form-section">
+        <div class="section-title">
+            <span class="step-index">1</span>
+            <div class="step-header">
+                <h3>Auto-scale-down configuration</h3>
+                <p></p>
+            </div>
+        </div>
+        <div class="section-wrapper">
+            <div class="section-bar"></div>
+            <div class="section-content">
+                <div class="form-element">
+                    <label asp-for="MaxIdleCpuPercent">CPU Idle Percent (%)</label>
+                    <input asp-for="MaxIdleCpuPercent" />
+                </div>
+                <div class="form-element">
+                    <label asp-for="MaxIdleGpuPercent">GPU Idle Percent (%)</label>
+                    <input asp-for="MaxIdleGpuPercent" />
+                </div>
+                <div class="form-element">
+                    <label asp-for="SpecificProcesses">Specific Processes</label>
+                    <input asp-for="SpecificProcesses" placeholder="e.g. myprogram.exe, powershell.exe" />
+                    <small>Comma separated list of processes that indicate a node is busy.</small>
+                    <small>The following processes are whitelisted by default: 3dsmax.exe, 3dsmaxcmd.exe, 3dsmaxio.exe, 3dsmaxcmdio.exe, render.exe, kick.exe, commandline.exe, cinema 4d.exe, vray.exe, maya.exe, mayabatch.exe, blender.exe</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-section">
+        <div class="section-title">
+            <span class="step-index">2</span>
+            <div class="step-header">
+                <h3>Pool Scale-Up API</h3>
+                <p>The scale-up endpoint can be used by 3rd-party schedulers to scale pools up when required.</p>
+                <p>When requesting additional nodes, they will first be allocated as low-priority nodes,
+                up to the maximum specified in the auto-scale parameters, and the remainder will be allocated as
+                dedicated nodes, up to the maximum specified in the auto-scale parameters.</p>
+                <p>Nodes will never be removed by the scale-up API.</p>
+            </div>
+        </div>
+        <div class="section-wrapper">
+            <div class="section-bar"></div>
+            <div class="section-content">
+                <div class="form-element">
+                    <label></label>
+                    <div class="form-check">
+                        <input asp-for="ScaleEndpointEnabled" type="checkbox">
+                        <label>Enable Scale-Up Endpoint</label>
+                        <small>When enabled clients can submit requests to the endpoint to scale a pool up.</small>
+                    </div>
+                </div>
+                <div class="form-element">
+                    <label asp-for="EnvironmentEndpoint"></label>
+                    <input asp-for="EnvironmentEndpoint" value="@Model.EnvironmentEndpoint" readonly="readonly" />
+                    <small>This environment&rsquo;s API endpoint.</small>
+                </div>
+                <div class="form-element">
+                    <label asp-for="PrimaryApiKey">Primary API Key</label>
+                    <input asp-for="PrimaryApiKey" value="@Model.PrimaryApiKey" readonly="readonly" />
+                    <span asp-validation-for="PrimaryApiKey" class=""></span>
+                    <small>A randomly generated key for endpoint access.</small>
+                </div>
+                <div class="form-element">
+                    <label asp-for="SecondaryApiKey">Secondary API Key</label>
+                    <input asp-for="SecondaryApiKey" value="@Model.SecondaryApiKey" readonly="readonly" />
+                    <span asp-validation-for="SecondaryApiKey" class=""></span>
+                </div>
+                <p>Example HTTP request</p>
+                <div class="form-element wide">
+<pre style="white-space: pre"><code>POST /api/environments/@Model.EnvironmentName/pools/{poolName} HTTP/1.1
+Host: &mdash;
+Authorization: Basic @Model.PrimaryApiKey
+Content-Type: application/json
+
+{
+    "requestedNodes": 10
+}
+</code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-section">
+        <div class="section-title">
+            <span class="step-index">3</span>
+            <div class="step-header">
+                <h3>Bootstrap Scripts</h3>
+                <p>The following scripts are used to bootstrap or configure the nodes.  The script is run every time the node starts and therefore must be idempotent.</p>
+                <p>Removing the scripts below will revert them to the default scripts supplied by the portal.</p>
+            </div>
+        </div>
+        <div class="section-wrapper">
+            <div class="section-bar"></div>
+            <div class="section-content">
+                <div class="form-element">
+                    <label asp-for="WindowsBootstrapScript">Windows Bootstrap Script</label>
+                    <input asp-for="WindowsBootstrapScript" />
+                </div>
+                <div class="form-element">
+                    <label asp-for="LinuxBootstrapScript">Linux Bootstrap Script</label>
+                    <input asp-for="LinuxBootstrapScript" />
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="form-footer">
+        <div class="summary"></div>
+        <div class="button-bar">
+            <input type="submit" class="btn btn-primary" value="Update" formaction="Config" />
+        </div>
+    </div>
+    <p>&nbsp;</p>
+</form>

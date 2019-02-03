@@ -1,0 +1,67 @@
+﻿@model WebApp.Models.Environments.EnvironmentOverviewModel
+@{
+    ViewBag.Title = "Environments";
+    var index = 0;
+}
+
+@section Breadcrumb
+    {
+    <a asp-controller="Environments" asp-action="Index">Environments</a>
+}
+
+<div class="page-header">
+    <h2>Environments</h2>
+    <p>This portal allows you to configure one or more render farm environments in Azure with connectivity back to your on-premises render farm.</p>
+    <p>&nbsp;</p>
+</div>
+
+@foreach (var env in Model.Environments)
+{
+    index++;
+    <div class="form-section">
+        <div class="section-title">
+            <span class="step-index">@index</span>
+            <div class="step-header">
+                <h1><a asp-action="Overview" asp-route-envId="@env.EnvironmentName">@env.EnvironmentName</a></h1>
+                <p></p>
+            </div>
+        </div>
+        <div class="section-wrapper">
+            <div class="section-bar"></div>
+            <div class="section-content">
+                <div id="canvas-container">
+                    <canvas id="@env.EnvironmentName-canvas"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="form-footer">
+    <div class="button-bar">
+        <a class="button" asp-controller="Environments" asp-action="Step1">Add Environment <i class="fa fa-plus"></i></a>
+    </div>
+</div>
+
+@section Scripts
+{
+    <script>
+        var environments = {};
+
+        @foreach (var environment in Model.Environments)
+        {
+            @:environments["@environment.EnvironmentName"] = @Html.Raw(Json.Serialize(environment.PoolUsageResults));
+        }
+
+        window.onload = function() {
+            for (var envName in environments) {
+                var poolUsageResults = environments[envName];
+                var config = getTimeChartForEnvironment(envName, poolUsageResults);
+                var ctx = document.getElementById(envName + '-canvas').getContext('2d');
+                ctx.canvas.parentNode.style.height = '300px';
+                ctx.canvas.parentNode.style.width = '680px';
+                window.chart = new Chart(ctx, config);
+            }
+        };
+    </script>
+}

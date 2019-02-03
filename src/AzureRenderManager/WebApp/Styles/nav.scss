@@ -1,0 +1,188 @@
+﻿@import "mixins";
+@import "variables";
+
+ul.main-left-nav {
+    user-select: none;
+    border: 1px solid $border-color;
+    border-left-width: 0;
+    border-right-width: 0;
+    background-color: $azureMenu;
+
+    > li {
+        border-bottom: 1px solid $border-color;
+
+        > div.nav-main-link-container {
+            height: 40px;
+            line-height: 40px;
+            display: flex;
+            flex-flow: row;
+
+            &.current {
+                background-color: #EAF2FA;
+            }
+
+            .nav-main-link {
+                flex: 1;
+                display: inline-block;
+
+                .nav-icon {
+                    display: inline;
+                    margin-left: 10px;
+                    height: 40px;
+
+                    img {
+                        position: relative;
+                        left: 0px;
+                        top: 4px;
+                    }
+                }
+
+                span {
+                    height: 40px;
+                    display: inline;
+                    align-items: center;
+                    margin-left: 2px;
+                    outline: none;
+                    font-size: $h5FontSize;
+                    -webkit-user-drag: none;
+                }
+            }
+
+            .fa {
+                margin-right: 10px;
+            }
+        }
+
+        > div.nav-main-link-container:hover {
+            background-color: #EAF2FA;
+        }
+
+        > div.nav-main-link {
+        }
+
+        a {
+            &.active {
+                font-weight: bolder;
+            }
+        }
+
+        .sub-menu {
+            min-height: 30px;
+
+            li {
+                .nav-sub-link {
+                    display: flex;
+                    padding: 5px 4px 5px 0;
+                    border-top: 1px dashed $border-color;
+                    margin-left: 10px;
+
+                    a.link, .disabled {
+                        flex: 1;
+                        color: $primary-text-color;
+
+                        &.current {
+                            font-weight: bold;
+                        }
+                    }
+
+                    .fa {
+                        color: $primary-text-color;
+
+                        &.fa-caret-right {
+                            font-size: 15px;
+                            margin-right: 7px;
+                            margin-left: 7px;
+                            margin-top: 2px;
+                        }
+
+                        &.fa-edit {
+                            margin-top: 4px !important;
+                        }
+
+                        &.fa-trash {
+                            margin-left: 4px;
+                            margin-top: 3px !important;
+                            cursor: pointer;
+                        }
+                    }
+                }
+            }
+
+            li:hover {
+                background-color: #EAF2FA;
+            }
+        }
+    }
+
+    li:last-child {
+        border-bottom-width: 0;
+    }
+}
+
+div.header-tabs {
+    display: flex;
+    flex-direction: row;
+    margin: 10px 0 0 0;
+    border-bottom: 2px solid $primaryBlue;
+
+    span {
+        width: 160px;
+        border: 1px solid $border-color;
+        border-width: 1px 0 0 1px;
+        background-color: $white;
+        text-align: center;
+        padding: 8px 4px;
+
+        &.current {
+            color: $anotherGray;
+            background-color: $primaryBlue;
+
+            a {
+                color: $anotherGray;
+            }
+        }
+
+        a {
+            color: $primary-text-color;
+        }
+    }
+
+    span:last-child {
+        border-right-width: 1px;
+    }
+}
+
+div.nav-table {
+    width: $form-width;
+    display: flex;
+    border: 1px solid $border-color;
+    align-items: stretch;
+    flex-direction: row;
+    background-color: $white;
+    margin-top: 15px;
+
+    span {
+        flex-grow: 1;
+        border-right: 1px solid $border-color;
+        text-align: center;
+        padding: 4px;
+        margin: auto;
+
+        &.current {
+            color: $anotherGray;
+            background-color: $primaryBlue;
+
+            a {
+                color: $anotherGray;
+            }
+        }
+
+        a {
+            color: $primary-text-color;
+        }
+    }
+
+    span:last-child {
+        border-right-width: 0;
+    }
+}

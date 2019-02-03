@@ -1,0 +1,326 @@
+﻿@import "mixins";
+@import "variables";
+
+.form-section {
+    &.half {
+        width: $form-width;
+    }
+
+    > .section-title {
+        display: flex;
+        margin-top: 15px;
+        align-items: baseline;
+        width: $form-width;
+
+        > .step-index {
+            width: $step-index-size;
+            height: $step-index-size;
+            flex: 0 0 $step-index-size;
+            line-height: $step-index-size;
+            text-align: center;
+            background: $form-section-header;
+            border-radius: 99%;
+            font-size: 14px;
+            color: $anotherGray;
+            margin-right: 10px;
+            margin-top: 15px;
+        }
+
+        > .step-header {
+            h3 {
+                padding-top: 12px;
+            }
+        }
+
+        margin-bottom: 5px;
+    }
+
+    .section-wrapper {
+        display: flex;
+
+        > .section-bar {
+            border-right: 1px solid $border-color;
+            margin: 0 20px 0 15px;
+        }
+
+        > .section-content {
+            flex: 1;
+            padding: 0 0 0 5px;
+            min-width: 0;
+            width: 350px;
+
+            .form-element:last-child {
+                margin-bottom: 15px;
+            }
+        }
+    }
+}
+
+.form-spacer {
+    margin: 0;
+    display: flex;
+    width: calc(#{$form-width} - (#{$step-index-size} + 10px));
+    margin: 15px 0 10px 0;
+
+    span {
+        padding: 0 10px 0 10px;
+        margin: 0;
+    }
+
+    hr {
+        flex: 1;
+        margin: 0;
+        border: 0;
+        border-top: 1px solid $form-section-header;
+        margin-top: 10px;
+    }
+}
+
+.form-element {
+    display: block;
+    width: calc(#{$form-width} - (#{$step-index-size} + 10px));
+    margin: 5px 0 13px 0;
+
+    &.half {
+        width: calc((#{$form-width} - (#{$step-index-size} + 16px)) / 2);
+    }
+
+    &.wide {
+        width: calc(#{$form-width} + 150px);
+    }
+
+    &.element-spacer {
+        margin-bottom: 15px;
+    }
+
+    &.pad-top {
+        margin-top: 20px;
+    }
+
+    &.disabled {
+        opacity: 0.5;
+    }
+
+    a {
+        display: block;
+        margin-left: 5px;
+        font-size: 9pt;
+    }
+
+    pre {
+        padding: 10px;
+        background: #ddd;
+        @include word-wrap;
+        line-height: 20px;
+    }
+
+    label {
+        display: block;
+        line-height: 18px;
+        margin-bottom: 3px;
+        color: #0071C5;
+        font-weight: 500;
+    }
+
+    input {
+        display: flex;
+    }
+
+    span {
+        &.field-validation-error {
+            padding: 2px 5px;
+            color: $formError;
+            display: block;
+        }
+    }
+
+    small {
+        display: block;
+        margin: 3px 0 0 3px;
+    }
+
+    p.spacer {
+        height: 26px;
+        margin: 0;
+    }
+
+    .async-select {
+        height: 26px;
+        position: relative;
+
+        &.loading {
+            select {
+                -webkit-appearance: none;
+                -moz-appearance: none;
+            }
+
+            i {
+                display: block;
+            }
+        }
+
+        i {
+            display: none;
+            position: absolute;
+            right: 8px;
+            top: 7px;
+            color: $azureBlue;
+        }
+    }
+
+    .form-check {
+        line-height: 26px;
+
+        input {
+            display: inline;
+            margin: 5px 5px 0 10px;
+        }
+
+        label {
+            color: $primary-text-color;
+            font-weight: normal;
+            display: inline-block;
+            vertical-align: top;
+            margin-top: 2px;
+        }
+    }
+
+    .newResource {
+        // margin-top: 4px;
+    }
+}
+
+.form-footer {
+    height: 60px;
+    display: flex;
+    margin-left: 0;
+    margin-top: 20px;
+    padding: 5px 0 5px 0;
+    width: $form-width;
+
+    .summary {
+        flex: 1;
+    }
+
+    .button-bar {
+        margin: 5px 0;
+    }
+}
+
+textarea {
+    resize: none;
+    min-height: 26px;
+    font: inherit;
+
+    &:active, &:focus {
+        outline: none;
+        border-bottom-color: $topnav-background;
+    }
+}
+
+input[type="text"], input[type="number"], input[type="password"] {
+    height: 26px;
+    color: $emperorGray;
+    padding: 0 5px;
+}
+
+select {
+    height: 26px;
+    color: $emperorGray;
+    padding: 0 1px;
+}
+
+input[type="text"], input[type="number"], input[type="password"] {
+    font: inherit;
+    background-color: $white;
+    margin-right: 5px;
+    border: none;
+    border-top: 2px solid transparent;
+    border-bottom: 2px solid transparent;
+
+    &:active, &:focus {
+        outline: none;
+        border-bottom-color: $topnav-background;
+    }
+}
+
+input[type="text"], input[type="number"], input[type="password"], input[type=file], textarea, select {
+    width: 100%;
+    border: 1px solid $alto;
+    outline: none;
+    font: inherit;
+
+    &.half {
+        width: 50%;
+    }
+
+    &.input-validation-error {
+        border: 1px solid $formError;
+    }
+
+    &:disabled {
+        cursor: not-allowed;
+        opacity: .7;
+    }
+
+    &.disable-read-only {
+        &:read-only {
+            cursor: not-allowed;
+            opacity: .7;
+        }
+    }
+}
+
+input:read-only {
+    opacity: .7;
+}
+
+div.validation-summary-errors {
+    padding-top: 10px;
+    color: $formError;
+}
+
+select {
+    option:disabled {
+        cursor: not-allowed;
+        text-decoration: line-through;
+        color: $formError;
+    }
+}
+
+select:disabled {
+    cursor: not-allowed;
+    opacity: .7;
+}
+
+button, input[type="submit"], input[type="button"], a.button {
+    border: none;
+    display: inline-block;
+    height: 32px;
+    outline: none;
+    cursor: pointer;
+    text-align: center;
+    vertical-align: middle;
+    line-height: 32px;
+    position: relative;
+    margin: 2px;
+    padding: 0 12px;
+    min-width: 32px;
+    background: $primary-button-color;
+    color: $anotherGray;
+    font-family: $main-font;
+    font-size: $font-size-base;
+    letter-spacing: 1px;
+
+    &:hover, &:focus {
+        text-decoration: none;
+        background: $hover-button-color;
+        color: $white;
+    }
+
+    &:disabled {
+        opacity: .7;
+        cursor: not-allowed;
+        color: $anotherGray;
+    }
+}

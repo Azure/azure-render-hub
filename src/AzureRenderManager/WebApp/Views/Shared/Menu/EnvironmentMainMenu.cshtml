@@ -1,0 +1,17 @@
+﻿@{
+    var step = ViewBag.Step;
+}
+<div class="header-tabs">
+    <span class="@(step == "env" ? "current" : "")">
+        <a asp-controller="Environments" asp-action="Overview" asp-route-envId="@Model.EnvironmentName"> Environment</a>
+    </span>
+    <span class="@(step == "pools" ? "current" : "")">
+        <a asp-controller="Pools" asp-action="Index" asp-route-envId="@Model.EnvironmentName">VM Pools</a>
+    </span>
+    <span class="@(step == "storage" ? "current" : "")">
+        <a asp-controller="Environments" asp-action="Storage" asp-route-envId="@Model.EnvironmentName">Storage</a>
+    </span>
+    <span class="@(step == "config" ? "current" : "")">
+        <a asp-controller="Environments" asp-action="Config" asp-route-envId="@Model.EnvironmentName">Configuration</a>
+    </span>
+</div>

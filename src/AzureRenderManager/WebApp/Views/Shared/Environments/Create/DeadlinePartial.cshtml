@@ -1,0 +1,108 @@
+﻿@using WebApp.Code.Extensions
+@using WebApp.Config.RenderManager
+@model WebApp.Models.Environments.Create.AddEnvironmentStep4Model
+
+<div class="form-section">
+    <div class="section-title">
+        <span class="step-index">4.2</span>
+        <div class="step-header">
+            <h3>@Model.RenderManager.GetDescription() Configuration</h3>
+            <p>Configure Deadline 10 render manager settings</p>
+        </div>
+    </div>
+    <div class="section-wrapper">
+        <div class="section-bar"></div>
+        <div class="section-content">
+            <div class="form-element">
+                <label asp-for="DeadlineEnvironment.WindowsDeadlineRepositoryShare">Windows Deadline repository server</label>
+                <input asp-for="DeadlineEnvironment.WindowsDeadlineRepositoryShare" value="@Model.DeadlineEnvironment.WindowsDeadlineRepositoryShare" />
+                <span asp-validation-for="DeadlineEnvironment.WindowsDeadlineRepositoryShare" class=""></span>
+                <small>The UNC path to the Deadline repository share. The share is required to install the client (if applicable) and join the slaves to groups or pools.</small>
+            </div>
+            <div class="form-element">
+                <label asp-for="DeadlineEnvironment.RepositoryUser">Repository Share Username</label>
+                <input asp-for="DeadlineEnvironment.RepositoryUser" value="@Model.DeadlineEnvironment.RepositoryUser" />
+                <span asp-validation-for="DeadlineEnvironment.RepositoryUser" class=""></span>
+                <small>The username to access the repository share, if required.</small>
+            </div>
+            <div class="form-element">
+                <label asp-for="DeadlineEnvironment.RepositoryPassword">Repository Share Password</label>
+                <input asp-for="DeadlineEnvironment.RepositoryPassword" value="@Model.DeadlineEnvironment.RepositoryPassword" type="password" />
+                <span asp-validation-for="DeadlineEnvironment.RepositoryPassword" class=""></span>
+                <small>The password to access the repository share, if required.  This is stored in Key Vault.</small>
+            </div>
+            <div class="form-element">
+                <label asp-for="DeadlineEnvironment.ExcludeFromLimitGroups">Limit Groups to exclude</label>
+                <input asp-for="DeadlineEnvironment.ExcludeFromLimitGroups" value="@Model.DeadlineEnvironment.ExcludeFromLimitGroups" />
+                <span asp-validation-for="DeadlineEnvironment.ExcludeFromLimitGroups" class=""></span>
+                <small>Comma separated list of Deadline limit groups the cloud nodes should be excluded from.  This could be used to exclude cloud nodes from license limit groups for example.</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="form-section">
+    <div class="section-title">
+        <span class="step-index">4.3</span>
+        <div class="step-header">
+            <h3>Deadline 10 Installation Parameters</h3>
+            <p>The following parameters are only required if you're installing the Deadline client with an application package.</p>
+        </div>
+    </div>
+    <div class="section-wrapper">
+        <div class="section-bar"></div>
+        <div class="section-content">
+            <div class="form-element">
+                <label asp-for="DeadlineEnvironment.LicenseMode">License Mode</label>
+                <select asp-for="DeadlineEnvironment.LicenseMode" asp-items="Html.GetEnumSelectList<LicenseMode>()">
+                    <option selected="selected" value="">Please select</option>
+                </select>
+                <span asp-validation-for="DeadlineEnvironment.LicenseMode" class="text-danger" />
+            </div>
+            <div class="form-element">
+                <label asp-for="DeadlineEnvironment.LicenseServer">Deadline License Server</label>
+                <input asp-for="DeadlineEnvironment.LicenseServer" value="@Model.DeadlineEnvironment.LicenseServer" />
+                <span asp-validation-for="DeadlineEnvironment.LicenseServer" class=""></span>
+                <small>e.g. 27008@10.2.0.6</small>
+            </div>
+            <div class="form-element">
+                <label asp-for="DeadlineEnvironment.DeadlineRegion">Deadline Region</label>
+                <input asp-for="DeadlineEnvironment.DeadlineRegion" value="@Model.DeadlineEnvironment.DeadlineRegion" />
+                <span asp-validation-for="DeadlineEnvironment.DeadlineRegion" class=""></span>
+                <small>An existing Deadline region</small>
+            </div>
+            <div class="form-element">
+                <label></label>
+                <div class="form-check">
+                    <input asp-for="DeadlineEnvironment.RunAsService" type="checkbox">
+                    <label>Run Client as Service</label>
+                </div>
+            </div>
+            <div id="DeadlineServiceForm">
+                <div class="form-element">
+                    <label asp-for="DeadlineEnvironment.ServiceUser">Service Username</label>
+                    <input asp-for="DeadlineEnvironment.ServiceUser" value="@Model.DeadlineEnvironment.ServiceUser" />
+                    <span asp-validation-for="DeadlineEnvironment.ServiceUser" class=""></span>
+                    <small>The existing user to run the Deadline client service under.  Typically this is required when the nodes will join a domain and you want to run the client service as a domain user.</small>
+                </div>
+                <div class="form-element">
+                    <label asp-for="DeadlineEnvironment.ServicePassword">Service Password</label>
+                    <input asp-for="DeadlineEnvironment.ServicePassword" value="@Model.DeadlineEnvironment.ServicePassword" type="password" />
+                    <span asp-validation-for="DeadlineEnvironment.ServicePassword" class=""></span>
+                </div>
+            </div>
+            <div class="form-element">
+                <label asp-for="DeadlineEnvironment.DeadlineDatabaseCertificate">Deadline Database Client Certificate</label>
+                <input asp-for="DeadlineEnvironment.DeadlineDatabaseCertificate" type="file" accept=".pfx" />
+                <span asp-validation-for="DeadlineEnvironment.DeadlineDatabaseCertificate" class=""></span>
+                <small>The Deadline Database client certificate used for authentication.  The certificate and password are stored in Key Vault.</small>
+            </div>
+            <div class="form-element">
+                <label asp-for="DeadlineEnvironment.DeadlineDatabaseCertificatePassword">Deadline Database Certificate Password</label>
+                <input asp-for="DeadlineEnvironment.DeadlineDatabaseCertificatePassword" value="@Model.DeadlineEnvironment.DeadlineDatabaseCertificatePassword" type="password" />
+                <span asp-validation-for="DeadlineEnvironment.DeadlineDatabaseCertificatePassword" class=""></span>
+                <small>The Deadline Database client certificate password, if required.</small>
+            </div>
+        </div>
+    </div>
+</div>

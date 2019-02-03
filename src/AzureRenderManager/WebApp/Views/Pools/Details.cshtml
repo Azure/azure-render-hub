@@ -1,0 +1,132 @@
+﻿@using WebApp.Code.Extensions
+@model WebApp.Models.Pools.PoolDetailsModel
+@{
+    var displayNameOrPoolId = Model.DisplayName ?? Model.Name;
+    var redirectUrl = $"/Environments/{Model.EnvironmentName}/Pools";
+    var deletePoolUrl = $"/Environments/{Model.EnvironmentName}/Pools/{Model.Name}";
+    ViewBag.Title = $"Pool '{displayNameOrPoolId}'";
+
+    // TODO: Show allocation status and any errors with the pool operations
+}
+
+<script src="~/js/Chart.bundle.min.js" asp-append-version="true"></script>
+<script src="~/js/hammer.min.js" asp-append-version="true"></script>
+<script src="~/js/chartjs-plugin-zoom.min.js" asp-append-version="true"></script>
+
+<style>
+    canvas {
+        -moz-user-select: none;
+        -webkit-user-select: none;
+        -ms-user-select: none;
+    }
+</style>
+
+@section Breadcrumb
+    {
+    <a asp-controller="Environments" asp-action="Index">Environments</a> &gt;
+    <a asp-controller="Environments" asp-action="Details" asp-route-envId="@Model.EnvironmentName">@Model.EnvironmentName</a> &gt;
+    <a asp-controller="Pools" asp-action="Index" asp-route-envId="@Model.EnvironmentName">Pools</a> &gt;
+    <span>@Model.Name</span>
+}
+
+<div class="page-header">
+    <h2>@Model.EnvironmentName - @displayNameOrPoolId</h2>
+    <p>Viewing details of the selected pool.</p>
+</div>
+@await Html.PartialAsync("Menu/EnvironmentMainMenu", Model, new ViewDataDictionary(ViewData) { { "Step", "pools" } })
+@await Html.PartialAsync("Menu/PoolSubMenu", Model, new ViewDataDictionary(ViewData) { { "Step", "details" }, { "Type", "view" } })
+
+<div class="pool-details">
+    <form asp-action="Details" method="post">
+        @Html.HiddenFor(model => model.EnvironmentName)
+        <div asp-validation-summary="ModelOnly" class=""></div>
+        <div class="form-section">
+            <div class="section-title">
+                <span class="step-index">1</span>
+                <div class="step-header">
+                    <h3>Pool Details</h3>
+                    <p>General details of the pool.</p>
+                </div>
+            </div>
+            <div class="section-wrapper">
+                <div class="section-bar"></div>
+                <div class="section-content">
+                    <div class="form-element">
+                        <label asp-for="Name">Pool name</label>
+                        <input asp-for="Name" readonly="readonly" />
+                    </div>
+                    <div class="form-element">
+                        <label asp-for="DisplayName">Display name</label>
+                        <input asp-for="DisplayName" readonly="readonly" />
+                    </div>
+                    <div class="form-element">
+                        <label asp-for="SelectedPackageId">@Model.RenderManagerType.GetDescription() worker package</label>
+                        <input asp-for="SelectedPackageId" readonly="readonly" />
+                    </div>
+                    <div class="form-element">
+                        <label asp-for="SelectedGpuPackageId">GPU Packages</label>
+                        <input asp-for="SelectedGpuPackageId" readonly="readonly" />
+                    </div>
+                    <div class="form-element">
+                        <label asp-for="SelectedGeneralPackageIds">General Packages</label>
+                        <input asp-for="SelectedGeneralPackageIds" readonly="readonly" />
+                    </div>
+                    <div class="form-element">
+                        <label>Application licenses</label>
+                        <input asp-for="ApplicationLicenses" readonly="readonly" />
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="form-section">
+            <div class="section-title">
+                <span class="step-index">2</span>
+                <div class="step-header">
+                    <h3>Virtual Machine Configuration</h3>
+                    <p>Virtual machine configuration settings.</p>
+                </div>
+            </div>
+            <div class="section-wrapper">
+                <div class="section-bar"></div>
+                <div class="section-content">
+                    <div class="form-element">
+                        <label asp-for="ImageReference">Official VM image</label>
+                        <input asp-for="ImageReference" readonly="readonly" />
+                    </div>
+                    <div class="form-element">
+                        <label asp-for="BatchAgentSku">Batch agent SKU</label>
+                        <input asp-for="BatchAgentSku" readonly="readonly" />
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="form-section">
+            <div class="section-title">
+                <span class="step-index">3</span>
+                <div class="step-header">
+                    <h3>Pool Scale Settings</h3>
+                    <p>The number of nodes in the pool.</p>
+                </div>
+            </div>
+            <div class="section-wrapper">
+                <div class="section-bar"></div>
+                <div class="section-content">
+                    <div class="form-element">
+                        <label asp-for="VmSize">Virtual machine size</label>
+                        <input asp-for="VmSize" readonly="readonly" />
+                    </div>
+                    <div class="form-element">
+                        <label asp-for="DedicatedNodes">Current dedicated nodes</label>
+                        <input asp-for="DedicatedNodes" class="half" readonly="readonly" />
+                        <span asp-validation-for="DedicatedNodes" class=""></span>
+                    </div>
+                    <div class="form-element">
+                        <label asp-for="LowPriorityNodes">Current low-priority nodes</label>
+                        <input asp-for="LowPriorityNodes" class="half" readonly="readonly" />
+                        <span asp-validation-for="LowPriorityNodes" class=""></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>

@@ -1,0 +1,122 @@
+﻿@model WebApp.Models.Environments.Create.AddEnvironmentStep3Model;
+@{
+    ViewBag.Title = "Add Environment";
+}
+
+@section Breadcrumb
+{
+    <a asp-controller="Environments" asp-action="Index">Environments</a> &gt;
+    <span>New</span>
+}
+
+@await Html.PartialAsync("Environments/Create/CreateFormHeaderPartial")
+
+<form id="myForm" method="post" enctype="multipart/form-data">
+    @await Html.PartialAsync("Menu/EnvironmentSubMenu", Model, new ViewDataDictionary(ViewData)
+    {
+        { "Step", 4 },
+        { "Wizard", "true" }
+    })
+
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(model => model.EnvironmentName)
+
+    <div asp-validation-summary="ModelOnly" class=""></div>
+    <div class="form-section">
+        <div class="section-title">
+            <span class="step-index">3</span>
+            <div class="step-header">
+                <h3>Key Vault Identity</h3>
+                <p>This identity is used by virtual machines to access credentials in Key Vault, if needed.  These credentials include things like user accounts to join domains and mount network shares.  This identity uses certificate based authentication.</p>
+                <p>To create the new identity (a.k.a Service Principal) navigate to <a href="https://shell.azure.com/powershell" target="_blank">Azure Cloud Shell</a> and paste in the following powershell script.</p>
+                <p>You can use an existing Service Principal, however it's important that you enable certificate based authentication and upload the certificate to this Key Vault with the certificate name specified below.</p>
+            </div>
+        </div>
+        <div class="section-wrapper">
+            <div class="section-bar"></div>
+            <div class="section-content">
+                <div class="form-element wide">
+                    <pre><code>
+az account set --subscription "@Model.SubscriptionId"<br />
+$sp = az ad sp create-for-rbac --name @(Model.EnvironmentName)KVSP --create-cert --cert @Model.KeyVaultServicePrincipalCertificateName --keyvault @Model.KeyVaultName --years 10<br />
+az role assignment create --assignee ($sp | ConvertFrom-Json).appId --role Reader 1> $nul<br />
+az role assignment delete --assignee ($sp | ConvertFrom-Json).appId --role Contributor 1> $nul<br />
+Write-Host ApplicationID: ($sp | ConvertFrom-Json).appId<br />
+Write-Host ObjectID: (az ad sp show --id ($sp | ConvertFrom-Json).appId --output json | ConvertFrom-Json).objectId<br />
+                    </code></pre>
+                </div>
+                <div class="form-element">
+                    <label asp-for="KeyVaultServicePrincipalAppId">Application ID</label>
+                    <input asp-for="KeyVaultServicePrincipalAppId" value="@Model.KeyVaultServicePrincipalAppId" />
+                    <span asp-validation-for="KeyVaultServicePrincipalAppId" class=""></span>
+                </div>
+                <div class="form-element">
+                    <label asp-for="KeyVaultServicePrincipalObjectId">Object ID</label>
+                    <input asp-for="KeyVaultServicePrincipalObjectId" value="@Model.KeyVaultServicePrincipalObjectId" />
+                    <span asp-validation-for="KeyVaultServicePrincipalObjectId" class=""></span>
+                </div>
+                <div class="form-element">
+                    <label asp-for="KeyVaultServicePrincipalCertificateName">Azure Key Vault certificate name</label>
+                    <input asp-for="KeyVaultServicePrincipalCertificateName" value="@Model.KeyVaultServicePrincipalCertificateName" />
+                    <span asp-validation-for="KeyVaultServicePrincipalCertificateName" class=""></span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="form-footer">
+        <div class="summary"></div>
+        <div class="button-bar">
+            <a id="previous" class="button" asp-controller="Environments" asp-action="Step2" asp-route-envId="@Model.EnvironmentName">Previous</a>
+            <button id="next" type="submit" formaction="Step3">Next : Render Manager Config <i id="nextSpinner" class="fa fa-spinner fa-spin" style="display: none;"></i></button>
+        </div>
+    </div>
+</form>
+
+@section scripts
+{
+    <script>
+        $(document).ready(function () {
+            var error = '@Model.Error';
+            if (error !== '')
+            {
+                toastr.options.timeOut = 0;
+                toastr.options.extendedTimeOut = 0;
+                toastr.options.closeButton = true;
+                toastr.options.positionClass = "toast-top-center";
+
+                var msg = '@Model.ErrorMessage';
+                toastr.warning(msg, error).css("width", "600px");
+
+                $('#next').attr('disabled', true);
+            }
+
+            var modelStateValid = '@ViewData.ModelState.IsValid';
+            if (modelStateValid && modelStateValid.toLowerCase() === "false") {
+                $("#nextSpinner").hide();
+                $("#next").prop("disabled", false);
+                $("#previous").show();
+            }
+
+            // hook into the form submission
+            $("#myForm").submit(function (e) {
+                if ($("#myForm").valid() === false) {
+                    e.preventDefault(e);
+                } else {
+                    $("#nextSpinner").show();
+                    $("#next").prop("disabled", true);
+                    $("#previous").hide();
+
+                    toastr.options.timeOut = 0;
+                    toastr.options.extendedTimeOut = 0;
+                    toastr.options.closeButton = false;
+                    toastr.options.positionClass = "toast-top-center";
+                    toastr.options.preventDuplicates = true;
+
+                    var title = "Assigning roles and permissions ...";
+                    var msg = "<br />We're assigning permissions for the portal to the Azure resources and Key Vault.  This step may take a little while.";
+                    toastr.info(msg, title).css("width", "600px");
+                }
+            });
+        });
+    </script>
+}

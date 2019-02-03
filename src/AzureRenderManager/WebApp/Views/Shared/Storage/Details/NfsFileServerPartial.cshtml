@@ -1,0 +1,103 @@
+﻿@model WebApp.Models.Storage.Details.NfsFileServerDetailsModel
+
+<div class="form-section half">
+    <div class="section-title">
+        <span class="step-index">2.1</span>
+        <div class="step-header">
+            <h3>@ViewBag.DisplayName</h3>
+            <p>@ViewBag.Description</p>
+        </div>
+    </div>
+    <div class="section-wrapper">
+        <div class="section-bar"></div>
+        <div class="section-content">
+            <div class="form-element half">
+                <label asp-for="Status">Status</label>
+                <input asp-for="Status" readonly="readonly"/>
+            </div>
+            <div class="form-element half">
+                <label asp-for="VmName">VM Name</label>
+                <input asp-for="VmName" readonly="readonly"/>
+            </div>
+            <div class="form-element half">
+                <label asp-for="ResourceGroupName">Resource Group</label>
+                <input asp-for="ResourceGroupName" readonly="readonly"/>
+            </div>
+            <div class="form-element half">
+                <label asp-for="DeploymentName">Deployment Name</label>
+                <input asp-for="DeploymentName" readonly="readonly"/>
+            </div>
+            <div class="form-element half">
+                <label asp-for="PublicIp">Public IP</label>
+                <input type="text" value="@(Model.PublicIp ?? "n/a")" readonly="readonly"/>
+            </div>
+        </div>
+        <div class="section-content">
+            <div class="form-element half">
+                <label>&nbsp;</label>
+                <p class="spacer">&nbsp;</p>
+            </div>
+            <div class="form-element half">
+                <label asp-for="VmSize">VM Size</label>
+                <input asp-for="VmSize" readonly="readonly"/>
+            </div>
+            <div class="form-element half">
+                <label asp-for="Username">Username</label>
+                <input asp-for="Username" readonly="readonly"/>
+            </div>
+            <div class="form-element half">
+                <label asp-for="ProvisioningState">Provisioning State</label>
+                <input asp-for="ProvisioningState" readonly="readonly"/>
+            </div>
+            <div class="form-element half">
+                <label asp-for="PrivateIp">Private IP</label>
+                <input type="text" value="@(Model.PrivateIp ?? "n/a")" readonly="readonly"/>
+            </div>
+            <div class="form-element half">
+                <label asp-for="AllowedNetworks">Allowed Networks</label>
+                <input type="text" value="@(Model.AllowedNetworks == null ? "n/a" : string.Join(", ", Model.AllowedNetworks))" readonly="readonly"/>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="form-section">
+    <div class="section-title">
+        <span class="step-index">2.2</span>
+        <div class="step-header">
+            <h3>File Shares</h3>
+            <p>File shares associated with this NFS File Server</p>
+            <p>TODO: Hook up action buttons</p>
+        </div>
+    </div>
+    <div class="section-wrapper">
+        <div class="section-bar"></div>
+        <div class="section-content">
+            <div class="form-element">
+                @if (Model.FileShares != null)
+                {
+                    <table class="file-shares">
+                        <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Type</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        @foreach (var share in Model.FileShares)
+                        {
+                            <tr>
+                                <td>@share.Name</td>
+                                <td>@share.Type</td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <p><b>No file shares have been configured</b></p>
+                }
+            </div>
+        </div>
+    </div>
+</div>
