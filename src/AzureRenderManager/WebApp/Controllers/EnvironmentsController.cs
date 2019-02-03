@@ -927,6 +927,12 @@ namespace WebApp.Controllers
                     CreateOrUpdateVnet(environment, model),
                     CreateOrUpdateAppInsights(environment, model));
             }
+            catch (CloudException ex)
+            {
+                ModelState.AddModelError("", $"{ex.Body.Message} ({ex.Body.Code})");
+                ModelState.AddModelError("", $"{ex}");
+                return View("Create/Step2", model);
+            }
             catch (Exception ex)
             {
                 // TODO: would be good to know which one actually failed, but hopefully the answer is in the error.
