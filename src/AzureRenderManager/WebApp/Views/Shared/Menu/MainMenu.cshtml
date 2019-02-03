@@ -1,0 +1,166 @@
+﻿@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContext
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Xsrf
+@functions{
+    public string GetAntiXsrfRequestToken()
+    {
+        return Xsrf.GetAndStoreTokens(HttpContext.HttpContext).RequestToken;
+    }
+}
+@{
+    var controller = ViewBag.Current;
+}
+<ul class="main-left-nav">
+    <li>
+        <div class="nav-main-link-container @(controller == "env" ? "current" : "")">
+            <div class="nav-main-link">
+                <div class="nav-icon"><img src="~/images/resource.svg" width="18" height="18" title="Batch environments" alt="Azure"/></div>
+                <span><a class="title" asp-controller="Environments" asp-action="Index">Environments</a></span>
+            </div>
+            @if (ViewBag.AddEnvironment == true)
+            {
+                <a asp-controller="Environments" asp-action="Step1" asp-route-envId=""><i class="fa fa-plus" title="Add an Environment"></i></a>
+            }
+        </div>
+        @if (Enumerable.Any(ViewBag.Environments))
+        {
+            <div class="sub-menu">
+                <ul>
+                    @foreach (ISubMenuItem environment in ViewBag.Environments)
+                    {
+                        <li>
+                            <div class="nav-sub-link">
+                                <i class="fa fa-caret-right"></i>
+                                @if (environment.Enabled)
+                                {
+                                    <a class="link @(ViewBag.EnvId == environment.Id ? "current" : "")" asp-controller="Environments" asp-action="Overview" asp-route-envId="@(environment.Id)">@(environment.DisplayName)</a>
+                                }
+                                else
+                                {
+                                    <span class="disabled @(ViewBag.EnvId == environment.Id ? "current" : "")">@environment.DisplayName &nbsp;<i class="fa fa-spinner" title="Environment setup in progress"></i></span>
+                                }
+
+                                @if (!environment.Enabled)
+                                {
+                                    <a asp-controller="Environments" asp-action="Step1" asp-route-envId="@(environment.Id)"><i class="fa fa-edit" title="Continue setting up this environment"></i></a>
+                                    <a asp-controller="Environments" asp-action="Delete" asp-route-envId="@(environment.Id)" title="Delete this environment"><i class="fa fa-trash"></i></a>
+                                }
+                            </div>
+                        </li>
+                    }
+                </ul>
+            </div>
+        }
+    </li>
+    <li>
+        <div class="nav-main-link-container @(controller == "pkg" ? "current" : "")">
+            <div class="nav-main-link">
+                <div class="nav-icon"><img src="~/images/saved-files.svg" width="18" height="18" title="Batch environments" alt="Azure"/></div>
+                <span><a class="title" asp-controller="Packages" asp-action="Index">Packages</a></span>
+            </div>
+            @if (ViewBag.AddPackage != null)
+            {
+                <a asp-controller="Packages" asp-action="Add" asp-route-pkgId=""><i class="fa fa-plus" title="Create a package"></i></a>
+            }
+        </div>
+        @if (ViewBag.Packages?.Count > 0)
+        {
+            <div class="sub-menu">
+                <ul>
+                    @foreach (ISubMenuItem package in ViewBag.Packages)
+                    {
+                        <li>
+                            <div class="nav-sub-link">
+                                <i class="fa fa-caret-right"></i>
+                                <a class="link @(ViewBag.PkgId == package.Id ? "current" : "")" asp-controller="Packages" asp-action="Details" asp-route-pkgId="@(package.Id)">@(package.DisplayName)</a>
+                            </div>
+                        </li>
+                    }
+                </ul>
+            </div>
+        }
+    </li>
+    <li>
+        <div class="nav-main-link-container @(controller == "store" ? "current" : "")">
+            <div class="nav-main-link">
+                <div class="nav-icon"><img src="~/images/storage.svg" width="18" height="18" title="Batch environments" alt="Azure"/></div>
+                <span><a class="title" asp-controller="Storage" asp-action="Index">Storage</a></span>
+            </div>
+            @if (ViewBag.AddRepo != null)
+            {
+                <a asp-controller="Storage" asp-action="Step1" asp-route-repoId=""><i class="fa fa-plus" title="Define a new storage configuration"></i></a>
+            }
+        </div>
+        @if (ViewBag.Repositories?.Count > 0)
+        {
+            <div class="sub-menu">
+                <ul>
+                    @foreach (ISubMenuItem repo in ViewBag.Repositories)
+                    {
+                        <li>
+                            <div class="nav-sub-link">
+                                <i class="fa fa-caret-right"></i>
+                                @if (repo.Enabled)
+                                {
+                                    <a class="link @(ViewBag.StorageId == repo.Id ? "current" : "")" asp-controller="Storage" asp-action="Details" asp-route-repoId="@(repo.Id)">@(repo.DisplayName)</a>
+                                }
+                                else
+                                {
+                                    <span class="disabled">@(repo.DisplayName + " (in progress)")</span>
+                                    <a asp-controller="Storage" asp-action="Step1" asp-route-repoId="@(repo.Id)"><i class="fa fa-edit" title="Continue setting up this configuration"></i></a>
+                                }
+                            </div>
+                        </li>
+                    }
+                </ul>
+            </div>
+        }
+    </li>
+    <li>
+        <div class="nav-main-link-container">
+            <div class="nav-main-link">
+                <div class="nav-icon"><img src="~/images/statistics.svg" width="18" height="18" title="Batch environments" alt="Azure" /></div>
+                <span><a class="title" asp-controller="Reporting" asp-action="Index">Reporting</a></span>
+            </div>
+        </div>
+    </li>
+</ul>
+<script language="javascript" type="text/javascript">
+    /*
+     * TODO: Hook up toasters here and save to info location in header
+     * TODO: Add JS to a shared script file that can be minified ....
+     */
+    function performDelete(controller, action, id) {
+        if (controller.toLowerCase() !== "environments") {
+            doDelete(id, `/${controller}/${action}/${id}`, `/${controller}`);
+        } else {
+            window.location.replace(`/${controller}/${action}/${id}`);
+        }
+    }
+
+    function doDelete(id, actionUrl, redirectUrl) {
+        // TODO: Remove log
+        console.log(`doDelete :: id: ${id}, actionUrl: ${actionUrl}, redirectUrl: ${redirectUrl}`);
+        console.log("href :: ", window.location.href);
+        if (confirm("Are you sure you want to delete: '" + id + "'?")) {
+            $.ajax({
+                type: "DELETE",
+                url: actionUrl,
+                headers: { "RequestVerificationToken": "@(GetAntiXsrfRequestToken())" },
+                success: function (status) {
+                    // TODO: show toaster here and add it to the info list in header
+                    // TODO: include controller name in check as well.
+                    if (redirectUrl || window.location.pathname.toLowerCase().includes(`${id}`.toLowerCase())) {
+                        // redirect to controller index page
+                        window.location.replace(redirectUrl);
+                    } else {
+                        window.location.replace(window.location.href);
+                    }
+                },
+                error: function(response) {
+                    // TODO: show toaster here and add it to the info list in header
+                    console.error("Failed to delete: ", response);
+                }
+            });
+        }
+    }
+</script>

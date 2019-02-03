@@ -1,0 +1,37 @@
+﻿@{
+    var step = ViewBag.Step;
+    var showLinks = ViewBag.Type == "view";
+}
+
+<div class="nav-table sub-menu">
+    <span class="@(step == "overview" ? "current" : "")">
+        @await Html.PartialAsync("Menu/SubMenuItemLink", Model, new ViewDataDictionary(ViewData)
+        {
+            { "Id", Model.EnvironmentName },
+            { "LinkText", "Overview" },
+            { "Controller", "Pools" },
+            { "Action", "Overview" },
+            { "IsLink", showLinks }
+        })
+    </span>
+    <span class="@(step == "details" ? "current" : "")">
+        @await Html.PartialAsync("Menu/SubMenuItemLink", Model, new ViewDataDictionary(ViewData)
+        {
+            { "Id", Model.EnvironmentName },
+            { "LinkText", "Details" },
+            { "Controller", "Pools" },
+            { "Action", "Details" },
+            { "IsLink", showLinks }
+        })
+    </span>
+    <span class="@(step == "autoscale" ? "current" : "")">
+        @await Html.PartialAsync("Menu/SubMenuItemLink", Model, new ViewDataDictionary(ViewData)
+        {
+            { "Id", Model.EnvironmentName },
+            { "LinkText", "Auto Scale" },
+            { "Controller", "Pools" },
+            { "Action", "AutoScale" },
+            { "IsLink", showLinks }
+        })
+    </span>
+</div>

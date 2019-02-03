@@ -1,0 +1,173 @@
+﻿@model WebApp.Models.Storage.Create.AddNfsFileServerModel
+@{
+    ViewBag.Title = "Add Storage Configuration";
+}
+
+@section Breadcrumb
+    {
+<a asp-controller="Storage" asp-action="Index">Storage Repositories</a> &gt;
+    <span>New</span>
+}
+
+@await Html.PartialAsync("Storage/Create/CreateFormHeaderPartial")
+
+<form asp-controller="Storage" asp-action="Step2Nfs" method="post">
+    @await Html.PartialAsync("Menu/StorageSubMenu", Model, new ViewDataDictionary(ViewData)
+    {
+        { "Step", 2 },
+        { "RepoId", Model.RepositoryName }
+    })
+
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(model => model.RepositoryName)
+    @Html.HiddenFor(model => model.RepositoryType)
+    @Html.HiddenFor(model => model.SubnetResourceIdLocationAndAddressPrefix)
+    @Html.HiddenFor(model => model.SubscriptionId)
+
+    <div asp-validation-summary="ModelOnly" class=""></div>
+    <div class="form-section">
+        <div class="section-title">
+            <span class="step-index">1</span>
+            <div class="step-header">
+                <h3>Configure NFS File Server</h3>
+                <p>Set up the details specific to the NFS file server</p>
+            </div>
+        </div>
+        <div class="section-wrapper">
+            <div class="section-bar"></div>
+            <div class="section-content">
+                <div class="form-element">
+                    <label asp-for="NewResourceGroupName">Resource Group</label>
+                    <input asp-for="NewResourceGroupName" value="@Model.NewResourceGroupName" />
+                    <span asp-validation-for="NewResourceGroupName" class=""></span>
+                </div>
+                <div class="form-element">
+                    <label asp-for="VmName">VM Name</label>
+                    <input asp-for="VmName" value="@Model.VmName" />
+                    <span asp-validation-for="VmName" class=""></span>
+                </div>
+                <div class="form-element">
+                    <label asp-for="VmSize">VM Size</label>
+                    <select asp-for="VmSize">
+                        <option value="Standard_D2s_v3">Standard_D2s_v3</option>
+                        <option selected value="Standard_D4s_v3">Standard_D4s_v3</option>
+                        <option value="Standard_D8s_v3">Standard_D8s_v3</option>
+                        <option value="Standard_D16s_v3">Standard_D16s_v3</option>
+                        <option value="Standard_L8s_v2">Standard_L8s_v2</option>
+                        <option value="Standard_L16s_v2">Standard_L16s_v2</option>
+                        <option value="Standard_L32s_v2">Standard_L32s_v2</option>
+                    </select>
+                    <span asp-validation-for="VmSize" class=""></span>
+                </div>
+                <div class="form-element">
+                    <label asp-for="UserName">Username</label>
+                    <input asp-for="UserName" />
+                    <span asp-validation-for="UserName" class=""></span>
+                </div>
+                <div class="form-element">
+                    <label asp-for="Password">Password</label>
+                    <input asp-for="Password" />
+                    <span asp-validation-for="Password" class=""></span>
+                </div>
+                <div class="form-element">
+                    <label asp-for="AllowedNetworks">Allowed Networks</label>
+                    <input asp-for="AllowedNetworks" placeholder="e.g. 10.2.0.0/24 (Optional)" value="@Model.AllowedNetworks" />
+                    <span asp-validation-for="AllowedNetworks" class=""></span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="form-section">
+        <div class="section-title">
+            <span class="step-index">2</span>
+            <div class="step-header">
+                <h3>File Share</h3>
+                <p>Details about the file share</p>
+            </div>
+        </div>
+        <div class="section-wrapper">
+            <div class="section-bar"></div>
+            <div class="section-content">
+                <div class="form-element">
+                    <label asp-for="FileShareName">Share Name</label>
+                    <input asp-for="FileShareName" placeholder="e.g. /exports/share" value="@Model.FileShareName"/>
+                    <span asp-validation-for="FileShareName" class=""></span>
+                </div>
+                <div class="form-element">
+                    <label asp-for="FileShareType">Share Type</label>
+                    <select asp-for="FileShareType">
+                        <option selected value="NFS">NFS</option>
+                        <option value="SMB" disabled="disabled">SMB (Coming soon)</option>
+                    </select>
+                    <span asp-validation-for="FileShareType" class=""></span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="form-footer">
+        <div class="summary"></div>
+        <div class="button-bar">
+            <a class="button" asp-controller="Storage" asp-action="Step1" asp-route-envId="@Model.RepositoryName">Previous</a>
+            <button id="createbtn" type="submit">Create <i class="fa fa-save"></i></button>
+        </div>
+    </div>
+    <p>&nbsp;</p>
+</form>
+
+@section scripts
+    {
+    <script>
+        // TODO: Add JS to a shared validation script file that can be minified ....
+        // TODO: Is there an easier way to add these? Can can at least be shared
+        $.validator.addMethod("ascii-only",
+            function (value, element, params) {
+                return /^[a-zA-Z0-9-]+$/.test(value);
+            }
+        );
+
+        $.validator.unobtrusive.adapters.add("ascii-only",
+            function (options) {
+                options.rules['ascii-only'] = [];
+                options.messages['ascii-only'] = options.message;
+            }
+        );
+
+        $.validator.addMethod("not-just-numbers",
+            function (value, element, params) {
+                return !/^[\d]+$/.test(value);
+            }
+        );
+
+        $.validator.unobtrusive.adapters.add("not-just-numbers",
+            function (options) {
+                options.rules['not-just-numbers'] = [];
+                options.messages['not-just-numbers'] = options.message;
+            }
+        );
+
+        $.validator.addMethod("start-end",
+            function (value, element, params) {
+                return value && !(value.startsWith("-") || value.endsWith("-"));
+            }
+        );
+
+        $.validator.unobtrusive.adapters.add("start-end",
+            function (options) {
+                options.rules['start-end'] = [];
+                options.messages['start-end'] = options.message;
+            }
+        );
+
+        $(document).ready(function () {
+            if ('@Model.Error' !== '')
+            {
+                toastr.options.timeOut = 0;
+                toastr.options.extendedTimeOut = 0;
+                toastr.options.closeButton = true;
+                toastr.options.positionClass = "toast-top-center";
+                toastr.warning('@Model.ErrorMessage', '@Model.Error').css("width", "600px");
+                $('#createbtn').attr('disabled', true);
+            }
+        });
+    </script>
+}

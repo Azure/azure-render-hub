@@ -1,0 +1,22 @@
+﻿@using WebApp.Code.Extensions
+@model WebApp.Models.Environments.Create.AddEnvironmentStep4Model
+
+<div class="form-section">
+    <div class="section-title">
+        <span class="step-index">4.2</span>
+        <div class="step-header">
+            <h3>@Model.RenderManager.GetDescription() Configuration</h3>
+            <p>Configure selected render manager settings</p>
+        </div>
+    </div>
+    <div class="section-wrapper">
+        <div class="section-bar"></div>
+        <div class="section-content">
+            <div class="form-element">
+                <label asp-for="QubeEnvironment.QubeSupervisor">Qube supervisor (only needed if installing the workers from a package)</label>
+                <input asp-for="QubeEnvironment.QubeSupervisor" value="@Model.QubeEnvironment.QubeSupervisor"/>
+                <span asp-validation-for="QubeEnvironment.QubeSupervisor" class=""></span>
+            </div>
+        </div>
+    </div>
+</div>

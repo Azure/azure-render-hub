@@ -1,0 +1,94 @@
+﻿@using WebApp.Code.Extensions
+@model WebApp.Models.Pools.PoolDetailsModel
+@{
+    var displayNameOrPoolId = Model.DisplayName ?? Model.Name;
+    var redirectUrl = $"/Environments/{Model.EnvironmentName}/Pools";
+    var deletePoolUrl = $"/Environments/{Model.EnvironmentName}/Pools/{Model.Name}";
+    ViewBag.Title = $"Pool '{displayNameOrPoolId}'";
+
+    // TODO: Show allocation status and any errors with the pool operations
+}
+
+<script src="~/js/Chart.bundle.min.js" asp-append-version="true"></script>
+<script src="~/js/hammer.min.js" asp-append-version="true"></script>
+<script src="~/js/chartjs-plugin-zoom.min.js" asp-append-version="true"></script>
+
+<style>
+    canvas {
+        -moz-user-select: none;
+        -webkit-user-select: none;
+        -ms-user-select: none;
+    }
+</style>
+
+@section Breadcrumb
+    {
+    <a asp-controller="Environments" asp-action="Index">Environments</a> &gt;
+    <a asp-controller="Environments" asp-action="Details" asp-route-envId="@Model.EnvironmentName">@Model.EnvironmentName</a> &gt;
+    <a asp-controller="Pools" asp-action="Index" asp-route-envId="@Model.EnvironmentName">Pools</a> &gt;
+    <span>@Model.Name</span>
+}
+
+<div class="page-header">
+    <h2>@Model.EnvironmentName - @displayNameOrPoolId</h2>
+    <p>Viewing details of the selected pool.</p>
+</div>
+@await Html.PartialAsync("Menu/EnvironmentMainMenu", Model, new ViewDataDictionary(ViewData) { { "Step", "pools" } })
+@await Html.PartialAsync("Menu/PoolSubMenu", Model, new ViewDataDictionary(ViewData) { { "Step", "autoscale" }, { "Type", "view" } })
+
+<div class="pool-details">
+    <form asp-action="AutoScale" method="post">
+        @Html.HiddenFor(model => model.EnvironmentName)
+        <div asp-validation-summary="ModelOnly" class=""></div>
+        <div class="form-section">
+            <div class="section-title">
+                <span class="step-index">1</span>
+                <div class="step-header">
+                    <h3>Auto scale settings</h3>
+                    <p>Configure the auto-scale settings.</p>
+                </div>
+            </div>
+            <div class="section-wrapper">
+                <div class="section-bar"></div>
+                <div class="section-content">
+                    <div class="form-element">
+                        <label asp-for="AutoScalePolicy">Auto-scale policy</label>
+                        <select asp-for="AutoScalePolicy" asp-items="Model.AutoScalePolicyItems"></select>
+                        <span asp-validation-for="AutoScalePolicy" class=""></span>
+                    </div>
+                    <div class="form-element">
+                        <label asp-for="AutoScaleDownIdleTimeout">Idle timeout in minutes</label>
+                        <input asp-for="AutoScaleDownIdleTimeout" class="half" value="@Model.AutoScaleDownIdleTimeout" />
+                        <span asp-validation-for="AutoScaleDownIdleTimeout" class=""></span>
+                    </div>
+                    <div class="form-element">
+                        <label asp-for="MinimumDedicatedNodes">Minimum number of dedicated nodes</label>
+                        <input asp-for="MinimumDedicatedNodes" class="half" />
+                        <span asp-validation-for="MinimumDedicatedNodes" class=""></span>
+                    </div>
+                    <div class="form-element">
+                        <label asp-for="MinimumLowPriorityNodes">Minimum number of low-priority nodes</label>
+                        <input asp-for="MinimumLowPriorityNodes" class="half" />
+                        <span asp-validation-for="MinimumLowPriorityNodes" class=""></span>
+                    </div>
+                    <div class="form-element">
+                        <label asp-for="MaximumDedicatedNodes">Maximum number of dedicated nodes</label>
+                        <input asp-for="MaximumDedicatedNodes" class="half" />
+                        <span asp-validation-for="MaximumDedicatedNodes" class=""></span>
+                        <small>The maximum counts are used by the scaling API to limit potential requests for a large number of nodes.</small>
+                    </div>
+                    <div class="form-element">
+                        <label asp-for="MaximumLowPriorityNodes">Maximum number of low-priority nodes</label>
+                        <input asp-for="MaximumLowPriorityNodes" class="half" />
+                        <span asp-validation-for="MaximumLowPriorityNodes" class=""></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="form-footer">
+            <div class="button-bar">
+                <button type="submit">Update Auto Scale <i class="fa fa-check"></i></button>
+            </div>
+        </div>
+    </form>
+</div>

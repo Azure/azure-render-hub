@@ -1,0 +1,19 @@
+﻿@import "mixins";
+@import "variables";
+
+.storage-details {
+    table {
+        width: 100%;
+        background: $white;
+
+        &.file-shares {
+            th:last-child, td:last-child {
+                text-align: center;
+
+                a {
+                    font-size: 16px;
+                }
+            }
+        }
+    }
+}

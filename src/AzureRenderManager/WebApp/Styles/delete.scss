@@ -1,0 +1,102 @@
+﻿@import "mixins";
+@import "variables";
+
+.delete-environment {
+    margin-top: 15px;
+
+    .section {
+        margin-top: 20px;
+
+        .header {
+            label {
+                font-weight: bold;
+            }
+        }
+
+        .resources {
+            margin-top: 15px;
+            margin-left: 15px;
+
+            p {
+                width: 700px;
+            }
+        }
+    }
+
+    table {
+        width: 550px;
+        margin-top: 5px;
+        border-width: 0;
+
+        thead {
+            tr {
+                border-width: 0;
+
+                th {
+                    text-align: left;
+                    border-width: 0;
+                    padding: 4px;
+                }
+            }
+        }
+
+        tbody {
+            tr {
+                border-width: 0;
+
+                td {
+                    text-align: left;
+                    border-width: 0;
+                    padding: 3px;
+                    white-space: nowrap;
+
+                    &.type {
+                        padding-right: 10px;
+                    }
+                }
+            }
+        }
+    }
+
+    .image-container {
+        flex: 1;
+        display: inline-block;
+
+        &.block {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .icon {
+            display: inline;
+            height: 40px;
+
+            img {
+                position: relative;
+                left: 0px;
+                top: 4px;
+            }
+        }
+
+        span {
+            height: 40px;
+            display: inline;
+            margin-left: 5px;
+            outline: none;
+            -webkit-user-drag: none;
+
+            i {
+                padding-left: 6px;
+            }
+        }
+    }
+
+    .form-section {
+        margin-top: 25px;
+    }
+
+    .form-footer {
+        margin-top: 0px;
+        margin-left: 3px;
+    }
+}

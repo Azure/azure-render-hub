@@ -1,0 +1,76 @@
+﻿@using Microsoft.Azure.Management.Batch.Models
+@model WebApp.Models.Pools.PoolListModel
+@{
+    ViewBag.Title = "Pools";
+}
+
+@section Breadcrumb
+{
+    <a asp-controller="Environments" asp-action="Index">Environments</a> &gt;
+    <a asp-controller="Environments" asp-action="Details" asp-route-envId="@Model.EnvironmentName">@Model.EnvironmentName</a> &gt;
+    <span>Pools</span>
+}
+
+<div class="page-header">
+    <h2>@Model.EnvironmentName - pools</h2>
+    <p>Pools that have been created and are managed for the selected environment.</p>
+</div>
+@await Html.PartialAsync("Menu/EnvironmentMainMenu", Model, new ViewDataDictionary(ViewData) {{ "Step", "pools" }})
+<div asp-validation-summary="ModelOnly" class=""></div>
+
+<div class="pool-details">
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Dedicated / Low Priority</th>
+                <th>VM Size</th>
+                <th>Auto scale</th>
+                <th>Licenses</th>
+                <th>State</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var pool in Model.Pools)
+        {
+            <tr class="@(pool.PoolAllocationState == AllocationState.Resizing ? "warning" : pool.PoolAllocationState == AllocationState.Stopping ? "danger" : "")">
+                <td><a asp-action="Overview" asp-route-envId="@Model.EnvironmentName" asp-route-poolId="@pool.Name">@pool.DisplayName</a></td>
+                <td>
+                    @if (pool.PoolAllocationState == AllocationState.Resizing && pool.CurrentDedicated != pool.TargetDedicated)
+                    {
+                        @:@pool.CurrentDedicated &rarr; @pool.TargetDedicated
+                    }
+                    else
+                    {
+                        @pool.CurrentDedicated
+                    }
+                    /
+                    @if (pool.PoolAllocationState == AllocationState.Resizing && pool.CurrentLowPriority != pool.TargetLowPriority)
+                    {
+                        @:@pool.CurrentLowPriority &rarr; @pool.TargetLowPriority
+                    }
+                    else
+                    {
+                        @pool.CurrentLowPriority
+                    }
+                </td>
+                <td>@pool.VmSize</td>
+                <td>@(pool.AutoScaleEnabled ? "Yes" : "No")</td>
+                <td>@(pool.AppLicenses == null || pool.AppLicenses.Count == 0 ? "None" : string.Join(", ", pool.AppLicenses))</td>
+                <td>@pool.PoolAllocationState</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+    @if (Model.Pools.Count == 0)
+    {
+        <p>&nbsp;</p>
+        <text><h4>There are no managed pools for this environment under Batch account '@Model.BatchAccount' in @Model.Location</h4></text>
+    }
+    <div class="form-footer">
+        <div class="button-bar">
+            <a class="button" asp-action="New" asp-route-envId="@Model.EnvironmentName">Add New Pool <i class="fa fa-plus"></i></a>
+            <a class="button" asp-action="Refresh" asp-route-envId="@Model.EnvironmentName">Refresh Pools <i class="fa fa-refresh"></i></a>
+        </div>
+    </div>
+</div>

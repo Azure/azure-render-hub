@@ -1,0 +1,77 @@
+﻿@model WebApp.Models.Environments.DeletingEnvironmentModel
+@{
+    ViewBag.Title = "Deleting " + @Model.EnvironmentName;
+}
+
+@section Breadcrumb
+{
+    <a asp-controller="Environments" asp-action="Index">Environments</a> &gt;
+    <a asp-controller="Environments" asp-action="Details" asp-route-envId="@Model.EnvironmentName">@Model.EnvironmentName</a> &gt;
+    <span>Deleting</span>
+}
+
+<div class="page-header">
+    <h2>Environment Deleting</h2>
+    <p>
+        The environment "@Model.EnvironmentName" is currently being deleted. This is a long running process and may take some time.
+    </p>
+</div>
+<br/>
+<h4>The following items are currently being deleted:</h4>
+<!--
+    TODO :: Call "Environments/{envId}/Remove" when we are happy that the environment can be deleted.
+-->
+<div class="delete-environment">
+    <div class="section">
+        <div class="resources">
+            <div class="image-container block">
+                <div class="icon"><img src="~/images/resource.svg" width="18" height="18" alt="Azure"/></div>
+                <span>@(Model.EnvironmentName) <i>(Render manager environment)</i></span>
+            </div>
+
+            @if (Model.DeleteResourceGroup)
+            {
+                <div class="image-container block">
+                    <div class="icon"><img src="~/images/resource-group.svg" width="18" height="18" alt="Azure"/></div>
+                    <span>@(Model.ResourceGroup) <i>(Resource group)</i></span>
+                </div>
+            }
+
+            @if (Model.DeleteBatchAccount)
+            {
+                <div class="image-container block">
+                    <div class="icon"><img src="~/images/batch.svg" width="18" height="18" alt="Azure"/></div>
+                    <span>@(Model.BatchAccount) <i>(Batch account)</i></span>
+                </div>
+            }
+            @if (Model.DeleteStorageAccount)
+            {
+                <div class="image-container block">
+                    <div class="icon"><img src="~/images/storage.svg" width="18" height="18" alt="Azure"/></div>
+                    <span>@(Model.StorageAccount) <i>(Storage account)</i></span>
+                </div>
+            }
+            @if (Model.DeleteAppInsights)
+            {
+                <div class="image-container block">
+                    <div class="icon"><img src="~/images/insights.svg" width="18" height="18" alt="Azure"/></div>
+                    <span>@(Model.ApplicationInsights) <i>(Application Insights account)</i></span>
+                </div>
+            }
+            @if (Model.DeleteKeyVault)
+            {
+                <div class="image-container block">
+                    <div class="icon"><img src="~/images/key.svg" width="18" height="18" alt="Azure"/></div>
+                    <span>@(Model.KeyVault) <i>(Key Vault)</i></span>
+                </div>
+            }
+            @if (Model.DeleteVNet)
+            {
+                <div class="image-container block">
+                    <div class="icon"><img src="~/images/vnet.svg" width="18" height="18" alt="Azure"/></div>
+                    <span>@(Model.VNet) <i>(Virtual network)</i></span>
+                </div>
+            }
+        </div>
+    </div>
+</div>

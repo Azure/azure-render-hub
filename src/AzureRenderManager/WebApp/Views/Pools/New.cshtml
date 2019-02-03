@@ -1,0 +1,221 @@
+﻿@using WebApp.Code.Extensions
+@using WebApp.Config
+@model WebApp.Models.Pools.PoolConfigurationModel
+@{
+    ViewBag.Title = "Create new pool";
+}
+
+@section Breadcrumb
+{
+    <a asp-controller="Environments" asp-action="Index">Environments</a> &gt;
+    <a asp-controller="Environments" asp-action="Details" asp-route-envId="@Model.EnvironmentName">@Model.EnvironmentName</a> &gt;
+    <a asp-controller="Pools" asp-action="Index" asp-route-envId="@Model.EnvironmentName">Pools</a> &gt;
+    <span>New</span>
+}
+
+<div class="page-header">
+    <h2>@Model.EnvironmentName - New Pool</h2>
+    <p>Create a new managed pool under the @Model.EnvironmentName environment.</p>
+</div>
+@await Html.PartialAsync("Menu/EnvironmentMainMenu", Model, new ViewDataDictionary(ViewData) {{ "Step", "pools" }})
+
+<div class="pool-details">
+    <form asp-action="New" method="post">
+        @Html.HiddenFor(model => model.EnvironmentName)
+        <div asp-validation-summary="ModelOnly" class=""></div>
+
+        <div class="form-section">
+            <div class="section-title">
+                <span class="step-index">1</span>
+                <div class="step-header">
+                    <h3>Pool Details</h3>
+                    <p>General details of the new pool.</p>
+                </div>
+            </div>
+            <div class="section-wrapper">
+                <div class="section-bar"></div>
+                <div class="section-content">
+                    <div class="form-element">
+                        <label asp-for="PoolName">Pool name</label>
+                        <input asp-for="PoolName" />
+                        <span asp-validation-for="PoolName" class=""></span>
+                    </div>
+                    @if (Model.RenderManagerType == RenderManagerType.Deadline)
+                    {
+                        <div class="form-element">
+                            <label></label>
+                            <div class="form-check">
+                                <input asp-for="UseDeadlineGroups" type="checkbox">
+                                <label>Use Deadline Groups instead of Pools</label>
+                            </div>
+                            <small>By default all compute nodes will be added to a Deadline pool of the same name as the Batch pool.  Use this flag to add to a group of this name instead.</small>
+                        </div>
+                    }
+                    <div class="form-element">
+                        <label>Application licenses</label>
+                        <div class="form-check">
+                            <input asp-for="MaxAppLicense" type="checkbox">
+                            <label asp-for="MaxAppLicense">3ds Max</label>
+                        </div>
+                        <div class="form-check">
+                            <input asp-for="MayaAppLicense" type="checkbox">
+                            <label asp-for="MayaAppLicense">Maya</label>
+                        </div>
+                        <div class="form-check">
+                            <input asp-for="VrayAppLicense" type="checkbox">
+                            <label asp-for="VrayAppLicense">VRay</label>
+                        </div>
+                        <div class="form-check">
+                            <input asp-for="ArnoldAppLicense" type="checkbox">
+                            <label asp-for="ArnoldAppLicense">Arnold</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="form-section">
+            <div class="section-title">
+                <span class="step-index">2</span>
+                <div class="step-header">
+                    <h3>Virtual Machine Configuration</h3>
+                    <p>Select either an Image Reference or a Custom Image Reference and a Batch Agent SKU</p>
+                </div>
+            </div>
+            <div class="section-wrapper">
+                <div class="section-bar"></div>
+                <div class="section-content">
+                    <div class="form-element">
+                        <label asp-for="ImageReference">Image reference</label>
+                        <select asp-for="ImageReference" asp-items="Model.OfficialImageReferences"></select>
+                        <span asp-validation-for="ImageReference" class=""></span>
+                    </div>
+                    <div class="form-spacer">
+                        <hr /><span>Choose Image Reference OR Custom Image and SKU</span><hr />
+                    </div>
+                    <div class="form-element">
+                        <label asp-for="CustomImageReference">Custom image reference</label>
+                        <select asp-for="CustomImageReference" asp-items="Model.CustomImageReferences"></select>
+                        <span asp-validation-for="CustomImageReference" class=""></span>
+                    </div>
+                    <div class="form-element">
+                        <label asp-for="BatchAgentSku">Batch agent SKU</label>
+                        <select asp-for="BatchAgentSku" asp-items="Model.BatchAgentSkus"></select>
+                        <span asp-validation-for="BatchAgentSku" class=""></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="form-section">
+            <div class="section-title">
+                <span class="step-index">3</span>
+                <div class="step-header">
+                    <h3>Application Packages</h3>
+                    <p>Optional application packages to be installed on the nodes.</p>
+                </div>
+            </div>
+            <div class="section-wrapper">
+                <div class="section-bar"></div>
+                <div class="section-content">
+                    <div class="form-element">
+                        <label asp-for="SelectedRenderManagerPackageId">@Model.RenderManagerType.GetDescription() worker package</label>
+                        <select asp-for="SelectedRenderManagerPackageId" asp-items="Model.RenderManagerPackages"></select>
+                        <span asp-validation-for="SelectedRenderManagerPackageId" class=""></span>
+                        <small>Optional @Model.RenderManagerType.GetDescription() installation package that will be installed on worker nodes.</small>
+                    </div>
+                    <div class="form-element">
+                        <label asp-for="SelectedGpuPackageId">GPU driver package</label>
+                        <select asp-for="SelectedGpuPackageId" asp-items="Model.GpuPackages"></select>
+                        <span asp-validation-for="SelectedGpuPackageId" class=""></span>
+                        <small>Optional GPU driver package to be installed on GPU nodes.</small>
+                    </div>
+                    <div class="form-element">
+                        <label asp-for="SelectedGeneralPackageIds">General packages</label>
+                        <select asp-for="SelectedGeneralPackageIds" asp-items="Model.GeneralPackages" multiple="multiple" size="4"></select>
+                        <span asp-validation-for="SelectedGeneralPackageIds" class=""></span>
+                        <small>Optional additional packages to be installed.</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="form-section">
+            <div class="section-title">
+                <span class="step-index">4</span>
+                <div class="step-header">
+                    <h3>Pool Settings</h3>
+                    <p>Configure the VM size and number of nodes.</p>
+                </div>
+            </div>
+            <div class="section-wrapper">
+                <div class="section-bar"></div>
+                <div class="section-content">
+                    <div class="form-element">
+                        <label asp-for="VmSize">Virtual machine size</label>
+                        <select asp-for="VmSize" asp-items="Model.Sizes"></select>
+                        <span asp-validation-for="VmSize" class=""></span>
+                    </div>
+                    <div class="form-element">
+                        <label asp-for="DedicatedNodes">Number of dedicated nodes</label>
+                        <input asp-for="DedicatedNodes" class="half" />
+                        <span asp-validation-for="DedicatedNodes" class=""></span>
+                    </div>
+                    <div class="form-element">
+                        <label asp-for="LowPriorityNodes">Number of low-priority nodes</label>
+                        <input asp-for="LowPriorityNodes" class="half" />
+                        <span asp-validation-for="LowPriorityNodes" class=""></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="form-section">
+            <div class="section-title">
+                <span class="step-index">4.1</span>
+                <div class="step-header">
+                    <h3>Auto scale-down settings</h3>
+                    <p>Configure the auto scale-down settings.</p>
+                </div>
+            </div>
+            <div class="section-wrapper">
+                <div class="section-bar"></div>
+                <div class="section-content">
+                    <div class="form-element">
+                        <label asp-for="AutoScalePolicy">Auto-scale policy</label>
+                        <select asp-for="AutoScalePolicy" asp-items="Model.AutoScalePolicyItems"></select>
+                        <span asp-validation-for="AutoScalePolicy" class=""></span>
+                        <small>The specific processes can be configured<a style="display: inline" asp-controller="Environments" asp-action="Config">here</a>.  By default the following processes are watched to indicate a node is busy:</small>
+                        <small>3dsmax.exe, 3dsmaxcmd.exe, 3dsmaxio.exe, 3dsmaxcmdio.exe, render.exe, kick.exe, commandline.exe, cinema 4d.exe, vray.exe, maya.exe, mayabatch.exe, blender.exe</small>
+                    </div>
+                    <div class="form-element">
+                        <label asp-for="AutoScaleDownIdleTimeout">Idle timeout in minutes</label>
+                        <input asp-for="AutoScaleDownIdleTimeout" class="half" value="15" />
+                        <span asp-validation-for="AutoScaleDownIdleTimeout" class=""></span>
+                    </div>
+                    <div class="form-element">
+                        <label asp-for="MinimumDedicatedNodes">Minimum number of dedicated nodes</label>
+                        <input asp-for="MinimumDedicatedNodes" value="0" class="half" />
+                        <span asp-validation-for="MinimumDedicatedNodes" class=""></span>
+                    </div>
+                    <div class="form-element">
+                        <label asp-for="MinimumLowPriorityNodes">Minimum number of low-priority nodes</label>
+                        <input asp-for="MinimumLowPriorityNodes" value="0" class="half" />
+                        <span asp-validation-for="MinimumLowPriorityNodes" class=""></span>
+                    </div>
+                    <div class="form-element">
+                        <label asp-for="MaximumDedicatedNodes">Maximum number of dedicated nodes</label>
+                        <input asp-for="MaximumDedicatedNodes" value="10" class="half" />
+                        <span asp-validation-for="MaximumDedicatedNodes" class=""></span>
+                    </div>
+                    <div class="form-element">
+                        <label asp-for="MaximumLowPriorityNodes">Maximum number of low-priority nodes</label>
+                        <input asp-for="MaximumLowPriorityNodes" value="10" class="half" />
+                        <span asp-validation-for="MaximumLowPriorityNodes" class=""></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="form-footer">
+            <div class="button-bar">
+                <button type="submit">Create Pool <i class="fa fa-save"></i></button>
+            </div>
+        </div>
+    </form>
+</div>

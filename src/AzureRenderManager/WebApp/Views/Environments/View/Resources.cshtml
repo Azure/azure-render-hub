@@ -1,0 +1,142 @@
+﻿@model WebApp.Models.Environments.Details.ViewEnvironmentModel
+@{
+    ViewBag.Title = Model.EnvironmentName;
+}
+
+@section Breadcrumb
+{
+    <a asp-controller="Environments" asp-action="Index">Environments</a> &gt;
+    <a asp-controller="Environments" asp-action="Details" asp-route-envId="@Model.EnvironmentName">@Model.EnvironmentName</a> &gt;
+    <span>Resources</span>
+}
+
+<h2>@Model.EnvironmentName - resources</h2>
+<p>View the details of a pre-configured render farm environment.</p>
+
+@await Html.PartialAsync("Menu/EnvironmentMainMenu", Model, new ViewDataDictionary(ViewData) {{ "Step", "env" }})
+@await Html.PartialAsync("Menu/EnvironmentSubMenu", Model, new ViewDataDictionary(ViewData)
+{
+    { "Step", 3 },
+    { "Type", "view" }
+})
+
+<div class="form-section">
+    <div class="section-title">
+        <span class="step-index">2.1</span>
+        <div class="step-header">
+            <h3>Batch Account</h3>
+            <p>Batch account details for the selected environment</p>
+        </div>
+    </div>
+    <div class="section-wrapper">
+        <div class="section-bar"></div>
+        <div class="section-content">
+            <div class="form-element">
+                <label asp-for="BatchAccountName">Name</label>
+                <input asp-for="BatchAccountName" readonly="readonly"/>
+            </div>
+            <div class="form-element">
+                <label asp-for="BatchAccountUrl">URL</label>
+                <input asp-for="BatchAccountUrl" readonly="readonly"/>
+            </div>
+            <div class="form-element">
+                <label asp-for="BatchAccountResourceId">Resource ID</label>
+                <input asp-for="BatchAccountResourceId" readonly="readonly"/>
+            </div>
+            <div class="form-element">
+                <label asp-for="BatchAccountLocation">Location</label>
+                <input asp-for="BatchAccountLocation" readonly="readonly"/>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="form-section">
+    <div class="section-title">
+        <span class="step-index">2.2</span>
+        <div class="step-header">
+            <h3>Storage Account</h3>
+            <p>Storage account details for the selected environment</p>
+        </div>
+    </div>
+    <div class="section-wrapper">
+        <div class="section-bar"></div>
+        <div class="section-content">
+            <div class="form-element">
+                <label asp-for="StorageAccountName">Name</label>
+                <input asp-for="StorageAccountName" readonly="readonly"/>
+            </div>
+            <div class="form-element">
+                <label asp-for="StorageAccountResourceId">Resource ID</label>
+                <input asp-for="StorageAccountResourceId" readonly="readonly"/>
+            </div>
+            <div class="form-element">
+                <label asp-for="StorageAccountLocation">Location</label>
+                <input asp-for="StorageAccountLocation" readonly="readonly"/>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="form-section">
+    <div class="section-title">
+        <span class="step-index">2.3</span>
+        <div class="step-header">
+            <h3>Subnet</h3>
+            <p>Subnet details for the selected environment</p>
+        </div>
+    </div>
+    <div class="section-wrapper">
+        <div class="section-bar"></div>
+        <div class="section-content">
+            <div class="form-element">
+                <label asp-for="SubnetName">Name</label>
+                <input asp-for="SubnetName" readonly="readonly"/>
+            </div>
+            <div class="form-element">
+                <label asp-for="SubnetVNetName">VNet name</label>
+                <input asp-for="SubnetVNetName" readonly="readonly"/>
+            </div>
+            <div class="form-element">
+                <label asp-for="SubnetResourceId">Resource ID</label>
+                <input asp-for="SubnetResourceId" readonly="readonly"/>
+            </div>
+            <div class="form-element">
+                <label asp-for="SubnetPrefix">Address prefix</label>
+                <input asp-for="SubnetPrefix" readonly="readonly"/>
+            </div>
+            <div class="form-element">
+                <label asp-for="SubnetLocation">Location</label>
+                <input asp-for="SubnetLocation" readonly="readonly"/>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="form-section">
+    <div class="section-title">
+        <span class="step-index">2.4</span>
+        <div class="step-header">
+            <h3>Application Insights</h3>
+            <p>Azure Application Insights details for the selected environment</p>
+        </div>
+    </div>
+    <div class="section-wrapper">
+        <div class="section-bar"></div>
+        <div class="section-content">
+            <div class="form-element">
+                <label asp-for="AppInsightsName">Name</label>
+                <input asp-for="AppInsightsName" readonly="readonly"/>
+            </div>
+            <div class="form-element">
+                <label asp-for="AppInsightsResourceId">Resource ID</label>
+                <input asp-for="AppInsightsResourceId" readonly="readonly"/>
+            </div>
+            <div class="form-element">
+                <label asp-for="AppInsightsLocation">Location</label>
+                <input asp-for="AppInsightsLocation" readonly="readonly"/>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="form-footer">
+
+</div>
+<p>&nbsp;</p>

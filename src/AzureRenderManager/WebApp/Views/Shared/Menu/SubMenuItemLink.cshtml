@@ -1,0 +1,17 @@
+﻿@{ /* link or text */ }
+@if (ViewBag.IsLink && ViewBag.Controller == "Environments")
+{
+    <a asp-controller="@ViewBag.Controller" asp-action="@ViewBag.Action" asp-route-envId="@ViewBag.Id">@ViewBag.LinkText</a>
+}
+else if (ViewBag.IsLink && ViewBag.Controller == "Pools")
+{
+    <a asp-controller="@ViewBag.Controller" asp-action="@ViewBag.Action" asp-route-envId="@ViewBag.Id">@ViewBag.LinkText</a>
+}
+else if (ViewBag.IsLink && ViewBag.Controller == "Storage")
+{
+    <a asp-controller="@ViewBag.Controller" asp-action="@ViewBag.Action" asp-route-repoId="@ViewBag.Id">@ViewBag.LinkText</a>
+}
+else
+{
+    @(ViewBag.LinkText)
+}

@@ -1,0 +1,56 @@
+﻿@model WebApp.Models.Environments.Details.ViewEnvironmentModel
+@{
+    ViewBag.Title = Model.EnvironmentName;
+}
+
+@section Breadcrumb
+{
+    <a asp-controller="Environments" asp-action="Index">Environments</a> &gt;
+    <a asp-controller="Environments" asp-action="Details" asp-route-envId="@Model.EnvironmentName">@Model.EnvironmentName</a> &gt;
+    <span>Identity</span>
+}
+
+<h2>@Model.EnvironmentName - identity</h2>
+<p>View the details of a pre-configured render farm environment.</p>
+
+@await Html.PartialAsync("Menu/EnvironmentMainMenu", Model, new ViewDataDictionary(ViewData) {{ "Step", "env" }})
+@await Html.PartialAsync("Menu/EnvironmentSubMenu", Model, new ViewDataDictionary(ViewData)
+{
+    { "Step", 4 },
+    { "Type", "view" }
+})
+
+<div class="form-section">
+    <div class="section-title">
+        <span class="step-index">3</span>
+        <div class="step-header">
+            <h3>Key Vault Service Principal</h3>
+            <p>The Key Vault service principal is used by compute nodes to access credentials, like domain passwords, in Key Vault.  The service principal uses certificate based authentication.</p>
+        </div>
+    </div>
+    <div class="section-wrapper">
+        <div class="section-bar"></div>
+        <div class="section-content">
+            <div class="form-element">
+                <label asp-for="KeyVaultServicePrincipalAppId">Application ID</label>
+                <input asp-for="KeyVaultServicePrincipalAppId" readonly="readonly"/>
+            </div>
+            <div class="form-element">
+                <label asp-for="KeyVaultServicePrincipalObjectId">Object ID</label>
+                <input asp-for="KeyVaultServicePrincipalObjectId" readonly="readonly"/>
+            </div>
+            <div class="form-element">
+                <label asp-for="KeyVaultServicePrincipalCertificatePath">Azure Key Vault certificate name</label>
+                <input asp-for="KeyVaultServicePrincipalCertificatePath" readonly="readonly"/>
+            </div>
+        </div>
+    </div>
+</div>
+<br/>
+<p>If you've updated your Key Vault authentication certificate or need to fix the portal permissions you can re-apply them below.</p>
+<div class="form-footer">
+    <div class="button-bar">
+        <a class="button" asp-controller="Environments" asp-action="ApplyPermissions" asp-route-envId="@Model.EnvironmentName">Re-apply Permissions</a>
+    </div>
+</div>
+<p>&nbsp;</p>

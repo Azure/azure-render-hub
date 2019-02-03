@@ -1,0 +1,117 @@
+﻿@using WebApp.Config
+@model WebApp.Models.Environments.EnvironmentStorageConfigModel
+@{
+    ViewBag.Title = Model.EnvironmentName;
+}
+
+@section Breadcrumb
+{
+    <a asp-controller="Environments" asp-action="Index">Environments</a> &gt;
+    <a asp-controller="Environments" asp-action="Details" asp-route-envId="@Model.EnvironmentName">@Model.EnvironmentName</a> &gt;
+    <span>Storage</span>
+}
+
+<h2>@Model.EnvironmentName - Storage</h2>
+<p>View the details of the pre-configured Azure Storage account.</p>
+
+@await Html.PartialAsync("Menu/EnvironmentMainMenu", Model, new ViewDataDictionary(ViewData) {{ "Step", "storage" }})
+
+<div class="form-section">
+    <div class="section-title">
+        <span class="step-index">1</span>
+        <div class="step-header">
+            <h3>Azure Storage</h3>
+            <p></p>
+        </div>
+    </div>
+    <div class="section-wrapper">
+        <div class="section-bar"></div>
+        <div class="section-content">
+            <div class="form-element">
+                <label asp-for="Uri">Storage URI</label>
+                <input asp-for="Uri" readonly="readonly" />
+            </div>
+            <div class="form-element">
+                <label asp-for="PrimaryKey">Primary key</label>
+                <input asp-for="PrimaryKey" readonly="readonly" />
+            </div>
+            <div class="form-element">
+                <label asp-for="SecondaryKey">Secondary Key</label>
+                <input asp-for="SecondaryKey" readonly="readonly" />
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="form-section">
+    <div class="section-title">
+        <span class="step-index">2</span>
+        <div class="step-header">
+            <h3>File Shares</h3>
+            <p>Azure Storage File shares for the environment</p>
+        </div>
+    </div>
+    <div class="section-wrapper">
+        <div class="section-bar"></div>
+        <div class="section-content">
+            <div class="form-element">
+                <label>File shares</label>
+                <table style="width: 100%">
+                    <tr>
+                        <th>Share Name</th>
+                        <th>URI</th>
+                        <th>Quota (GB)</th>
+                    </tr>
+                    @foreach (var share in Model.FileShares)
+                    {
+                        <tr>
+                            <td>@share.ShareName</td>
+                            <td>@share.Uri</td>
+                            <td>@share.Quota</td>
+                        </tr>
+                    }
+                </table>
+            </div>
+            <div class="form-element">
+                <label>Usage</label>
+                @if (Model.FileShares.Any())
+                {
+                    @if (Model.RenderManagerType == RenderManagerType.Deadline)
+                    {
+                        <p>Deadline can be configured to mount the shares above on nodes.  In the Deadline monitor navigate to Configure Repository Options -> Mapped Drives and add a new mapped drive using the connection details below.  Ensure you replace the share name and drive letter with the one you want.</p>
+                    }
+                    else if (Model.RenderManagerType == RenderManagerType.Qube610 || Model.RenderManagerType == RenderManagerType.Qube70)
+                    {
+                        <p>Qube can be configured to mount the shares above on nodes.  Edit the supervisors qb.conf and following the instructions below.  Ensure you replace the share name and drive letter with the one you want.</p>
+                        <a href="http://docs.pipelinefx.com/display/QUBE/worker_drive_map">http://docs.pipelinefx.com/display/QUBE/worker_drive_map</a>
+                    }
+
+                    <br />
+                    <p>Windows</p>
+                    <div class="form-element wide">
+                        <pre><code>
+    cmdkey /add:@Model.Uri.Host /user:AZURE\@Model.AccountName /pass:@Model.PrimaryKey
+                        <br />
+
+    net use X: \\@Model.Uri.Host\@Model.FileShares.First().ShareName
+</code></pre>
+                    </div>
+
+                    <p>Linux</p>
+                    <div class="form-element wide">
+                        <pre><code>
+    sudo mount -t cifs //@Model.Uri.Host/@Model.FileShares.First().ShareName /mnt/@Model.FileShares.First().ShareName -o vers=3.0,username=AZURE\@Model.AccountName,password=@Model.PrimaryKey,dir_mode=0777,file_mode=0777,serverino
+
+</code></pre>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+<div class="form-footer">
+    <div class="button-bar">
+        <a class="button" asp-controller="Environments" asp-action="Delete" asp-route-envId="@Model.EnvironmentName">Delete Environment <i class="fa fa-trash"></i></a>
+    </div>
+</div>
+<p>&nbsp;</p>

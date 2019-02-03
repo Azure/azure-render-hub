@@ -1,0 +1,31 @@
+﻿@import "mixins";
+@import "variables";
+
+.split {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    overflow-y: auto;
+    overflow-x: hidden;
+
+    &.split-vertical {
+        height: 100%;
+        float: left;
+    }
+}
+
+.gutter {
+    border-left: 1px solid $border-color;
+    border-right: 1px solid $border-color;
+    background-repeat: no-repeat;
+    background-position: 50%;
+
+    // todo: goodness knows why this is called split-horizontal
+    // todo: fix it in the JS code.
+    &.gutter-horizontal {
+        height: 100%;
+        float: left;
+        cursor: ew-resize;
+        background-image: url('../images/vertical.png');
+    }
+}

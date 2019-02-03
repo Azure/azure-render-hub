@@ -1,0 +1,255 @@
+﻿@using WebApp.Code.Extensions
+@model WebApp.Models.Pools.PoolDetailsModel
+@{
+    var displayNameOrPoolId = Model.DisplayName ?? Model.Name;
+    var redirectUrl = $"/Environments/{Model.EnvironmentName}/Pools";
+    var deletePoolUrl = $"/Environments/{Model.EnvironmentName}/Pools/{Model.Name}";
+    ViewBag.Title = $"Pool '{displayNameOrPoolId}'";
+
+    // TODO: Show allocation status and any errors with the pool operations
+}
+
+<script src="~/js/Chart.bundle.min.js" asp-append-version="true"></script>
+<script src="~/js/hammer.min.js" asp-append-version="true"></script>
+<script src="~/js/chartjs-plugin-zoom.min.js" asp-append-version="true"></script>
+
+<style>
+    canvas {
+        -moz-user-select: none;
+        -webkit-user-select: none;
+        -ms-user-select: none;
+    }
+</style>
+
+@section Breadcrumb
+    {
+    <a asp-controller="Environments" asp-action="Index">Environments</a> &gt;
+    <a asp-controller="Environments" asp-action="Details" asp-route-envId="@Model.EnvironmentName">@Model.EnvironmentName</a> &gt;
+    <a asp-controller="Pools" asp-action="Index" asp-route-envId="@Model.EnvironmentName">Pools</a> &gt;
+    <span>@Model.Name</span>
+}
+
+<div class="page-header">
+    <h2>@Model.EnvironmentName - @displayNameOrPoolId</h2>
+    <p>Viewing details of the selected pool.</p>
+</div>
+@await Html.PartialAsync("Menu/EnvironmentMainMenu", Model, new ViewDataDictionary(ViewData) { { "Step", "pools" } })
+@await Html.PartialAsync("Menu/PoolSubMenu", Model, new ViewDataDictionary(ViewData) {{ "Step", "overview" }, { "Type", "view" }})
+
+<div class="pool-details">
+    <form asp-action="Overview" method="post">
+        @Html.HiddenFor(model => model.EnvironmentName)
+        <div asp-validation-summary="ModelOnly" class=""></div>
+
+        <div class="form-section">
+            <div class="section-title">
+                <span class="step-index">1</span>
+                <div class="step-header">
+                    <h1>Pool Usage</h1>
+                    <p></p>
+                </div>
+            </div>
+            <div class="section-wrapper">
+                <div class="section-bar"></div>
+                <div class="section-content">
+                    <div id="canvas-container">
+                        <canvas id="pool-usage"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="form-section">
+            <div class="section-title">
+                <span class="step-index">2</span>
+                <div class="step-header">
+                    <h3>Current Pool State</h3>
+                    <p></p>
+                </div>
+            </div>
+            <div class="section-wrapper">
+                <div class="section-bar"></div>
+                <div class="section-content">
+                    <div class="form-element">
+                        <label asp-for="AllocationState">State</label>
+                        <input asp-for="AllocationState" readonly="readonly" class="half" value="@Model.AllocationState" />
+                    </div>
+                    <div class="form-element">
+                        <label asp-for="VmSize">Virtual machine size</label>
+                        <input asp-for="VmSize" readonly="readonly" class="half" />
+                    </div>
+                    <div class="form-element">
+                        <label asp-for="CurrentDedicatedNodes">Current dedicated nodes</label>
+                        <input asp-for="CurrentDedicatedNodes" class="half" readonly="readonly" />
+                        <span asp-validation-for="CurrentDedicatedNodes" class=""></span>
+                    </div>
+                    <div class="form-element">
+                        <label asp-for="CurrentLowPriorityNodes">Current low-priority nodes</label>
+                        <input asp-for="CurrentLowPriorityNodes" class="half" readonly="readonly" />
+                        <span asp-validation-for="CurrentLowPriorityNodes" class=""></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="form-section">
+            <div class="section-title">
+                <span class="step-index">3</span>
+                <div class="step-header">
+                    <h3>Resize the Pool</h3>
+                    <p>Resize the dedicated or low priority node count.</p>
+                </div>
+            </div>
+            <div class="section-wrapper">
+                <div class="section-bar"></div>
+                <div class="section-content">
+                    <div class="form-element">
+                        <label asp-for="DedicatedNodes">Target dedicated nodes</label>
+                        <input asp-for="DedicatedNodes" class="half" />
+                        <span asp-validation-for="DedicatedNodes" class=""></span>
+                    </div>
+                    <div class="form-element">
+                        <label asp-for="LowPriorityNodes">Target low-priority nodes</label>
+                        <input asp-for="LowPriorityNodes" class="half" />
+                        <span asp-validation-for="LowPriorityNodes" class=""></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="form-footer">
+            <div class="button-bar">
+                <button type="submit">Resize Pool <i class="fa fa-check"></i></button>
+                <button type="button" onclick="doDelete('@(Model.Name)', '@(deletePoolUrl)', '@(redirectUrl)')">Delete Pool <i class="fa fa-trash"></i></button>
+            </div>
+        </div>
+    </form>
+</div>
+
+
+@section Scripts
+    {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.13.0/moment.min.js"></script>
+    <script>
+
+        window.chartColors = {
+            red: 'rgb(255, 99, 132)',
+            orange: 'rgb(255, 159, 64)',
+            yellow: 'rgb(255, 205, 86)',
+            green: 'rgb(75, 192, 192)',
+            blue: 'rgb(54, 162, 235)',
+            purple: 'rgb(153, 102, 255)',
+            grey: 'rgb(201, 203, 207)'
+        };
+
+
+        var poolUsage = @Html.Raw(Json.Serialize(Model.PoolUsageMetrics));
+
+        var color = Chart.helpers.color;
+
+        var labels = [];
+        var dedicatedData = [];
+        var lowPriorityData = [];
+
+        for (var i = 0;i < poolUsage.length; i++) {
+            var metric = poolUsage[i];
+            labels.push(new Date(metric.timestamp));
+            dedicatedData.push(metric.dedicatedCores);
+            lowPriorityData.push(metric.lowPriorityCores);
+        }
+
+        var dedicatedDataset = {
+            label: 'Dedicated Cores',
+            backgroundColor: color(window.chartColors.red).alpha(0.5).rgbString(),
+            borderColor: window.chartColors.red,
+            data: dedicatedData,
+            pointRadius: 0,
+            fill: false,
+            lineTension: 0,
+            borderWidth: 2
+        };
+
+        var lowPriorityDataset = {
+            label: 'Low Priority Cores',
+            backgroundColor: color(window.chartColors.orange).alpha(0.5).rgbString(),
+            borderColor: window.chartColors.orange,
+            data: lowPriorityData,
+            pointRadius: 0,
+            fill: false,
+            lineTension: 0,
+            borderWidth: 2
+        };
+
+        var config = {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [dedicatedDataset, lowPriorityDataset]
+            },
+            options: {
+                title: {
+                    text: 'Pool Compute Cores'
+                },
+                pan: {
+                    enabled: false,
+                    mode: 'x'
+                },
+                zoom: {
+                    enabled: false,
+                    mode: 'x'
+                },
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    xAxes: [{
+                        type: 'time',
+                        //distribution: 'series',
+                        time: {
+                            unit: "hour",
+                            //unitStepSize: 2,
+                            displayFormats: {
+                                millisecond: 'MM DD',
+                                second: 'MM DD',
+                                minute: 'MMM DD h:mm a',
+                                hour: 'MMM DD h:mm a',
+                                day: 'MM DD',
+                                week: 'MM DD',
+                                month: 'MM DD',
+                                quarter: 'MM DD',
+                                year: 'MM DD'
+                            }
+                        },
+                        scaleLabel: {
+                            display: true,
+                            labelString: ''
+                        }
+                    }],
+                    yAxes: [{
+                        ticks: {
+                            beginAtZero: true,
+                            stepSize: 1,
+                            min: 0,
+                            max: 1
+                        },
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Cores'
+                        }
+                    }]
+                }
+            }
+        };
+
+        var maxVmCount = Math.max(...dedicatedData, ...lowPriorityData);
+        config.options.scales.yAxes[0].ticks.max = maxVmCount + 1;
+        config.options.scales.yAxes[0].ticks.stepSize = Math.max(1, Math.ceil(maxVmCount / 10));
+
+        window.onload = function () {
+            var ctx = document.getElementById('pool-usage').getContext('2d');
+            ctx.canvas.parentNode.style.height = '300px';
+            ctx.canvas.parentNode.style.width = '680px';
+            window.chart = new Chart(ctx, config);
+        };
+
+        $(document).ready(function () {
+
+        });
+    </script>
+}

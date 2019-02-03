@@ -1,0 +1,15 @@
+﻿@model WebApp.Models.Storage.Details.AssetRepositoryDetailsModel
+
+<div class="form-footer">
+    <div class="button-bar">
+        @if (Model.Status == "VM running")
+        {
+            <button type="button">Shutdown Server <i class="fa fa-stop"></i></button>
+        }
+        else
+        {
+            <button type="button">Start NFS Server <i class="fa fa-play"></i></button>
+        }
+        <button type="button" onclick="performDelete('Storage', 'Delete', '@(Model.Name)')">Delete Config <i class="fa fa-trash"></i></button>
+    </div>
+</div>
