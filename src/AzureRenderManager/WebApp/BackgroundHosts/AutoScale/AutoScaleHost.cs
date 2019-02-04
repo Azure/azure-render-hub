@@ -117,11 +117,11 @@ namespace WebApp.BackgroundHosts.AutoScale
 
                     Console.WriteLine($"Autoscale for Env {environment.Name} and Pool {pool.Id}: " +
                                       $"Nodes with process events " +
-                                      $"{poolNodeCpuAndProcessEvents.Where(e => e.WhitelistedProcess).Select(e => e.ComputeNodeName).Distinct().Count()}");
+                                      $"{poolNodeCpuAndProcessEvents.Where(e => e.TrackedProcess).Select(e => e.ComputeNodeName).Distinct().Count()}");
 
                     Console.WriteLine($"Autoscale for Env {environment.Name} and Pool {pool.Id}: " +
                                       $"Nodes with CPU events " +
-                                      $"{poolNodeCpuAndProcessEvents.Where(e => !e.WhitelistedProcess).Select(e => e.ComputeNodeName).Distinct().Count()}");
+                                      $"{poolNodeCpuAndProcessEvents.Where(e => !e.TrackedProcess).Select(e => e.ComputeNodeName).Distinct().Count()}");
 
                     // All nodes in the pool eligible for eviction.
                     // We ensure there's at least some CPU events lately to ensure
@@ -141,14 +141,14 @@ namespace WebApp.BackgroundHosts.AutoScale
                     if (policy == AutoScalePolicy.Resources || policy == AutoScalePolicy.ResourcesAndSpecificProcesses)
                     {
                         activeNodeByCpuNames = poolNodeCpuAndProcessEvents.Where(an =>
-                                !an.WhitelistedProcess && // Grab nodes with CPU usage (not whitelisted)
+                                !an.TrackedProcess && // Grab nodes with CPU usage (not whitelisted)
                                 an.CpuPercent >=
                                 environment.AutoScaleConfiguration.MaxIdleCpuPercent) // Over the idle CPU % limit
                             .Select(an => an.ComputeNodeName)
                             .ToHashSet();
 
                         activeNodeByGpuNames = poolNodeCpuAndProcessEvents.Where(an =>
-                                !an.WhitelistedProcess && // Grab nodes with GPU usage (not whitelisted)
+                                !an.TrackedProcess && // Grab nodes with GPU usage (not whitelisted)
                                 an.GpuPercent >=
                                 environment.AutoScaleConfiguration.MaxIdleGpuPercent) // Over the idle GPU % limit
                             .Select(an => an.ComputeNodeName)
@@ -158,7 +158,7 @@ namespace WebApp.BackgroundHosts.AutoScale
                     if (policy == AutoScalePolicy.SpecificProcesses ||
                         policy == AutoScalePolicy.ResourcesAndSpecificProcesses)
                     {
-                        activeNodesByProcess = poolNodeCpuAndProcessEvents.Where(an => an.WhitelistedProcess)
+                        activeNodesByProcess = poolNodeCpuAndProcessEvents.Where(an => an.TrackedProcess)
                             .Select(an => an.ComputeNodeName)
                             .ToHashSet();
                     }
