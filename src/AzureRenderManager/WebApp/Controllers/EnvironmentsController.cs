@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Management.Batch;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Microsoft.Rest.Azure;
 using TaskTupleAwaiter;
 using WebApp.AppInsights.PoolUsage;
@@ -44,6 +45,7 @@ namespace WebApp.Controllers
         private readonly IManagementClientProvider _managementClientProvider;
         private readonly IPoolUsageProvider _poolUsageProvider;
         private readonly StartTaskProvider _startTaskProvider;
+        private readonly ILogger _logger;
 
         public EnvironmentsController(
             IConfiguration configuration,
@@ -55,7 +57,8 @@ namespace WebApp.Controllers
             IPoolUsageProvider poolUsageProvider,
             IPackageCoordinator packageCoordinator,
             IAssetRepoCoordinator assetRepoCoordinator,
-            StartTaskProvider startTaskProvider) : base(environmentCoordinator, packageCoordinator, assetRepoCoordinator)
+            StartTaskProvider startTaskProvider,
+            ILogger<EnvironmentsController> logger) : base(environmentCoordinator, packageCoordinator, assetRepoCoordinator)
         {
             _configuration = configuration;
             _azureResourceProvider = azureResourceProvider;
@@ -65,6 +68,7 @@ namespace WebApp.Controllers
             _managementClientProvider = managementClientProvider;
             _poolUsageProvider = poolUsageProvider;
             _startTaskProvider = startTaskProvider;
+            _logger = logger;
         }
 
         [HttpGet]
@@ -939,13 +943,13 @@ namespace WebApp.Controllers
             }
             catch (CloudException ex)
             {
-                Console.WriteLine(ex);
+                _logger.LogError(ex, "Error creating environment resources");
                 ex.AddModelErrors(ModelState);
                 return View("Create/Step2", model);
             }
             catch (Exception ex)
             {
-                // TODO: would be good to know which one actually failed, but hopefully the answer is in the error.
+                _logger.LogError(ex, "Error creating environment resources");
                 ModelState.AddModelError("", $"Failed to create or update account, storage, app insights, or vnet: {ex}");
                 return View("Create/Step2", model);
             }
