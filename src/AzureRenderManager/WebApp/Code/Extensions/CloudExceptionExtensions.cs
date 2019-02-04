@@ -5,21 +5,41 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Rest.Azure;
 
 namespace WebApp.Code.Extensions
 {
     public static class CloudExceptionExtensions
     {
-        public static string ToFriendlyString(this CloudException ex)
+        public static string ToFriendlyString(this CloudException ex, bool includeStack = true)
         {
             StringBuilder sb = new StringBuilder($"Message={ex.Message}");
             if (ex.Body != null)
             {
+                var additionalInfo = ex.Body.AdditionalInfo == null
+                    ? "None"
+                    : string.Join(", ", ex.Body.AdditionalInfo.Select(ai => $"{ai.Type}={ai.Info}"));
+
+                sb.Append(additionalInfo);
+
                 AppendCloudError(sb, ex.Body);
             }
-            sb.AppendLine($"Stack={ex}");
+            if (includeStack)
+            {
+                sb.AppendLine($"Stack={ex}");
+            }
             return sb.ToString();
+        }
+
+        public static void AddModelErrors(this CloudException ex, ModelStateDictionary modelState)
+        {
+            var errors = ex.ToFriendlyString(false);
+            var lines = errors.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
+            foreach (var line in lines)
+            {
+                modelState.AddModelError("", line);
+            }
         }
 
         private static void AppendCloudError(StringBuilder sb, CloudError error)

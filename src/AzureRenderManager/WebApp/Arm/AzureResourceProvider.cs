@@ -148,7 +148,7 @@ namespace WebApp.Arm
             }
         }
 
-        public async Task<Microsoft.Azure.Management.KeyVault.Models.CheckNameAvailabilityResult> ValidateKeyVaultName(Guid subscriptionId, string keyVaultName)
+        public async Task<Microsoft.Azure.Management.KeyVault.Models.CheckNameAvailabilityResult> ValidateKeyVaultName(Guid subscriptionId, string resourceGroupName, string keyVaultName)
         {
             var accessToken = await GetAccessToken();
             var token = new TokenCredentials(accessToken);
@@ -156,6 +156,24 @@ namespace WebApp.Arm
 
             var param = new VaultCheckNameAvailabilityParameters { Name = keyVaultName };
             var result = await kvClient.Vaults.CheckNameAvailabilityWithHttpMessagesAsync(param);
+            if (!result.Body.NameAvailable.GetValueOrDefault(true))
+            {
+                // The name isn't available, let's see if it's our KV
+                bool available = false;
+                try
+                {
+                    var kv = await kvClient.Vaults.GetAsync(resourceGroupName, keyVaultName);
+                    available = true;
+                }
+                catch (CloudException ce)
+                {
+                    if (ce.Body.Code != "NotFound")
+                    {
+                        throw;
+                    }
+                }
+                return new Microsoft.Azure.Management.KeyVault.Models.CheckNameAvailabilityResult(available);
+            }
 
             return result?.Body;
         }

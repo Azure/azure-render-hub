@@ -33,7 +33,7 @@ namespace WebApp.Arm
         Task DeleteResourceGroupAsync(Guid subscriptionId, string resourceGroupName);
 
         Task<CheckNameAvailabilityResult> ValidateKeyVaultName(
-            Guid subscriptionId, string keyVaultName);
+            Guid subscriptionId, string resourceGroupName, string keyVaultName);
 
         Task<Vault> CreateKeyVaultAsync(
             Identity.Identity portalIdentity,
