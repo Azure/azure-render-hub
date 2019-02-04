@@ -1,9 +1,9 @@
 ﻿// Please see documentation at https://docs.microsoft.com/aspnet/core/client-side/bundling-and-minification
 // for details on configuring this project to bundle and minify static web assets.
 
-// Write your JavaScript code.
-
+//
 // Chart.js Helpers
+//
 const colors = [
     Chart.helpers.color('rgb(255, 99, 132)'),
     Chart.helpers.color('rgb(255, 159, 64)'),
@@ -48,7 +48,7 @@ function getChartJsConfig(title, label) {
                 xAxes: [
                     {
                         type: 'time',
-                        distribution: 'series',
+                        distribution: 'linear',
                         time: {
                             unit: "hour",
                             displayFormats: {
@@ -83,7 +83,7 @@ function getChartJsConfig(title, label) {
                         }
                     }
                 ]
-            },
+            }
         }
     };
 }
@@ -112,18 +112,7 @@ function getTimeChartForEnvironment(envName, poolUsageResults) {
         }
 
         var color = colors[i % colors.length];
-        var dataset =
-        {
-            label: poolUsage.poolName,
-            backgroundColor: color.alpha(0.5).rgbString(),
-            borderColor: color.rgbString(),
-            data: data,
-            pointRadius: 0,
-            fill: false,
-            lineTension: 0,
-            borderWidth: 2
-        };
-
+        var dataset = getDataSet(poolUsage.poolName, color, data);
         datasets.push(dataset);
     }
 
@@ -134,6 +123,65 @@ function getTimeChartForEnvironment(envName, poolUsageResults) {
     return config;
 }
 
+function getTimeChartForPool(poolName, poolUsage) {
+
+    var dedicatedData = [];
+    var lowPriorityData = [];
+    var maxCores = 1;
+
+    for (var i = 0; i < poolUsage.length; i++) {
+        var metric = poolUsage[i];
+
+        dedicatedData.push(
+            {
+                x:
+                    metric.timestamp,
+                y:
+                    metric.dedicatedCores
+            }
+        );
+
+        lowPriorityData.push(
+            {
+                x:
+                    metric.timestamp,
+                y:
+                    metric.lowPriorityCores
+            }
+        );
+
+        maxCores = Math.max(maxCores, metric.dedicatedCores);
+        maxCores = Math.max(maxCores, metric.lowPriorityCores);
+    }
+
+    var dedicatedDataset = getDataSet('Dedicated Cores', colors[0], dedicatedData);
+    var lowPriorityDataset = getDataSet('Low Priority Cores', colors[1], lowPriorityData);
+    var config = getChartJsConfig(poolName + " Usage", "Compute Cores");
+    config.data.datasets = [dedicatedDataset, lowPriorityDataset];
+    config.options.scales.yAxes[0].ticks.stepSize = Math.max(1, Math.ceil(maxCores / 10));
+    config.options.scales.yAxes[0].ticks.max = maxCores + Math.max(1, Math.ceil(maxCores / 20));
+
+    return config;
+}
+
+function getDataSet(label, color, data) {
+    return {
+        label: label,
+        backgroundColor: color.alpha(0.5).rgbString(),
+        borderColor: color.rgbString(),
+        data: data,
+        steppedLine: true,
+        pointRadius: 0,
+        fill: false,
+        lineTension: 0,
+        borderWidth: 2
+    };
+}
+
+
+//
+// Form Helpers
+//
 function registerCheckboxEnabledFormSection(checkboxId, outerDivId) {
     var id = '#' + checkboxId;
     var divId = '#' + outerDivId;
