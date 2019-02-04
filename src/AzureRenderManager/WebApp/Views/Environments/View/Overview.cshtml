@@ -93,7 +93,6 @@
         window.onload = function () {
             var envName = "@Model.EnvironmentName";
             var poolUsageResults = @Html.Raw(Json.Serialize(Model.PoolUsageResults));
-            console.log(poolUsageResults);
             var config = getTimeChartForEnvironment(envName, poolUsageResults);
             var ctx = document.getElementById('env-usage').getContext('2d');
             ctx.canvas.parentNode.style.height = '300px';
