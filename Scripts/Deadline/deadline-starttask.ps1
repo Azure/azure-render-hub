@@ -492,7 +492,7 @@ if ('' -ne $excludeFromLimitGroups)
 if ($env:APP_INSIGHTS_APP_ID -and $env:APP_INSIGHTS_INSTRUMENTATION_KEY)
 {
     # Install Batch Insights
-    iex ((New-Object System.Net.WebClient).DownloadString('https://renderfarmmgrdev.blob.core.windows.net/publicscripts/run-windows.ps1')) | Out-File batchinsights.log
+    iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/Azure/batch-insights/master/scripts/run-windows.ps1')) | Out-File batchinsights.log
 }
 
 if (!$deadlineRunningAsService)
