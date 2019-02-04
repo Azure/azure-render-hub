@@ -55,7 +55,7 @@ namespace WebApp.AppInsights.ActiveNodes
                         {
                             PoolName = row[0].Value<string>(),
                             ComputeNodeName = row[1].Value<string>(),
-                            WhitelistedProcess = !string.IsNullOrEmpty(row[3].Value<string>()),
+                            TrackedProcess = !string.IsNullOrEmpty(row[3].Value<string>()),
                             LastActive = row[4].Value<DateTime>(),
                         };
 

@@ -159,7 +159,7 @@
             "properties": {
                 "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('hostingPlanName'))]",
                 "siteConfig": {
-                    "alwaysOn": true,
+                    "alwaysOn": "[not(or(equals(parameters('skuSize'), 'F1'), equals(parameters('skuSize'), 'D1')))]",
                     "appSettings": []
                 }
             },
