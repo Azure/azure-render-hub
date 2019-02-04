@@ -18,6 +18,7 @@ using WebApp.AppInsights.PoolUsage;
 using WebApp.Arm;
 using WebApp.Code.Attributes;
 using WebApp.Code.Contract;
+using WebApp.Code.Extensions;
 using WebApp.Config;
 using WebApp.Config.Pools;
 using WebApp.Models.Environments.Create;
@@ -899,7 +900,11 @@ namespace WebApp.Controllers
             if (environment.KeyVault == null)
             {
                 // Ensure it doesn't exist if it hasn't been created already
-                var nameAvailability = await _azureResourceProvider.ValidateKeyVaultName(environment.SubscriptionId, model.KeyVaultName);
+                var nameAvailability = await _azureResourceProvider.ValidateKeyVaultName(
+                    environment.SubscriptionId,
+                    environment.ResourceGroupName,
+                    model.KeyVaultName);
+
                 if (!nameAvailability.NameAvailable.GetValueOrDefault(false))
                 {
                     ModelState.AddModelError(nameof(AddEnvironmentStep2Model.KeyVaultName), $"The Key Vault name is not available. {nameAvailability.Message}");
@@ -918,19 +923,35 @@ namespace WebApp.Controllers
                 return View("Create/Step2", model);
             }
 
+            Task allTasks = null;
+
             try
             {
-                // TODO Replace with ARM Template
                 await CreateOrUpdateResourceGroup(environment, model);
-                await (CreateOrUpdateKeyVault(environment, model),
+
+                // We want to make sure all tasks complete if they can to ensure the creaetd resources get
+                // persisted in the environment
+                allTasks = Task.WhenAll(
+                    CreateOrUpdateKeyVault(environment, model),
                     CreateOrUpdateStorageAndBatchAccounts(environment, model),
                     CreateOrUpdateVnet(environment, model),
                     CreateOrUpdateAppInsights(environment, model));
+
+                await allTasks;
+            }
+            catch (AggregateException ex)
+            {
+                Console.WriteLine(ex);
+                foreach (var e in allTasks.Exception.InnerExceptions)
+                {
+                    if (e is CloudException ce) ce.AddModelErrors(ModelState);
+                }
+                return View("Create/Step2", model);
             }
             catch (CloudException ex)
             {
-                ModelState.AddModelError("", $"{ex.Body.Message} ({ex.Body.Code})");
-                ModelState.AddModelError("", $"{ex}");
+                Console.WriteLine(ex);
+                ex.AddModelErrors(ModelState);
                 return View("Create/Step2", model);
             }
             catch (Exception ex)
