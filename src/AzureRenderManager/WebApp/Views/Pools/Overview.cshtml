@@ -128,128 +128,13 @@
     {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.13.0/moment.min.js"></script>
     <script>
-
-        window.chartColors = {
-            red: 'rgb(255, 99, 132)',
-            orange: 'rgb(255, 159, 64)',
-            yellow: 'rgb(255, 205, 86)',
-            green: 'rgb(75, 192, 192)',
-            blue: 'rgb(54, 162, 235)',
-            purple: 'rgb(153, 102, 255)',
-            grey: 'rgb(201, 203, 207)'
-        };
-
-
-        var poolUsage = @Html.Raw(Json.Serialize(Model.PoolUsageMetrics));
-
-        var color = Chart.helpers.color;
-
-        var labels = [];
-        var dedicatedData = [];
-        var lowPriorityData = [];
-
-        for (var i = 0;i < poolUsage.length; i++) {
-            var metric = poolUsage[i];
-            labels.push(new Date(metric.timestamp));
-            dedicatedData.push(metric.dedicatedCores);
-            lowPriorityData.push(metric.lowPriorityCores);
-        }
-
-        var dedicatedDataset = {
-            label: 'Dedicated Cores',
-            backgroundColor: color(window.chartColors.red).alpha(0.5).rgbString(),
-            borderColor: window.chartColors.red,
-            data: dedicatedData,
-            pointRadius: 0,
-            fill: false,
-            lineTension: 0,
-            borderWidth: 2
-        };
-
-        var lowPriorityDataset = {
-            label: 'Low Priority Cores',
-            backgroundColor: color(window.chartColors.orange).alpha(0.5).rgbString(),
-            borderColor: window.chartColors.orange,
-            data: lowPriorityData,
-            pointRadius: 0,
-            fill: false,
-            lineTension: 0,
-            borderWidth: 2
-        };
-
-        var config = {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [dedicatedDataset, lowPriorityDataset]
-            },
-            options: {
-                title: {
-                    text: 'Pool Compute Cores'
-                },
-                pan: {
-                    enabled: false,
-                    mode: 'x'
-                },
-                zoom: {
-                    enabled: false,
-                    mode: 'x'
-                },
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    xAxes: [{
-                        type: 'time',
-                        //distribution: 'series',
-                        time: {
-                            unit: "hour",
-                            //unitStepSize: 2,
-                            displayFormats: {
-                                millisecond: 'MM DD',
-                                second: 'MM DD',
-                                minute: 'MMM DD h:mm a',
-                                hour: 'MMM DD h:mm a',
-                                day: 'MM DD',
-                                week: 'MM DD',
-                                month: 'MM DD',
-                                quarter: 'MM DD',
-                                year: 'MM DD'
-                            }
-                        },
-                        scaleLabel: {
-                            display: true,
-                            labelString: ''
-                        }
-                    }],
-                    yAxes: [{
-                        ticks: {
-                            beginAtZero: true,
-                            stepSize: 1,
-                            min: 0,
-                            max: 1
-                        },
-                        scaleLabel: {
-                            display: true,
-                            labelString: 'Cores'
-                        }
-                    }]
-                }
-            }
-        };
-
-        var maxVmCount = Math.max(...dedicatedData, ...lowPriorityData);
-        config.options.scales.yAxes[0].ticks.max = maxVmCount + 1;
-        config.options.scales.yAxes[0].ticks.stepSize = Math.max(1, Math.ceil(maxVmCount / 10));
-
         window.onload = function () {
+            var poolUsage = @Html.Raw(Json.Serialize(Model.PoolUsageMetrics));
+            config = getTimeChartForPool("Pool Usage", poolUsage);
             var ctx = document.getElementById('pool-usage').getContext('2d');
             ctx.canvas.parentNode.style.height = '300px';
             ctx.canvas.parentNode.style.width = '680px';
             window.chart = new Chart(ctx, config);
         };
-
-        $(document).ready(function () {
-
-        });
     </script>
 }
