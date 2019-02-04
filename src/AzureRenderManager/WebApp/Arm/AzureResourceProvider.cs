@@ -155,8 +155,8 @@ namespace WebApp.Arm
             var kvClient = new KeyVaultManagementClient(token) { SubscriptionId = subscriptionId.ToString() };
 
             var param = new VaultCheckNameAvailabilityParameters { Name = keyVaultName };
-            var result = await kvClient.Vaults.CheckNameAvailabilityWithHttpMessagesAsync(param);
-            if (!result.Body.NameAvailable.GetValueOrDefault(true))
+            var result = await kvClient.Vaults.CheckNameAvailabilityAsync(param);
+            if (!result.NameAvailable.GetValueOrDefault(true))
             {
                 // The name isn't available, let's see if it's our KV
                 bool available = false;
@@ -175,7 +175,7 @@ namespace WebApp.Arm
                 return new Microsoft.Azure.Management.KeyVault.Models.CheckNameAvailabilityResult(available);
             }
 
-            return result?.Body;
+            return result;
         }
 
         public async Task<Vault> CreateKeyVaultAsync(
