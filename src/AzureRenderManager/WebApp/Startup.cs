@@ -79,13 +79,6 @@ namespace WebApp
                         };
                 });
 
-            // shared logging
-            services.AddLogging(c =>
-            {
-                c.AddConsole();
-                c.AddDebug();
-            });
-
             // Session state cache
             services.AddDistributedMemoryCache();
             services.AddSession(options =>
