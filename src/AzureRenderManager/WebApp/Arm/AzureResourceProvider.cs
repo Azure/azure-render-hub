@@ -162,7 +162,7 @@ namespace WebApp.Arm
                 bool available = false;
                 try
                 {
-                    var kv = await kvClient.Vaults.GetAsync(resourceGroupName, keyVaultName);
+                    await kvClient.Vaults.GetAsync(resourceGroupName, keyVaultName);
                     available = true;
                 }
                 catch (CloudException ce)

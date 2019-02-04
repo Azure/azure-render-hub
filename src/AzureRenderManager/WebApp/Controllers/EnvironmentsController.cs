@@ -931,22 +931,11 @@ namespace WebApp.Controllers
 
                 // We want to make sure all tasks complete if they can to ensure the creaetd resources get
                 // persisted in the environment
-                allTasks = Task.WhenAll(
+                await Task.WhenAll(
                     CreateOrUpdateKeyVault(environment, model),
                     CreateOrUpdateStorageAndBatchAccounts(environment, model),
                     CreateOrUpdateVnet(environment, model),
                     CreateOrUpdateAppInsights(environment, model));
-
-                await allTasks;
-            }
-            catch (AggregateException ex)
-            {
-                Console.WriteLine(ex);
-                foreach (var e in allTasks.Exception.InnerExceptions)
-                {
-                    if (e is CloudException ce) ce.AddModelErrors(ModelState);
-                }
-                return View("Create/Step2", model);
             }
             catch (CloudException ex)
             {
