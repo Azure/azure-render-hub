@@ -12,12 +12,14 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Management.Batch;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Microsoft.Rest.Azure;
 using TaskTupleAwaiter;
 using WebApp.AppInsights.PoolUsage;
 using WebApp.Arm;
 using WebApp.Code.Attributes;
 using WebApp.Code.Contract;
+using WebApp.Code.Extensions;
 using WebApp.Config;
 using WebApp.Config.Pools;
 using WebApp.Models.Environments.Create;
@@ -43,6 +45,7 @@ namespace WebApp.Controllers
         private readonly IManagementClientProvider _managementClientProvider;
         private readonly IPoolUsageProvider _poolUsageProvider;
         private readonly StartTaskProvider _startTaskProvider;
+        private readonly ILogger _logger;
 
         public EnvironmentsController(
             IConfiguration configuration,
@@ -54,7 +57,8 @@ namespace WebApp.Controllers
             IPoolUsageProvider poolUsageProvider,
             IPackageCoordinator packageCoordinator,
             IAssetRepoCoordinator assetRepoCoordinator,
-            StartTaskProvider startTaskProvider) : base(environmentCoordinator, packageCoordinator, assetRepoCoordinator)
+            StartTaskProvider startTaskProvider,
+            ILogger<EnvironmentsController> logger) : base(environmentCoordinator, packageCoordinator, assetRepoCoordinator)
         {
             _configuration = configuration;
             _azureResourceProvider = azureResourceProvider;
@@ -64,6 +68,7 @@ namespace WebApp.Controllers
             _managementClientProvider = managementClientProvider;
             _poolUsageProvider = poolUsageProvider;
             _startTaskProvider = startTaskProvider;
+            _logger = logger;
         }
 
         [HttpGet]
@@ -899,7 +904,11 @@ namespace WebApp.Controllers
             if (environment.KeyVault == null)
             {
                 // Ensure it doesn't exist if it hasn't been created already
-                var nameAvailability = await _azureResourceProvider.ValidateKeyVaultName(environment.SubscriptionId, model.KeyVaultName);
+                var nameAvailability = await _azureResourceProvider.ValidateKeyVaultName(
+                    environment.SubscriptionId,
+                    environment.ResourceGroupName,
+                    model.KeyVaultName);
+
                 if (!nameAvailability.NameAvailable.GetValueOrDefault(false))
                 {
                     ModelState.AddModelError(nameof(AddEnvironmentStep2Model.KeyVaultName), $"The Key Vault name is not available. {nameAvailability.Message}");
@@ -918,24 +927,29 @@ namespace WebApp.Controllers
                 return View("Create/Step2", model);
             }
 
+            Task allTasks = null;
+
             try
             {
-                // TODO Replace with ARM Template
                 await CreateOrUpdateResourceGroup(environment, model);
-                await (CreateOrUpdateKeyVault(environment, model),
+
+                // We want to make sure all tasks complete if they can to ensure the creaetd resources get
+                // persisted in the environment
+                await Task.WhenAll(
+                    CreateOrUpdateKeyVault(environment, model),
                     CreateOrUpdateStorageAndBatchAccounts(environment, model),
                     CreateOrUpdateVnet(environment, model),
                     CreateOrUpdateAppInsights(environment, model));
             }
             catch (CloudException ex)
             {
-                ModelState.AddModelError("", $"{ex.Body.Message} ({ex.Body.Code})");
-                ModelState.AddModelError("", $"{ex}");
+                _logger.LogError(ex, "Error creating environment resources");
+                ex.AddModelErrors(ModelState);
                 return View("Create/Step2", model);
             }
             catch (Exception ex)
             {
-                // TODO: would be good to know which one actually failed, but hopefully the answer is in the error.
+                _logger.LogError(ex, "Error creating environment resources");
                 ModelState.AddModelError("", $"Failed to create or update account, storage, app insights, or vnet: {ex}");
                 return View("Create/Step2", model);
             }
