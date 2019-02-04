@@ -6,17 +6,16 @@ using Microsoft.Azure.KeyVault;
 using Microsoft.Azure.Services.AppAuthentication;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Configuration.AzureKeyVault;
+using System.Threading.Tasks;
 
 namespace WebApp
 {
     public class Program
     {
-        public static void Main(string[] args)
-        {
-            CreateWebHostBuilder(args).Build().Run();
-        }
+        public static Task Main(string[] args)
+            => CreateWebHost(args).RunAsync();
 
-        public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
+        public static IWebHost CreateWebHost(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
                 .ConfigureAppConfiguration((context, config) =>
                 {
@@ -30,6 +29,7 @@ namespace WebApp
                         client,
                         new DefaultKeyVaultSecretManager());
                 })
-                .UseStartup<Startup>();
+                .UseStartup<Startup>()
+                .Build(); 
     }
 }
