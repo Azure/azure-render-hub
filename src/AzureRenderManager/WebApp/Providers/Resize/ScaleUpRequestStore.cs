@@ -132,14 +132,19 @@ namespace WebApp.Providers.Resize
 
         public async Task Delete(ScaleUpRequestEntity entry)
         {
-            Console.WriteLine("Deleting entry '{0}:{1}' from storage", entry.EnvironmentName, entry.PoolName);
+            if (entry == null)
+            {
+                _logger.LogWarning("ScaleUpStore was asked to delete a null entry, returning");
+                return;
+            }
 
             try
             {
+                _logger.LogDebug("Deleting entry '{0}:{1}' from storage", entry.EnvironmentName, entry.PoolName);
                 var operation = TableOperation.Delete(entry);
 
                 await _table.ExecuteAsync(operation);
-                Console.WriteLine("Entry '{0}:{1}' deleted", entry.EnvironmentName, entry.PoolName);
+                _logger.LogDebug("Entry '{0}:{1}' deleted", entry.EnvironmentName, entry.PoolName);
             }
             catch (StorageException ex) when (ex.RequestInformation.HttpStatusCode == 404)
             {
@@ -149,7 +154,7 @@ namespace WebApp.Providers.Resize
             {
                 // TODO: correctly handle this. This may fail due to eTag. 
                 // if so read it again and delete.
-                Console.WriteLine("Failed to delete storage entry: {0}", ex);
+                _logger.LogError(ex, "Failed to delete storage entry");
             }
         }
 
