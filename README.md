@@ -1,3 +1,4 @@
+[![Build Status](https://dev.azure.com/azure/azure-render-farm-manager/_apis/build/status/Azure.azure-render-farm-manager?branchName=master)](https://dev.azure.com/azure/azure-render-farm-manager/_build/latest?definitionId=19&branchName=master)
 
 # Azure Render Farm Manager
 
