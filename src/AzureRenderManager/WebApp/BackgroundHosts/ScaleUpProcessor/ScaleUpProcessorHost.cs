@@ -127,7 +127,7 @@ namespace WebApp.BackgroundHosts.ScaleUpProcessor
                 if (pool == null || pool.ProvisioningState == PoolProvisioningState.Deleting)
                 {
                     _logger.LogInformation(
-                        "Pool '{0}' (in environment '{1}') has been deleted, discarding scale request '{1}'",
+                        "Pool '{0}' (in environment '{1}') has been deleted, discarding scale request '{2}'",
                         request.PoolName,
                         request.EnvironmentName,
                         request.ETag);
