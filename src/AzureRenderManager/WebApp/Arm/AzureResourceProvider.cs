@@ -652,7 +652,7 @@ namespace WebApp.Arm
             string scope)
         {
             var roleFilter = new ODataQuery<RoleDefinitionFilter>(f => f.Type == "BuiltInRole");
-            return  await authClient.RoleDefinitions.ListAsync(scope, roleFilter);
+            return await authClient.RoleDefinitions.ListAsync(scope, roleFilter);
         }
 
         private async Task<List<RoleAssignment>> GetRoleAssignmentsForCurrentUser(
