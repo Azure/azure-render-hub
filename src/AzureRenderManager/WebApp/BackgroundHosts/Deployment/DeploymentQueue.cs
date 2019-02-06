@@ -1,8 +1,11 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.WindowsAzure.Storage.Queue;
+using Microsoft.WindowsAzure.Storage.RetryPolicies;
 using Newtonsoft.Json;
 
 namespace WebApp.BackgroundHosts.Deployment
@@ -44,19 +47,26 @@ namespace WebApp.BackgroundHosts.Deployment
 
         }
 
-        public async Task<ActiveDeployment> Get()
+        public async Task<IEnumerable<ActiveDeployment>> Get()
         {
             var queue = _queueClient.GetQueueReference(QueueName);
             if (await queue.ExistsAsync())
             {
-                var cloudMessage = await queue.GetMessageAsync();
-                if (cloudMessage != null)
+                var cloudMessages = await queue.GetMessagesAsync(
+                    10,
+                    TimeSpan.FromSeconds(60),
+                    new QueueRequestOptions { RetryPolicy = new ExponentialRetry() },
+                    null);
+                if (cloudMessages != null)
                 {
-                    var activeDeployment = JsonConvert.DeserializeObject<ActiveDeployment>(cloudMessage.AsString);
-                    activeDeployment.MessageId = cloudMessage.Id;
-                    activeDeployment.PopReceipt = cloudMessage.PopReceipt;
-                    activeDeployment.QueueName = QueueName;
-                    return activeDeployment;
+                    return cloudMessages.Select(cloudMessage =>
+                    {
+                        var activeDeployment = JsonConvert.DeserializeObject<ActiveDeployment>(cloudMessage.AsString);
+                        activeDeployment.MessageId = cloudMessage.Id;
+                        activeDeployment.PopReceipt = cloudMessage.PopReceipt;
+                        activeDeployment.QueueName = QueueName;
+                        return activeDeployment;
+                    }).ToList();
                 }
             }
             return null;

@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 using WebApp.Code;
@@ -23,6 +24,12 @@ namespace WebApp.Models.Storage.Create
         /// </summary>
         [Required]
         public string SubnetResourceIdLocationAndAddressPrefix { get; set; }
+
+        public bool UseEnvironment { get; set; } = true;
+
+        public List<string> Environments { get; set; }
+
+        public string SelectedEnvironmentName { get; set; }
 
         [Required]
         public Guid? SubscriptionId { get; set; }

@@ -154,7 +154,8 @@ namespace WebApp
                 p.GetRequiredService<IAssetRepoCoordinator>(),
                 p.GetRequiredService<ManagementClientMsiProvider>(),
                 p.GetRequiredService<IDeploymentQueue>(),
-                p.GetRequiredService<ILeaseMaintainer>()));
+                p.GetRequiredService<ILeaseMaintainer>(),
+                p.GetRequiredService<ILogger<BackgroundDeploymentHost>>()));
             services.AddSingleton<IHostedService, AutoScaleHost>();
             services.AddSingleton<IAppInsightsQueryProvider, AppInsightsQueryProvider>();
             services.AddSingleton<IActiveNodeProvider, ActiveNodeProvider>();
