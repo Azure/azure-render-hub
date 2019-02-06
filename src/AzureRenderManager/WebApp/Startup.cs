@@ -1,9 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 using System;
-using System.Threading;
 using System.Threading.Tasks;
-
+using Microsoft.ApplicationInsights;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Builder;
@@ -92,6 +91,10 @@ namespace WebApp
                 x.ValueLengthLimit = int.MaxValue;
                 x.MultipartBodyLengthLimit = int.MaxValue; // In case of multipart
             });
+
+            // Add Application Insights integration:
+            services.AddApplicationInsightsTelemetry(Configuration);
+            services.AddLogging(c => c.AddApplicationInsights());
 
             services.AddSingleton(
                 p =>

@@ -20,7 +20,7 @@ namespace WebApp.BackgroundHosts.AutoScale
 
         public string ComputeNodeName { get; set; }
 
-        public bool WhitelistedProcess { get; set; }
+        public bool TrackedProcess { get; set; }
 
         public long CpuPercent { get; set; }
 

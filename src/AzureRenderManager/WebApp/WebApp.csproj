@@ -9,7 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="BuildBundlerMinifier" Version="2.8.391" />
-    <PackageReference Include="Microsoft.ApplicationInsights" Version="2.7.1" />
+    <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.6.0" />
     <PackageReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Microsoft.AspNetCore.AzureKeyVault.HostingStartup" Version="2.0.2" />
     <PackageReference Include="Microsoft.Azure.Batch" Version="10.0.0" />
@@ -23,6 +23,7 @@
     <PackageReference Include="Microsoft.Azure.Management.Network" Version="5.0.0" />
     <PackageReference Include="Microsoft.Azure.Management.ResourceManager" Version="2.0.0-preview" />
     <PackageReference Include="Microsoft.Azure.Management.Storage" Version="9.2.0-preview" />
+    <PackageReference Include="Microsoft.Extensions.Logging.ApplicationInsights" Version="2.9.0-beta3" />
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="2.1.1" />
     <PackageReference Include="TaskTupleAwaiter" Version="1.1.2" />
     <PackageReference Include="WindowsAzure.Storage" Version="9.3.0" />
