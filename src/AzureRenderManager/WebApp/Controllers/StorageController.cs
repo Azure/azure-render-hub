@@ -71,7 +71,7 @@ namespace WebApp.Controllers
         }
 
         [HttpDelete]
-        [Route("Storage/Delete/{repoId}")]
+        [Route("Storage/{repoId}/Delete")]
         public async Task<ActionResult> Delete(string repoId)
         {
             var repository = await _assetRepoCoordinator.GetRepository(repoId);
@@ -80,58 +80,42 @@ namespace WebApp.Controllers
                 return NotFound($"Storage configuration with id: '{repoId}' could not be found");
             }
 
-            // TODO: Remove this when christian is happy to delete it
-            if (repository.Name.Equals("NfsServer", StringComparison.OrdinalIgnoreCase))
-            {
-                return Conflict("Safeguard to stop me accidentally deleting this one");
-            }
-
-            var networkClient = await GetNetworkManagementClient(repository.SubscriptionId);
-            var computeClient = await _computeClient.ForSubscription(repository.SubscriptionId);
-
-            repository.ProvisioningState = "Deleting";
+            repository.ProvisioningState = ProvisioningState.Deleting;
             await _assetRepoCoordinator.UpdateRepository(repository);
 
-            switch (repository)
+            await _deploymentQueue.Add(new ActiveDeployment
             {
-                case AvereCluster avere:
-                    await DeleteAvereClusterDeployment(networkClient, computeClient, avere);
-                    break;
-
-                case NfsFileServer nfs:
-                    await DeleteNfsFileServerDeployment(networkClient, computeClient, nfs);
-                    break;
-
-                default:
-                    throw new NotSupportedException("Unknown type of repository");
-            }
-
-            var removed = await _assetRepoCoordinator.RemoveRepository(repository);
-            if (!removed)
-            {
-                return StatusCode(500, "Unable to remove environment");
-            }
+                FileServerName = repository.Name,
+                StartTime = DateTime.UtcNow,
+                Action = "DeleteVM",
+            });
 
             return Ok();
         }
 
         [HttpGet]
-        [Route("Storage/{repoId}/Details")]
-        public async Task<ActionResult> Details(string repoId)
+        [Route("Storage/{repoId}/Deploying")]
+        public async Task<ActionResult> Deploying(string repoId)
         {
             var repo = await _assetRepoCoordinator.GetRepository(repoId);
             if (repo == null)
             {
-                return RedirectToAction("Step1", new { repoId });
+                return RedirectToAction("Index");
             }
 
-            var model = await GetDetailsViewModel(repo);
-            return View("View/Details", model);
+            if (repo.ProvisioningState == ProvisioningState.Succeeded)
+            {
+                return RedirectToAction("Overview", new { repoId });
+            }
+
+            var model = await GetOverviewViewModel(repo);
+
+            return View("View/Deploying", model);
         }
 
         [HttpGet]
-        [Route("Storage/{repoId}/Configuration")]
-        public async Task<ActionResult> Configuration(string repoId)
+        [Route("Storage/{repoId}/Overview")]
+        public async Task<ActionResult> Overview(string repoId)
         {
             var repo = await _assetRepoCoordinator.GetRepository(repoId);
             if (repo == null)
@@ -139,8 +123,28 @@ namespace WebApp.Controllers
                 return RedirectToAction("Step1", new { repoId });
             }
 
-            var model = await GetDetailsViewModel(repo);
-            return View("View/Configuration", model);
+            if (repo.ProvisioningState != ProvisioningState.Succeeded)
+            {
+                return RedirectToAction("Deploying", new { repoId });
+            }
+
+            var model = await GetOverviewViewModel(repo);
+
+            return View("View/Overview", model);
+        }
+
+        [HttpGet]
+        [Route("Storage/{repoId}/Resources")]
+        public async Task<ActionResult> Resources(string repoId)
+        {
+            var repo = await _assetRepoCoordinator.GetRepository(repoId);
+            if (repo == null)
+            {
+                return RedirectToAction("Step1", new { repoId });
+            }
+
+            var model = await GetOverviewViewModel(repo);
+            return View("View/Resources", model);
         }
 
         [HttpGet]
@@ -157,7 +161,7 @@ namespace WebApp.Controllers
                     if (existing.Enabled)
                     {
                         // not allowed to edit an existing enabled config
-                        return RedirectToAction("Details", new { repoId });
+                        return RedirectToAction("Overview", new { repoId });
                     }
 
                     model = new AddAssetRepoStep1Model(existing);
@@ -173,12 +177,37 @@ namespace WebApp.Controllers
                 model.SubscriptionId = Guid.Parse(_configuration["SubscriptionId"]);
             }
 
+            model.Environments = await _environmentCoordinator.ListEnvironments();
+
             return View("Create/Step1", model);
         }
 
         [HttpPost]
         public async Task<ActionResult> Step1(AddAssetRepoStep1Model model)
         {
+
+            RenderingEnvironment environment = null;
+            if (model.UseEnvironment)
+            {
+                if (string.IsNullOrEmpty(model.SelectedEnvironmentName))
+                {
+                    ModelState.AddModelError(nameof(AddAssetRepoStep1Model.SelectedEnvironmentName), "Selected environment cannot be empty when using a environment.");
+                }
+                else
+                {
+                    environment = await _environmentCoordinator.GetEnvironment(model.SelectedEnvironmentName);
+                    if (environment == null)
+                    {
+                        ModelState.AddModelError(nameof(AddAssetRepoStep1Model.SelectedEnvironmentName), "Selected environment doesn't exist.");
+                    }
+                }
+            }
+
+            if (!model.UseEnvironment && string.IsNullOrEmpty(model.SubnetResourceIdLocationAndAddressPrefix))
+            {
+                ModelState.AddModelError(nameof(AddAssetRepoStep1Model.SubnetResourceIdLocationAndAddressPrefix), "Subnet resource cannot be empty when using a VNet.");
+            }
+
             if (!ModelState.IsValid)
             {
                 // Validation errors, redirect back to form
@@ -192,7 +221,7 @@ namespace WebApp.Controllers
             if (repository.Enabled)
             {
                 // not allowed to edit an existing enabled config
-                return RedirectToAction("Details", new { repoId = repository.Name });
+                return RedirectToAction("Overview", new { repoId = repository.Name });
             }
 
             try
@@ -201,12 +230,21 @@ namespace WebApp.Controllers
                 repository.ResourceGroupName = model.RepositoryName;
                 repository.RepositoryType = model.RepositoryType;
                 repository.SubscriptionId = model.SubscriptionId.ToString();
-                repository.Subnet = new Subnet
+                repository.EnvironmentName = null;
+                if (model.UseEnvironment)
                 {
-                    ResourceId = model.SubnetResourceIdLocationAndAddressPrefix.Split(";")[0],
-                    Location = model.SubnetResourceIdLocationAndAddressPrefix.Split(";")[1],
-                    AddressPrefix = model.SubnetResourceIdLocationAndAddressPrefix.Split(";")[2],
-                };
+                    repository.EnvironmentName = model.SelectedEnvironmentName;
+                    repository.Subnet = environment.Subnet;
+                }
+                else
+                {
+                    repository.Subnet = new Subnet
+                    {
+                        ResourceId = model.SubnetResourceIdLocationAndAddressPrefix.Split(";")[0],
+                        Location = model.SubnetResourceIdLocationAndAddressPrefix.Split(";")[1],
+                        AddressPrefix = model.SubnetResourceIdLocationAndAddressPrefix.Split(";")[2],
+                    };
+                }
 
                 // pass in the original name in case we have updated it.
                 await _assetRepoCoordinator.UpdateRepository(repository, model.OriginalName);
@@ -221,7 +259,7 @@ namespace WebApp.Controllers
         }
 
         [HttpGet]
-        [Route("Storage/Step2/{repoId?}")]
+        [Route("Storage/{repoId}/Step2")]
         public async Task<ActionResult> Step2(string repoId)
         {
             var repository = await _assetRepoCoordinator.GetRepository(repoId);
@@ -234,7 +272,7 @@ namespace WebApp.Controllers
             if (repository.Enabled)
             {
                 // not allowed to edit an existing enabled config
-                return RedirectToAction("Details", new { repoId });
+                return RedirectToAction("Overview", new { repoId });
             }
 
             string error = null;
@@ -289,6 +327,13 @@ namespace WebApp.Controllers
         [HttpPost]
         public async Task<ActionResult> Step2Nfs(AddNfsFileServerModel model)
         {
+            // Validate that the share isn't a root share
+            if (model.FileShareName.StartsWith("/") &&
+                model.FileShareName.Split("/", StringSplitOptions.RemoveEmptyEntries).Length == 1)
+            {
+                ModelState.AddModelError(nameof(AddNfsFileServerModel.FileShareName), "File share cannot be at the root of the file system, e.g. /share.");
+            }
+
             if (!ModelState.IsValid)
             {
                 return View("Create/Step2Nfs", model);
@@ -303,7 +348,7 @@ namespace WebApp.Controllers
             if (repository.Enabled)
             {
                 // not allowed to edit an existing enabled config
-                return RedirectToAction("Details", new { repoId = repository.Name });
+                return RedirectToAction("Overview", new { repoId = repository.Name });
             }
 
             // validate the resource group doesn't exist
@@ -311,8 +356,11 @@ namespace WebApp.Controllers
             {
                 try
                 {
-                    await client.ResourceGroups.CreateOrUpdateAsync(model.NewResourceGroupName,
-                        new ResourceGroup(repository.Subnet.Location));
+                    await client.ResourceGroups.CreateOrUpdateAsync(
+                        model.NewResourceGroupName,
+                        new ResourceGroup(
+                            repository.Subnet.Location, // The subnet location pins us to a region
+                            tags: AzureResourceProvider.GetEnvironmentTags(repository.EnvironmentName)));
 
                     await _azureResourceProvider.AssignManagementIdentityAsync(
                         Guid.Parse(repository.SubscriptionId),
@@ -322,8 +370,8 @@ namespace WebApp.Controllers
 
                     // update and save the model before we deploy as we can always retry the create
                     repository.UpdateFromModel(model);
-                    repository.ProvisioningState = "Creating";
-                    repository.DeploymentName = "file-server-deploy";
+                    repository.ProvisioningState = ProvisioningState.Running;
+                    repository.DeploymentName = "FileServerDeployment";
                     repository.InProgress = false;
 
                     await _assetRepoCoordinator.UpdateRepository(repository);
@@ -338,7 +386,7 @@ namespace WebApp.Controllers
                 }
             }
 
-            return RedirectToAction("Details", new { repoId = repository.Name });
+            return RedirectToAction("Deploying", new { repoId = repository.Name });
         }
 
         [HttpPost]
@@ -358,7 +406,7 @@ namespace WebApp.Controllers
             if (repository.Enabled)
             {
                 // not allowed to edit an existing enabled config
-                return RedirectToAction("Details", new { repoId = repository.Name });
+                return RedirectToAction("Overview", new { repoId = repository.Name });
             }
 
             // validate the resource group doesn't exist
@@ -372,7 +420,7 @@ namespace WebApp.Controllers
             {
                 // update and save the model before we deploy as we can always retry the create
                 repository.UpdateFromModel(model);
-                repository.ProvisioningState = "Creating";
+                repository.ProvisioningState = ProvisioningState.Creating;
                 repository.DeploymentName = "avere-deploy";
                 repository.InProgress = false;
 
@@ -386,16 +434,17 @@ namespace WebApp.Controllers
                 return View("Create/Step2Avere", model);
             }
 
-            return RedirectToAction("Details", new { repoId = repository.Name });
+            return RedirectToAction("Overview", new { repoId = repository.Name });
         }
 
         [HttpPost]
-        public async Task<ActionResult> Shutdown(string fileServerName)
+        [Route("Storage/{repoId}/Shutdown")]
+        public async Task<ActionResult> Shutdown(string repoId)
         {
-            var fileServer = await _assetRepoCoordinator.GetRepository(fileServerName) as NfsFileServer;
+            var fileServer = await _assetRepoCoordinator.GetRepository(repoId) as NfsFileServer;
             if (fileServer == null)
             {
-                return NotFound($"No NFS File Server found with the name: {fileServerName}");
+                return NotFound($"No NFS File Server found with the name: {repoId}");
             }
 
             // TODO: handle errors here
@@ -406,12 +455,13 @@ namespace WebApp.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> Start(string fileServerName)
+        [Route("Storage/{repoId}/Start")]
+        public async Task<ActionResult> Start(string repoId)
         {
-            var fileServer = await _assetRepoCoordinator.GetRepository(fileServerName) as NfsFileServer;
+            var fileServer = await _assetRepoCoordinator.GetRepository(repoId) as NfsFileServer;
             if (fileServer == null)
             {
-                return NotFound($"No NFS File Server found with the name: {fileServerName}");
+                return NotFound($"No NFS File Server found with the name: {repoId}");
             }
 
             // TODO: handle errors here
@@ -484,20 +534,20 @@ namespace WebApp.Controllers
             {
                 await client.ResourceGroups.CreateOrUpdateAsync(repository.ResourceGroupName,
                     new ResourceGroup {Location = repository.Subnet.Location});
-
-                // TODO: Support multiple
+                
                 var fileShare = repository.FileShares.FirstOrDefault();
                 var templateParams = new Dictionary<string, Dictionary<string, object>>
                 {
+                    {"environmentTag", new Dictionary<string, object> {{"value", repository.EnvironmentName ?? "Global"}}},
                     {"vmName", new Dictionary<string, object> {{"value", repository.VmName}}},
                     {"adminUserName", new Dictionary<string, object> {{"value", repository.Username}}},
                     {"adminPassword", new Dictionary<string, object> {{"value", password}}},
                     {"vmSize", new Dictionary<string, object> {{"value", repository.VmSize}}},
                     {"subnetResourceId", new Dictionary<string, object> {{"value", repository.Subnet.ResourceId}}},
                     {"sharesToExport", new Dictionary<string, object> {{"value", fileShare?.Name ?? ""}}},
+                    {"subnetAddressPrefix", new Dictionary<string, object> {{"value", string.Join(",", repository.AllowedNetworks)}}},
                 };
 
-                // TODO: Tied to Linux?
                 var file = new FileInfo(Path.Combine(_environment.ContentRootPath, "Templates", "linux-file-server.json"));
                 var properties = new Deployment
                 {
@@ -521,7 +571,7 @@ namespace WebApp.Controllers
                 });
 
                 // TODO: can the deployment queue update the state to running when it's done??
-                repository.ProvisioningState = "Deploying";
+                repository.ProvisioningState = ProvisioningState.Running;
                 await _assetRepoCoordinator.UpdateRepository(repository);
             }
             catch (CloudException ex)
@@ -585,18 +635,21 @@ namespace WebApp.Controllers
         // TODO: General Helper Methods for the Controller
         // #########################################################
 
-        private async Task<AssetRepositoryDetailsModel> GetDetailsViewModel(AssetRepository repo)
+        private async Task<AssetRepositoryOverviewModel> GetOverviewViewModel(AssetRepository repo)
         {
             switch (repo)
             {
                 case AvereCluster avere:
-                    return new AvereClusterDetailsModel(avere) { Status = repo.ProvisioningState };
+                    return new AvereClusterOverviewModel(avere)
+                    {
+                        ProvisioningState = repo.ProvisioningState,
+                        PowerStatus = "Unknown",
+                    };
 
                 case NfsFileServer nfs:
-                    var status = await GetVirtualMachineStatus(nfs.SubscriptionId, nfs.ResourceGroupName, nfs.VmName);
-                    return new NfsFileServerDetailsModel(nfs)
+                    return new NfsFileServerOverviewModel(nfs)
                     {
-                        Status = status == "Unknown" ? repo.ProvisioningState ?? "Unknown" : status
+                        PowerStatus = await GetVirtualMachineStatus(nfs.SubscriptionId, nfs.ResourceGroupName, nfs.VmName),
                     };
 
                 default:

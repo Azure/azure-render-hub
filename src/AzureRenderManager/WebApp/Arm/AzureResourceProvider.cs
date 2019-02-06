@@ -652,7 +652,7 @@ namespace WebApp.Arm
             string scope)
         {
             var roleFilter = new ODataQuery<RoleDefinitionFilter>(f => f.Type == "BuiltInRole");
-            return await authClient.RoleDefinitions.ListAsync(scope, roleFilter);
+            return  await authClient.RoleDefinitions.ListAsync(scope, roleFilter);
         }
 
         private async Task<List<RoleAssignment>> GetRoleAssignmentsForCurrentUser(
@@ -672,9 +672,9 @@ namespace WebApp.Arm
             return roleAssignments;
         }
 
-        private static IDictionary<string, string> GetEnvironmentTags(string environmentName)
+        public static IDictionary<string, string> GetEnvironmentTags(string environmentName)
         {
-            return new Dictionary<string, string> {{"Environment", environmentName}};
+            return new Dictionary<string, string> {{"Environment", environmentName ?? "Global"}};
         }
 
         private async Task RegisterProvider(Guid subscriptionId, string resourceProviderNamespace)

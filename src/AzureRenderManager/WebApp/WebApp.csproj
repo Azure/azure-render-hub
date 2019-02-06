@@ -142,10 +142,13 @@
     <Content Update="Views\Storage\Create\Step2Nfs.cshtml">
       <Pack>$(IncludeRazorContentInPack)</Pack>
     </Content>
-    <Content Update="Views\Storage\View\Configuration.cshtml">
+    <Content Update="Views\Storage\View\Resources.cshtml">
       <Pack>$(IncludeRazorContentInPack)</Pack>
     </Content>
-    <Content Update="Views\Storage\View\Details.cshtml">
+    <Content Update="Views\Storage\View\Deploying.cshtml">
+      <Pack>$(IncludeRazorContentInPack)</Pack>
+    </Content>
+    <Content Update="Views\Storage\View\Overview.cshtml">
       <Pack>$(IncludeRazorContentInPack)</Pack>
     </Content>
     <Content Update="Views\Storage\Create\Step1.cshtml">

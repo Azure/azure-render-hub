@@ -11,5 +11,11 @@ namespace WebApp.Config.Storage
         public string Name { get; set; }
 
         public string Type { get; set; }
+
+        public long Size { get; set; }
+
+        public long Used { get; set; }
+
+        public int Disks { get; set; }
     }
 }

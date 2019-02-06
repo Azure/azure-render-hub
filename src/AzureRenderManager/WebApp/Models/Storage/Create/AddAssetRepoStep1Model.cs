@@ -23,11 +23,14 @@ namespace WebApp.Models.Storage.Create
                 {
                     SubscriptionId = new Guid(repository.SubscriptionId);
                 }
-                
+
                 if (repository.Subnet?.ResourceId != null)
                 {
                     SubnetResourceIdLocationAndAddressPrefix = repository.Subnet.ToString();
                 }
+
+                UseEnvironment = !string.IsNullOrEmpty(repository.EnvironmentName);
+                SelectedEnvironmentName = repository.EnvironmentName;
             }
         }
 
