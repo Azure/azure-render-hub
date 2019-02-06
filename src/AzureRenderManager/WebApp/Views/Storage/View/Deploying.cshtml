@@ -17,7 +17,9 @@
     {
     <a asp-controller="Storage" asp-action="Index">Storage Repositories</a> &gt;
     <a asp-controller="Storage" asp-action="Deploying" asp-route-repoId="@Model.Name">@Model.Name</a> &gt;
-    <span>Deploying</span>
+    <span>
+    @(Model.ProvisioningState == ProvisioningState.Running || Model.ProvisioningState == ProvisioningState.Failed ? "Deploying" : "Deleting")
+    </span>
 }
 
 <div class="storage-details">
@@ -28,7 +30,7 @@
 
                 @if (Model.ProvisioningState == ProvisioningState.Running)
                 {
-                <h3>Deploying the file server @Model.Name</h3>
+                    <h3>Deploying the file server @Model.Name</h3>
                     <p>The File Server deployment is in progress.</p>
                 }
                 else if (Model.ProvisioningState == ProvisioningState.Deleting)
@@ -61,6 +63,17 @@
         </div>
     </div>
 </div>
+
+@if (Model.ProvisioningState == ProvisioningState.Failed)
+{
+    <div class="form-footer">
+        <div class="button-bar">
+
+            <a class="button" asp-action="Delete" asp-route-repoId="@Model.Name" onclick="return confirm('Are you sure you want to delete @Model.Name?')">Delete File Server <i class="fa fa-trash"></i></a>
+        </div>
+    </div>
+}
+
 <p>&nbsp;</p>
 
 @if (Model.ProvisioningState != ProvisioningState.Failed)

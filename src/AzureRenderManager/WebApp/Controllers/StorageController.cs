@@ -6,25 +6,17 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
-
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Management.Compute;
 using Microsoft.Azure.Management.Compute.Models;
-using Microsoft.Azure.Management.Network;
-using Microsoft.Azure.Management.ResourceManager;
-using Microsoft.Azure.Management.ResourceManager.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Rest.Azure;
 using Microsoft.WindowsAzure.Storage.Blob;
-using Newtonsoft.Json.Linq;
 using WebApp.Arm;
-using WebApp.BackgroundHosts.Deployment;
 using WebApp.Code.Attributes;
 using WebApp.Code.Contract;
 using WebApp.Config;
 using WebApp.Config.Storage;
-using WebApp.Identity;
 using WebApp.Models.Storage;
 using WebApp.Models.Storage.Create;
 using WebApp.Models.Storage.Details;
@@ -37,29 +29,20 @@ namespace WebApp.Controllers
     public class StorageController : MenuBaseController
     {
         private readonly IConfiguration _configuration;
-        private readonly IHostingEnvironment _environment;
-        private readonly IDeploymentQueue _deploymentQueue;
-        private readonly ComputeManagementClientAccessor _computeClient;
+        private readonly IManagementClientProvider _managementClientProvider;
         private readonly IAzureResourceProvider _azureResourceProvider;
-        private readonly IIdentityProvider _identityProvider;
 
         public StorageController(
-            IHostingEnvironment environment,
             IConfiguration configuration,
-            IDeploymentQueue deploymentQueue,
-            ComputeManagementClientAccessor computeClient,
+            IManagementClientProvider managementClientProvider,
             CloudBlobClient cloudBlobClient,
             IAssetRepoCoordinator assetRepoCoordinator,
             IEnvironmentCoordinator environmentCoordinator,
             IPackageCoordinator packageCoordinator,
-            IIdentityProvider identityProvider,
             IAzureResourceProvider azureResourceProvider) : base(environmentCoordinator, packageCoordinator, assetRepoCoordinator)
         {
-            _environment = environment;
             _configuration = configuration;
-            _deploymentQueue = deploymentQueue;
-            _computeClient = computeClient;
-            _identityProvider = identityProvider;
+            _managementClientProvider = managementClientProvider;
             _azureResourceProvider = azureResourceProvider;
         }
 
@@ -70,7 +53,7 @@ namespace WebApp.Controllers
             return View(new StorageConfigHomeModel());
         }
 
-        [HttpDelete]
+        [HttpGet]
         [Route("Storage/{repoId}/Delete")]
         public async Task<ActionResult> Delete(string repoId)
         {
@@ -80,17 +63,9 @@ namespace WebApp.Controllers
                 return NotFound($"Storage configuration with id: '{repoId}' could not be found");
             }
 
-            repository.ProvisioningState = ProvisioningState.Deleting;
-            await _assetRepoCoordinator.UpdateRepository(repository);
+            await _assetRepoCoordinator.BeginDeleteRepositoryAsync(repository, _managementClientProvider);
 
-            await _deploymentQueue.Add(new ActiveDeployment
-            {
-                FileServerName = repository.Name,
-                StartTime = DateTime.UtcNow,
-                Action = "DeleteVM",
-            });
-
-            return Ok();
+            return RedirectToAction("Overview", new { repoId });
         }
 
         [HttpGet]
@@ -123,7 +98,8 @@ namespace WebApp.Controllers
                 return RedirectToAction("Step1", new { repoId });
             }
 
-            if (repo.ProvisioningState != ProvisioningState.Succeeded)
+            if (repo.ProvisioningState != ProvisioningState.Creating &&
+                repo.ProvisioningState != ProvisioningState.Succeeded)
             {
                 return RedirectToAction("Deploying", new { repoId });
             }
@@ -185,7 +161,6 @@ namespace WebApp.Controllers
         [HttpPost]
         public async Task<ActionResult> Step1(AddAssetRepoStep1Model model)
         {
-
             RenderingEnvironment environment = null;
             if (model.UseEnvironment)
             {
@@ -301,13 +276,6 @@ namespace WebApp.Controllers
 
             switch (repository)
             {
-                case AvereCluster avere:
-                    return View("Create/Step2Avere", new AddAvereClusterModel(avere)
-                    {
-                        Error = error,
-                        ErrorMessage = errorMessage
-                    });
-
                 case NfsFileServer nfs:
                     return View("Create/Step2Nfs", new AddNfsFileServerModel(nfs)
                     {
@@ -351,39 +319,16 @@ namespace WebApp.Controllers
                 return RedirectToAction("Overview", new { repoId = repository.Name });
             }
 
-            // validate the resource group doesn't exist
-            using (var client = await GetResourceClient(model.SubscriptionId.ToString()))
+            try
             {
-                try
-                {
-                    await client.ResourceGroups.CreateOrUpdateAsync(
-                        model.NewResourceGroupName,
-                        new ResourceGroup(
-                            repository.Subnet.Location, // The subnet location pins us to a region
-                            tags: AzureResourceProvider.GetEnvironmentTags(repository.EnvironmentName)));
-
-                    await _azureResourceProvider.AssignManagementIdentityAsync(
-                        Guid.Parse(repository.SubscriptionId),
-                        repository.ResourceGroupResourceId,
-                        AzureResourceProvider.ContributorRole,
-                        _identityProvider.GetPortalManagedServiceIdentity());
-
-                    // update and save the model before we deploy as we can always retry the create
-                    repository.UpdateFromModel(model);
-                    repository.ProvisioningState = ProvisioningState.Running;
-                    repository.DeploymentName = "FileServerDeployment";
-                    repository.InProgress = false;
-
-                    await _assetRepoCoordinator.UpdateRepository(repository);
-
-                    await DeployNfsFileServer(client, repository as NfsFileServer, model.Password);
-                }
-                catch (Exception ex)
-                {
-                    model.Error = "Failed to create repository with error";
-                    model.ErrorMessage = ex.ToString();
-                    return View("Create/Step2Nfs", model);
-                }
+                repository.UpdateFromModel(model);
+                await _assetRepoCoordinator.BeginRepositoryDeploymentAsync(repository, _managementClientProvider, _azureResourceProvider);
+            }
+            catch (Exception ex)
+            {
+                model.Error = "Failed to create repository with error";
+                model.ErrorMessage = ex.ToString();
+                return View("Create/Step2Nfs", model);
             }
 
             return RedirectToAction("Deploying", new { repoId = repository.Name });
@@ -420,13 +365,11 @@ namespace WebApp.Controllers
             {
                 // update and save the model before we deploy as we can always retry the create
                 repository.UpdateFromModel(model);
-                repository.ProvisioningState = ProvisioningState.Creating;
-                repository.DeploymentName = "avere-deploy";
-                repository.InProgress = false;
 
-                await _assetRepoCoordinator.UpdateRepository(repository);
-
-                await DeployAvereCluster(client, repository as AvereCluster);
+                await _assetRepoCoordinator.BeginRepositoryDeploymentAsync(
+                    repository,
+                    _managementClientProvider,
+                    _azureResourceProvider);
             }
             catch (Exception ex)
             {
@@ -437,9 +380,9 @@ namespace WebApp.Controllers
             return RedirectToAction("Overview", new { repoId = repository.Name });
         }
 
-        [HttpPost]
-        [Route("Storage/{repoId}/Shutdown")]
-        public async Task<ActionResult> Shutdown(string repoId)
+        [HttpGet]
+        [Route("Storage/{repoId}/PowerOperation/{operation}")]
+        public async Task<ActionResult> PowerOperation(string repoId, string operation)
         {
             var fileServer = await _assetRepoCoordinator.GetRepository(repoId) as NfsFileServer;
             if (fileServer == null)
@@ -447,33 +390,25 @@ namespace WebApp.Controllers
                 return NotFound($"No NFS File Server found with the name: {repoId}");
             }
 
-            // TODO: handle errors here
-            var computeClient = await _computeClient.ForSubscription(fileServer.SubscriptionId);
-            await computeClient.VirtualMachines.BeginDeallocateAsync(fileServer.ResourceGroupName, fileServer.VmName);
-
-            return NoContent();
-        }
-
-        [HttpPost]
-        [Route("Storage/{repoId}/Start")]
-        public async Task<ActionResult> Start(string repoId)
-        {
-            var fileServer = await _assetRepoCoordinator.GetRepository(repoId) as NfsFileServer;
-            if (fileServer == null)
+            if (operation != "start" && operation != "shutdown")
             {
-                return NotFound($"No NFS File Server found with the name: {repoId}");
+                return BadRequest("Action must be 'start' or 'shutdown'");
             }
 
-            // TODO: handle errors here
-            var computeClient = await _computeClient.ForSubscription(fileServer.SubscriptionId);
-            await computeClient.VirtualMachines.BeginStartWithHttpMessagesAsync(fileServer.ResourceGroupName, fileServer.VmName);
+            using (var computeClient = await _managementClientProvider.CreateComputeManagementClient(Guid.Parse(fileServer.SubscriptionId)))
+            {
+                if (operation == "start")
+                {
+                    await computeClient.VirtualMachines.BeginStartWithHttpMessagesAsync(fileServer.ResourceGroupName, fileServer.VmName);
+                }
+                else if (operation == "shutdown")
+                {
+                    await computeClient.VirtualMachines.BeginDeallocateAsync(fileServer.ResourceGroupName, fileServer.VmName);
+                }
+            }
 
-            return NoContent();
+            return RedirectToAction("Overview", new { repoId = repoId });
         }
-
-        // #########################################################
-        // TODO: below here are other methods that can be injectable
-        // #########################################################
 
         private async Task<string> GetVirtualMachineStatus(string subscriptionId, string rgName, string vmName)
         {
@@ -483,175 +418,40 @@ namespace WebApp.Controllers
                 return status;
             }
 
-            var computeClient = await _computeClient.ForSubscription(subscriptionId);
-            try
+            using (var computeClient = await _managementClientProvider.CreateComputeManagementClient(Guid.Parse(subscriptionId)))
             {
-                var node = await computeClient.VirtualMachines.GetAsync(rgName, vmName, InstanceViewTypes.InstanceView);
-                status = node?.InstanceView?.Statuses?.FirstOrDefault(s => s.Code.StartsWith("PowerState/"))?.DisplayStatus;
-            }
-            catch (CloudException cEx)
-            {
-                if (cEx.Response.StatusCode == HttpStatusCode.NotFound || cEx.Body.Code == "NotFound")
+                try
                 {
-                    // Ignore
-                    Console.WriteLine($"Failed to get VM status as VM: {vmName} was not found.");
+                    var node = await computeClient.VirtualMachines.GetAsync(rgName, vmName, InstanceViewTypes.InstanceView);
+                    status = node?.InstanceView?.Statuses?.FirstOrDefault(s => s.Code.StartsWith("PowerState/"))?.DisplayStatus;
                 }
-                else
+                catch (CloudException cEx)
                 {
-                    // TODO: Log or do something else ...
-                    Console.WriteLine($"Failed to get VM status with error: {cEx.Message}.\n{cEx.StackTrace}");
+                    if (cEx.Response.StatusCode == HttpStatusCode.NotFound || cEx.Body.Code == "NotFound")
+                    {
+                        // Ignore
+                        Console.WriteLine($"Failed to get VM status as VM: {vmName} was not found.");
+                    }
+                    else
+                    {
+                        // TODO: Log or do something else ...
+                        Console.WriteLine($"Failed to get VM status with error: {cEx.Message}.\n{cEx.StackTrace}");
+                    }
                 }
             }
 
             return status;
         }
 
-        private async Task DeployAvereCluster(ResourceManagementClient client, AvereCluster repository)
-        {
-            if (repository == null)
-            {
-                throw new ArgumentException("DeployAvereCluster was passed a null repository");
-            }
-
-            await Task.CompletedTask;
-        }
-
-        private async Task<bool> DeleteAvereClusterDeployment(INetworkManagementClient networkClient
-            , IComputeManagementClient computeClient, AvereCluster repository)
-        {
-            await Task.CompletedTask;
-            return true;
-        }
-
-        private async Task<bool> DeployNfsFileServer(ResourceManagementClient client, NfsFileServer repository, string password)
-        {
-            if (repository == null)
-            {
-                throw new ArgumentException("DeployNfsFileServer was passed a null repository");
-            }
-
-            try
-            {
-                await client.ResourceGroups.CreateOrUpdateAsync(repository.ResourceGroupName,
-                    new ResourceGroup {Location = repository.Subnet.Location});
-                
-                var fileShare = repository.FileShares.FirstOrDefault();
-                var templateParams = new Dictionary<string, Dictionary<string, object>>
-                {
-                    {"environmentTag", new Dictionary<string, object> {{"value", repository.EnvironmentName ?? "Global"}}},
-                    {"vmName", new Dictionary<string, object> {{"value", repository.VmName}}},
-                    {"adminUserName", new Dictionary<string, object> {{"value", repository.Username}}},
-                    {"adminPassword", new Dictionary<string, object> {{"value", password}}},
-                    {"vmSize", new Dictionary<string, object> {{"value", repository.VmSize}}},
-                    {"subnetResourceId", new Dictionary<string, object> {{"value", repository.Subnet.ResourceId}}},
-                    {"sharesToExport", new Dictionary<string, object> {{"value", fileShare?.Name ?? ""}}},
-                    {"subnetAddressPrefix", new Dictionary<string, object> {{"value", string.Join(",", repository.AllowedNetworks)}}},
-                };
-
-                var file = new FileInfo(Path.Combine(_environment.ContentRootPath, "Templates", "linux-file-server.json"));
-                var properties = new Deployment
-                {
-                    Properties = new DeploymentProperties
-                    {
-                        Template = JObject.Parse(await System.IO.File.ReadAllTextAsync(file.FullName)),
-                        Parameters = templateParams,
-                        Mode = DeploymentMode.Incremental
-                    }
-                };
-
-                await client.Deployments.BeginCreateOrUpdateAsync(
-                    repository.ResourceGroupName,
-                    repository.DeploymentName,
-                    properties);
-
-                await _deploymentQueue.Add(new ActiveDeployment
-                {
-                    FileServerName = repository.Name,
-                    StartTime = DateTime.UtcNow,
-                });
-
-                // TODO: can the deployment queue update the state to running when it's done??
-                repository.ProvisioningState = ProvisioningState.Running;
-                await _assetRepoCoordinator.UpdateRepository(repository);
-            }
-            catch (CloudException ex)
-            {
-                Console.WriteLine($"Failed to deploy NFS server: {ex.Message}.\n{ex.StackTrace}");
-                throw;
-            }
-
-            return true;
-        }
-
-        private async Task<bool> DeleteNfsFileServerDeployment(INetworkManagementClient networkClient
-            , IComputeManagementClient computeClient, NfsFileServer repository)
-        {
-            try
-            {
-                var virtualMachine = await computeClient.VirtualMachines.GetAsync(repository.ResourceGroupName, repository.VmName);
-                if (virtualMachine != null)
-                {
-                    var nicId = virtualMachine.NetworkProfile.NetworkInterfaces[0].Id;
-                    var avSet = virtualMachine.AvailabilitySet.Id?.Split("/").Last();
-                    var osDisk = virtualMachine.StorageProfile.OsDisk.ManagedDisk.Id;
-                    var dataDisks = virtualMachine.StorageProfile.DataDisks.Select(dd => dd.ManagedDisk.Id.Split("/").Last()).ToList();
-
-                    var nic = await networkClient.NetworkInterfaces.GetAsync(repository.ResourceGroupName, nicId.Split("/").Last());
-                    var pip = nic.IpConfigurations[0].PublicIPAddress?.Id;
-                    var nsg = nic.NetworkSecurityGroup?.Id;
-
-                    await _deploymentQueue.Add(new ActiveDeployment
-                    {
-                        FileServerName = repository.Name,
-                        StartTime = DateTime.UtcNow,
-                        Action = "DeleteVM",
-                        AvSetName = avSet,
-                        NicName = nic.Name,
-                        NsgName = nsg?.Split("/").Last(),
-                        PipName = pip?.Split("/").Last(),
-                        OsDiskName = osDisk?.Split("/").Last(),
-                        DataDiskNames = dataDisks,
-                    });
-
-                    return true;
-                }
-                else
-                {
-                    // TODO: Log and return something ...
-                    Console.WriteLine($"No virtual machine found with name: {repository.VmName}");
-                }
-            }
-            catch (Exception ex)
-            {
-                // TODO: Log Exception
-                // TODO: Do we care? Should we return a message to the user saying do it yourself?
-                Console.WriteLine($"Failed to delete NFS server: {ex.Message}.\n{ex.StackTrace}");
-            }
-
-            return false;
-        }
-
-        // #########################################################
-        // TODO: General Helper Methods for the Controller
-        // #########################################################
-
         private async Task<AssetRepositoryOverviewModel> GetOverviewViewModel(AssetRepository repo)
         {
             switch (repo)
             {
-                case AvereCluster avere:
-                    return new AvereClusterOverviewModel(avere)
-                    {
-                        ProvisioningState = repo.ProvisioningState,
-                        PowerStatus = "Unknown",
-                    };
-
                 case NfsFileServer nfs:
                     return new NfsFileServerOverviewModel(nfs)
                     {
                         PowerStatus = await GetVirtualMachineStatus(nfs.SubscriptionId, nfs.ResourceGroupName, nfs.VmName),
                     };
-
                 default:
                     throw new NotSupportedException("Unknown type of repository");
             }

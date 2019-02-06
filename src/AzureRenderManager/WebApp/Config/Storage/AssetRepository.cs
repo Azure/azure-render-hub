@@ -21,6 +21,7 @@ namespace WebApp.Config.Storage
 
         public Subnet Subnet { get; set; }
 
+        [JsonConverter(typeof(StringEnumConverter))]
         public ProvisioningState ProvisioningState { get; set; }
 
         public string ResourceGroupName { get; set; }
