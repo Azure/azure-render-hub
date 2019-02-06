@@ -10,8 +10,6 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.KeyVault;
-using Microsoft.Azure.Services.AppAuthentication;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -35,6 +33,7 @@ using WebApp.Config.Pools;
 using WebApp.Identity;
 using WebApp.Operations;
 using WebApp.Providers.Resize;
+using WebApp.Providers.Templates;
 using WebApp.Util;
 
 namespace WebApp
@@ -148,6 +147,7 @@ namespace WebApp
             services.AddScoped<IPoolUsageProvider, PoolUsageProvider>();
 
             // Deployment background server
+            services.AddSingleton<ITemplateProvider, TemplateProvider>();
             services.AddSingleton<ILeaseMaintainer, LeaseMaintainer>();
             services.AddSingleton<IDeploymentQueue, DeploymentQueue>();
             services.AddSingleton<IHostedService>(p => new BackgroundDeploymentHost(

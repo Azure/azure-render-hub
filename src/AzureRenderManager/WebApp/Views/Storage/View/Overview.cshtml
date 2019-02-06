@@ -112,19 +112,15 @@
         <div class="button-bar">
             @if (Model.PowerStatus == "VM running")
             {
-                <form asp-action="Shutdown" asp-route-repoId="@Model.Name">
-                    <button type="submit">Shutdown Server <i class="fa fa-stop"></i></button>
-                </form>
+                <a class="button" asp-action="PowerOperation" asp-route-repoId="@Model.Name" asp-route-operation="shutdown">Shutdown Server <i class="fa fa-stop"></i></a>
             }
             else
             {
-                <form asp-action="Start" asp-route-repoId="@Model.Name">
-                    <button type="submit">Start NFS Server <i class="fa fa-play"></i></button>
-                </form>
+                <a class="button" asp-action="PowerOperation" asp-route-repoId="@Model.Name" asp-route-operation="start">Start Server <i class="fa fa-play"></i></a>
             }
-            <button type="button" onclick="performDelete('Storage', 'Delete', '@(Model.Name)')">Delete File Server <i class="fa fa-trash"></i></button>
+
+            <a class="button" asp-action="Delete" asp-route-repoId="@Model.Name" onclick="return confirm('Are you sure you want to delete @Model.Name?')">Delete Server <i class="fa fa-trash"></i></a>
         </div>
     </div>
-
 </div>
 <p>&nbsp;</p>
