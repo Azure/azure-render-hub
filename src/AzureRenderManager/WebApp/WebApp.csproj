@@ -95,6 +95,9 @@
     <Content Update="Views\Packages\Add.cshtml">
       <Pack>$(IncludeRazorContentInPack)</Pack>
     </Content>
+    <Content Update="Views\Packages\Edit.cshtml">
+      <Pack>$(IncludeRazorContentInPack)</Pack>
+    </Content>
     <Content Update="Views\Packages\Details.cshtml">
       <Pack>$(IncludeRazorContentInPack)</Pack>
     </Content>
