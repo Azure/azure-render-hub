@@ -72,6 +72,9 @@ $webAppName = "contosorenderfarmmanager"
 # Create the application
 $app = az ad app create --display-name $webAppName --identifier-uris http://$webAppName --end-date 2040-12-31 --homepage "https://$webAppName.azurewebsites.net" --reply-urls "https://$webAppName.azurewebsites.net/signin-oidc"
 
+# Register the Service Principal in the current directory
+az ad sp create --id ($app | ConvertFrom-Json).appId
+
 # Assign the required API permissions
 
 # Windows Azure Active Directory - Sign in and read user profile
