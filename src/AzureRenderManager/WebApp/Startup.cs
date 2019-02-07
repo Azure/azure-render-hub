@@ -110,6 +110,7 @@ namespace WebApp
             services.AddSingleton<BlobConfigurationStore>();
             services.AddSingleton<IKeyVaultMsiClient, KeyVaultMsiClient>();
 
+            services.AddSingleton<IGenericConfigCoordinator, GenericConfigCoordinator>();
             services.AddSingleton<IPortalConfigurationProvider, PortalConfigurationProvider>();
             services.AddSingleton<BatchClientMsiProvider>();
             services.AddSingleton(Environment);
@@ -133,13 +134,30 @@ namespace WebApp
                 var cbc = p.GetRequiredService<CloudBlobClient>();
                 var kvClient = p.GetRequiredService<IKeyVaultMsiClient>();
                 var cache = p.GetRequiredService<IMemoryCache>();
-                return new CachingEnvironmentCoordinator(new EnvironmentCoordinator(cbc.GetContainerReference("environments"), kvClient), cache);
+                return new CachingEnvironmentCoordinator(new EnvironmentCoordinator(
+                    p.GetRequiredService<IGenericConfigCoordinator>(),
+                    cbc.GetContainerReference("environments"),
+                    kvClient), cache);
+            });
+
+            services.AddSingleton<IAssetRepoCoordinator>(p =>
+            {
+                var cbc = p.GetRequiredService<CloudBlobClient>();
+                return new AssetRepoCoordinator(
+                    p.GetRequiredService<IGenericConfigCoordinator>(),
+                    cbc.GetContainerReference("storage"));
+            });
+
+            services.AddSingleton<IPackageCoordinator>(p =>
+            {
+                var cbc = p.GetRequiredService<CloudBlobClient>();
+                return new PackageCoordinator(
+                    p.GetRequiredService<IGenericConfigCoordinator>(),
+                    cbc.GetContainerReference("packages"));
             });
 
             services.AddScoped<IManagementClientProvider, ManagementClientHttpContextProvider>();
             services.AddScoped<IPoolCoordinator, PoolCoordinator>();
-            services.AddScoped<IPackageCoordinator, PackageCoordinator>();
-            services.AddSingleton<IAssetRepoCoordinator, AssetRepoCoordinator>();
             services.AddSingleton<IScaleUpRequestStore, ScaleUpRequestStore>();
 
             // While this does use credentials of the user, the data is not sensitive

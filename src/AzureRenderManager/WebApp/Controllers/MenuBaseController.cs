@@ -35,12 +35,18 @@ namespace WebApp.Controllers
 
         public async Task<IReadOnlyList<InstallationPackage>> Packages()
         {
-            return await _packageCoordinator.GetPackages();
+            var packages = await Task.WhenAll((await _packageCoordinator.ListPackages())
+                .Select(packageName => _packageCoordinator.GetPackage(packageName)));
+
+            return packages.Where(re => re != null).OrderBy(re => re.PackageName).ToList();
         }
 
         public async Task<IReadOnlyList<AssetRepository>> Repositories()
         {
-            return await _assetRepoCoordinator.GetRepositories();
+            var repos = await Task.WhenAll((await _assetRepoCoordinator.ListRepositories())
+                .Select(repoName => _assetRepoCoordinator.GetRepository(repoName)));
+
+            return repos.Where(re => re != null).OrderBy(re => re.Name).ToList();
         }
     }
 }

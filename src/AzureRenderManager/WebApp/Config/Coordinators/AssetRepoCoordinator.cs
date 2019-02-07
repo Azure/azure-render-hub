@@ -4,11 +4,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-
-using Microsoft.AspNetCore.Http;
-using WebApp.Code;
+using Microsoft.WindowsAzure.Storage.Blob;
 using WebApp.Code.Contract;
-using WebApp.Code.Extensions;
 using WebApp.Config.Storage;
 using WebApp.Models.Storage.Create;
 
@@ -16,26 +13,23 @@ namespace WebApp.Config.Coordinators
 {
     public class AssetRepoCoordinator : IAssetRepoCoordinator
     {
-        private readonly IPortalConfigurationProvider _portalConfigurationProvider;
+        private readonly IGenericConfigCoordinator _configCoordinator;
+        private readonly CloudBlobContainer _container;
 
-        public AssetRepoCoordinator(IPortalConfigurationProvider portalConfigurationProvider)
+        public AssetRepoCoordinator(IGenericConfigCoordinator configCoordinator, CloudBlobContainer container)
         {
-            _portalConfigurationProvider = portalConfigurationProvider;
+            _configCoordinator = configCoordinator;
+            _container = container;
         }
 
-        public async Task<List<AssetRepository>> GetRepositories()
+        public async Task<List<string>> ListRepositories()
         {
-            var config = await _portalConfigurationProvider.GetConfig();
-            var repositories = config != null ? config.Repositories : new List<AssetRepository>();
-            return repositories;
+            return await _configCoordinator.List(_container);
         }
 
         public async Task<AssetRepository> GetRepository(string repoName)
         {
-            var repositories = await GetRepositories();
-            var found = repositories?.FirstOrDefault(repo => repo.Name.Equals(repoName, StringComparison.OrdinalIgnoreCase));
-
-            return found;
+            return await _configCoordinator.Get<AssetRepository>(_container, repoName);
         }
 
         public AssetRepository CreateRepository(AddAssetRepoBaseModel model)
@@ -55,43 +49,12 @@ namespace WebApp.Config.Coordinators
 
         public async Task UpdateRepository(AssetRepository repository, string originalName = null)
         {
-            var repositories = await GetRepositories() ?? new List<AssetRepository>();
-            var index = repositories.FindIndex(env => env.Name.Equals(originalName ?? repository.Name, StringComparison.OrdinalIgnoreCase));
-            if (index < 0)
-            {
-                repositories.Add(repository);
-            }
-            else
-            {
-                repositories[index] = repository;
-            }
-
-            await UpdateRepositories(repositories);
-        }
-
-        public async Task UpdateRepositories(IEnumerable<AssetRepository> repositories)
-        {
-            var config = await _portalConfigurationProvider.GetConfig();
-            if (config != null)
-            {
-                config.Repositories = repositories.ToList();
-                await _portalConfigurationProvider.SetConfig(config);
-            }
+            await _configCoordinator.Update(_container, repository, repository.Name, originalName);
         }
 
         public async Task<bool> RemoveRepository(AssetRepository repository)
         {
-            var repositories = await GetRepositories();
-            var index = repositories?.FindIndex(env => env.Name.Equals(repository.Name, StringComparison.OrdinalIgnoreCase));
-            if (index.GetValueOrDefault(-1) > -1)
-            {
-                repositories?.RemoveAt(index.Value);
-                await UpdateRepositories(repositories);
-
-                return true;
-            }
-
-            return false;
+            return await _configCoordinator.Remove(_container, repository.Name);
         }
     }
 }
