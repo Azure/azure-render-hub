@@ -5,14 +5,14 @@ using WebApp.Config.Storage;
 
 namespace WebApp.Models.Storage.Details
 {
-    public class NfsFileServerDetailsModel : AssetRepositoryDetailsModel
+    public class NfsFileServerOverviewModel : AssetRepositoryOverviewModel
     {
-        public NfsFileServerDetailsModel()
+        public NfsFileServerOverviewModel()
         {
             // default constructor needed for model binding
         }
 
-        public NfsFileServerDetailsModel(NfsFileServer fileServer)
+        public NfsFileServerOverviewModel(NfsFileServer fileServer)
         {
             if (fileServer != null)
             {
@@ -20,6 +20,7 @@ namespace WebApp.Models.Storage.Details
                 RepositoryType = fileServer.RepositoryType;
                 SubscriptionId = fileServer.SubscriptionId;
                 Username = fileServer.Username;
+                Password = fileServer.Password;
                 VmName = fileServer.VmName;
                 PublicIp = fileServer.PublicIp;
                 PrivateIp = fileServer.PrivateIp;
@@ -41,33 +42,18 @@ namespace WebApp.Models.Storage.Details
             }
         }
 
-        public string Username { get; set; }
-
-        public string VmName { get; set; }
-
-        public string PublicIp { get; set; }
-
-        public string PrivateIp { get; set; }
-
-        public string VmSize { get; set; }
-
-        public string ProvisioningState { get; set; }
-
-        public string ResourceGroupName { get; set; }
-
-        public string DeploymentName { get; set; }
-
         public List<NfsFileShare> FileShares { get; set; }
 
         // e.g. 10.2.0.0/24
         public List<string> AllowedNetworks { get; set; }
 
         // overrides
+        public override ProvisioningState ProvisioningState { get; set; }
 
-        public override string Status { get; set; }
+        public override string PowerStatus { get; set; }
 
-        public override string DisplayName => "NFS File Server";
+        public override string DisplayName => "File Server";
 
-        public override string Description => "Details about the NFS File Server";
+        public override string Description => "Details about the File Server";
     }
 }

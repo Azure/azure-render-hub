@@ -2,9 +2,10 @@
 // Licensed under the MIT License.
 using System.Collections.Generic;
 using System.Threading.Tasks;
-
+using WebApp.Arm;
 using WebApp.Config.Storage;
 using WebApp.Models.Storage.Create;
+using WebApp.Operations;
 
 namespace WebApp.Code.Contract
 {
@@ -15,6 +16,14 @@ namespace WebApp.Code.Contract
         Task<AssetRepository> GetRepository(string repoName);
 
         AssetRepository CreateRepository(AddAssetRepoBaseModel model);
+
+        Task BeginRepositoryDeploymentAsync(AssetRepository repository, IManagementClientProvider managementClientProvider, IAzureResourceProvider azureResourceProvider);
+
+        Task<ProvisioningState> UpdateRepositoryFromDeploymentAsync(AssetRepository repository, IManagementClientProvider managementClientProvider);
+
+        Task BeginDeleteRepositoryAsync(AssetRepository repository, IManagementClientProvider managementClientProvider);
+
+        Task DeleteRepositoryResourcesAsync(AssetRepository repository, IManagementClientProvider managementClientProvider);
 
         Task UpdateRepository(AssetRepository repository, string originalName = null);
 

@@ -12,6 +12,7 @@ namespace WebApp.Code
                 public const string PackageName = "Package names only allow alphanumeric characters, periods, underscores, and hyphens and cannot end in a period.";
                 public const string AssetRepoName = "Storage configuration names only allow alphanumeric characters, periods, underscores, and hyphens and cannot end in a period.";
                 public const string ResourceGroup = "Resource group names only allow alphanumeric characters, periods, underscores, and hyphens and cannot end in a period.";
+                public const string SubnetAddressRange = "Subnet address ranges must be a valid CIDR block such as 10.1.0.0/24.";
                 public const string NoAscii = "{0} cannot contain non-ASCII or special characters.";
                 public const string NoSpecialStartEnd = "{0} must begin and end with a letter or number.";
                 public const string NoNumbersOnly = "{0} cannot contain only numbers.";
