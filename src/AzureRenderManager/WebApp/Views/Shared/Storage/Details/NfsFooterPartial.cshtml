@@ -1,8 +1,8 @@
-﻿@model WebApp.Models.Storage.Details.AssetRepositoryDetailsModel
+﻿@model WebApp.Models.Storage.Details.AssetRepositoryOverviewModel
 
 <div class="form-footer">
     <div class="button-bar">
-        @if (Model.Status == "VM running")
+        @if (Model.PowerStatus == "VM running")
         {
             <button type="button">Shutdown Server <i class="fa fa-stop"></i></button>
         }

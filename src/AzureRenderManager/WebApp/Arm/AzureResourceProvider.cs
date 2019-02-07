@@ -672,9 +672,9 @@ namespace WebApp.Arm
             return roleAssignments;
         }
 
-        private static IDictionary<string, string> GetEnvironmentTags(string environmentName)
+        public static IDictionary<string, string> GetEnvironmentTags(string environmentName)
         {
-            return new Dictionary<string, string> {{"Environment", environmentName}};
+            return new Dictionary<string, string> {{"Environment", environmentName ?? "Global"}};
         }
 
         private async Task RegisterProvider(Guid subscriptionId, string resourceProviderNamespace)

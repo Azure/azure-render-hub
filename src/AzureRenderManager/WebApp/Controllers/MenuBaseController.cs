@@ -13,8 +13,8 @@ namespace WebApp.Controllers
     public class MenuBaseController : ViewBaseController
     {
         protected readonly IAssetRepoCoordinator _assetRepoCoordinator;
+        protected readonly IEnvironmentCoordinator _environmentCoordinator;
         private readonly IPackageCoordinator _packageCoordinator;
-        private readonly IEnvironmentCoordinator _environmentCoordinator;
 
         public MenuBaseController(IEnvironmentCoordinator environmentCoordinator,
             IPackageCoordinator packageCoordinator,

@@ -927,8 +927,6 @@ namespace WebApp.Controllers
                 return View("Create/Step2", model);
             }
 
-            Task allTasks = null;
-
             try
             {
                 await CreateOrUpdateResourceGroup(environment, model);
