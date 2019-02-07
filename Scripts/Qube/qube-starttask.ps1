@@ -103,7 +103,7 @@ if ('' -ne $qubeSupervisorIp -and (Test-Path -Path "C:\ProgramData\Pfx\Qube\qb.c
     (Get-Content 'C:\ProgramData\Pfx\Qube\qb.conf') -replace '^.*qb_supervisor.*',"qb_supervisor = $qubeSupervisorIp" | Set-Content qb.conf
 }
 
-if ('' -ne $workerHostGroups)
+if ('' -ne $workerHostGroups -and (Test-Path -Path $qbConf))
 {
     $currentGroups = Get-Content $qbConf | select-string -pattern '^worker_groups = (.*)' | % {$_.Matches} | % {$_.Groups[1].Value.Trim()}
     if ($currentGroups -and !$currentGroups.Contains($workerHostGroups))

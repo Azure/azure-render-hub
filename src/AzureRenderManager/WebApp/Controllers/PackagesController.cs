@@ -22,18 +22,15 @@ namespace WebApp.Controllers
     [PackagesActionFilter]
     public class PackagesController : MenuBaseController
     {
-        private readonly IHostingEnvironment _environment;
         private readonly CloudBlobClient _blobClient;
         private readonly IPackageCoordinator _packageCoordinator;
 
         public PackagesController(
-            IHostingEnvironment environment,
             CloudBlobClient cloudBlobClient,
             IEnvironmentCoordinator environmentCoordinator,
             IPackageCoordinator packageCoordinator,
             IAssetRepoCoordinator assetRepoCoordinator) : base(environmentCoordinator, packageCoordinator, assetRepoCoordinator)
         {
-            _environment = environment;
             _blobClient = cloudBlobClient;
             _packageCoordinator = packageCoordinator;
         }
@@ -91,11 +88,46 @@ namespace WebApp.Controllers
         }
 
         [HttpGet]
-        [Route("RenderManagerPackages/Add/{pkgId?}")]
+        [Route("RenderManagerPackages/Add")]
         public ActionResult Add(string pkgId)
         {
             var model = new AddPackageModel { PackageName = pkgId };
             return View(model);
+        }
+
+        [HttpGet]
+        [Route("RenderManagerPackages/{pkgId}/Edit")]
+        public async Task<ActionResult> Edit(string pkgId)
+        {
+            var package = await _packageCoordinator.GetPackage(pkgId);
+            if (package == null)
+            {
+                return RedirectToAction("Index");
+            }
+
+            var model = new EditPackageModel
+            {
+                PackageName = pkgId,
+                InstallCommandLine = package.PackageInstallCommand,
+            };
+
+            return View(model);
+        }
+
+        [HttpPost]
+        [Route("RenderManagerPackages/{pkgId}/Edit")]
+        public async Task<ActionResult> Edit(string pkgId, EditPackageModel model)
+        {
+            var package = await _packageCoordinator.GetPackage(pkgId);
+            if (package == null)
+            {
+                return RedirectToAction("Index");
+            }
+
+            package.PackageInstallCommand = model.InstallCommandLine;
+            await _packageCoordinator.UpdatePackage(package);
+
+            return RedirectToAction("Details", new {pkgId});
         }
 
         [HttpPost]

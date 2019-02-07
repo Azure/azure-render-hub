@@ -3,8 +3,8 @@
 
 namespace WebApp.Models.Packages
 {
-    public class AddPackageModel
-    {
+    public class AddPackageModel {
+
         public string PackageName { get; set; }
 
         public AddGeneralPackageModel GeneralPackage { get; set; }
