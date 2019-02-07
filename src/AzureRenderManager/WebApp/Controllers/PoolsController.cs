@@ -437,7 +437,8 @@ namespace WebApp.Controllers
         {
             var (imageRefs, packages, sizes) = await (
                 _poolCoordinator.GetImageReferences(environment),
-                _packageCoordinator.GetPackages(),
+                Task.WhenAll((await _packageCoordinator.ListPackages())
+                    .Select(packageName => _packageCoordinator.GetPackage(packageName))),
                 _vmSizes.GetSizesSelectList(environment));
 
             result.RenderManagerType = environment.RenderManager;

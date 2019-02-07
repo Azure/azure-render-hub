@@ -8,16 +8,12 @@ namespace WebApp.Code.Contract
 {
     public interface IPackageCoordinator
     {
-        Task<List<InstallationPackage>> GetPackages();
+        Task<List<string>> ListPackages();
 
         Task<InstallationPackage> GetPackage(string packageName);
 
         Task UpdatePackage(InstallationPackage package);
 
-        Task UpdatePackages(IEnumerable<InstallationPackage> packages);
-
         Task<bool> RemovePackage(InstallationPackage package);
-
-        void ClearCache();
     }
 }

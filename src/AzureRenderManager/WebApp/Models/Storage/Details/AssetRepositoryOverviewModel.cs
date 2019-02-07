@@ -1,5 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+
+using System;
 using WebApp.Config.Storage;
 
 namespace WebApp.Models.Storage.Details
@@ -10,7 +12,7 @@ namespace WebApp.Models.Storage.Details
 
         public AssetRepositoryType RepositoryType { get; protected set; }
 
-        public string SubscriptionId { get; set; }
+        public Guid SubscriptionId { get; set; }
 
         public string SubnetName { get; set; }
 

@@ -6,17 +6,23 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Management.Compute;
 using Microsoft.Azure.Management.Compute.Models;
+using Microsoft.Azure.Management.Network;
+using Microsoft.Azure.Management.ResourceManager;
+using Microsoft.Azure.Management.ResourceManager.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Rest.Azure;
 using Microsoft.WindowsAzure.Storage.Blob;
 using WebApp.Arm;
+using WebApp.BackgroundHosts.Deployment;
 using WebApp.Code.Attributes;
 using WebApp.Code.Contract;
 using WebApp.Config;
 using WebApp.Config.Storage;
+using WebApp.Identity;
 using WebApp.Models.Storage;
 using WebApp.Models.Storage.Create;
 using WebApp.Models.Storage.Details;
@@ -29,8 +35,12 @@ namespace WebApp.Controllers
     public class StorageController : MenuBaseController
     {
         private readonly IConfiguration _configuration;
+        private readonly IHostingEnvironment _environment;
+        private readonly IDeploymentQueue _deploymentQueue;
         private readonly IManagementClientProvider _managementClientProvider;
         private readonly IAzureResourceProvider _azureResourceProvider;
+        private readonly IIdentityProvider _identityProvider;
+
 
         public StorageController(
             IConfiguration configuration,
@@ -42,8 +52,8 @@ namespace WebApp.Controllers
             IAzureResourceProvider azureResourceProvider) : base(environmentCoordinator, packageCoordinator, assetRepoCoordinator)
         {
             _configuration = configuration;
-            _managementClientProvider = managementClientProvider;
             _azureResourceProvider = azureResourceProvider;
+            _managementClientProvider = managementClientProvider;
         }
 
         [HttpGet]
@@ -204,7 +214,7 @@ namespace WebApp.Controllers
                 repository.Name = model.RepositoryName;
                 repository.ResourceGroupName = model.RepositoryName;
                 repository.RepositoryType = model.RepositoryType;
-                repository.SubscriptionId = model.SubscriptionId.ToString();
+                repository.SubscriptionId = model.SubscriptionId.Value;
                 repository.EnvironmentName = null;
                 if (model.UseEnvironment)
                 {
@@ -253,8 +263,7 @@ namespace WebApp.Controllers
             string error = null;
             string errorMessage = null;
 
-            var canCreate = await _azureResourceProvider.CanCreateResources(
-                Guid.Parse(repository.SubscriptionId));
+            var canCreate = await _azureResourceProvider.CanCreateResources(repository.SubscriptionId);
             if (!canCreate)
             {
                 error = "You don't have the required permissions to create resources";
@@ -264,7 +273,7 @@ namespace WebApp.Controllers
             else
             {
                 var canAssign = await _azureResourceProvider.CanCreateRoleAssignments(
-                    Guid.Parse(repository.SubscriptionId),
+                    repository.SubscriptionId,
                     repository.ResourceGroupName);
                 if (!canAssign)
                 {
@@ -395,7 +404,7 @@ namespace WebApp.Controllers
                 return BadRequest("Action must be 'start' or 'shutdown'");
             }
 
-            using (var computeClient = await _managementClientProvider.CreateComputeManagementClient(Guid.Parse(fileServer.SubscriptionId)))
+            using (var computeClient = await _managementClientProvider.CreateComputeManagementClient(fileServer.SubscriptionId))
             {
                 if (operation == "start")
                 {
@@ -450,7 +459,7 @@ namespace WebApp.Controllers
                 case NfsFileServer nfs:
                     return new NfsFileServerOverviewModel(nfs)
                     {
-                        PowerStatus = await GetVirtualMachineStatus(nfs.SubscriptionId, nfs.ResourceGroupName, nfs.VmName),
+                        PowerStatus = await GetVirtualMachineStatus(nfs.SubscriptionId.ToString(), nfs.ResourceGroupName, nfs.VmName),
                     };
                 default:
                     throw new NotSupportedException("Unknown type of repository");

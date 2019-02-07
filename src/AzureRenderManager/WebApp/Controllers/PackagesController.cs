@@ -42,8 +42,9 @@ namespace WebApp.Controllers
         [Route("RenderManagerPackages")]
         public async Task<ActionResult> Index()
         {
-            var packages = await _packageCoordinator.GetPackages();
-            return View(new ListPackagesModel { Packages = packages });
+            var packages = await Task.WhenAll((await _packageCoordinator.ListPackages())
+                .Select(packageName => _packageCoordinator.GetPackage(packageName)));
+            return View(new ListPackagesModel { Packages = packages.ToList() });
         }
 
         [HttpDelete]

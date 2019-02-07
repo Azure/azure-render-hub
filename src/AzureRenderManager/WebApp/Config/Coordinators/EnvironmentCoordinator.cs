@@ -6,11 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-
 using Microsoft.WindowsAzure.Storage;
-using Microsoft.WindowsAzure.Storage.Blob;
-using Microsoft.WindowsAzure.Storage.Blob.Protocol;
-using Newtonsoft.Json;
 using WebApp.Arm;
 using WebApp.Code.Attributes;
 using WebApp.Code.Contract;
@@ -21,36 +17,21 @@ namespace WebApp.Config.Coordinators
     public class EnvironmentCoordinator : IEnvironmentCoordinator
     {
         private readonly IKeyVaultMsiClient _keyVaultClient;
-        private readonly CloudBlobContainer _environmentContainer;
+        private readonly IGenericConfigCoordinator _configCoordinator;
 
-        public EnvironmentCoordinator(CloudBlobContainer environmentContainer, IKeyVaultMsiClient keyVaultClient)
+        public EnvironmentCoordinator(
+            IGenericConfigCoordinator configCoordinator,
+            IKeyVaultMsiClient keyVaultClient)
         {
-            _environmentContainer = environmentContainer;
+            _configCoordinator = configCoordinator;
             _keyVaultClient = keyVaultClient;
-        }
-
-        private CloudBlockBlob BlobFor(string environmentName)
-            => _environmentContainer.GetBlockBlobReference(environmentName);
-
-        private async Task HandleContainerDoesNotExist(Func<Task> action)
-        {
-            try
-            {
-                await action();
-            }
-            catch (StorageException ex) when (ex.RequestInformation.ErrorCode == BlobErrorCodeStrings.ContainerNotFound)
-            {
-                await _environmentContainer.CreateIfNotExistsAsync();
-                await action();
-            }
         }
 
         public async Task<RenderingEnvironment> GetEnvironment(string environmentName)
         {
             try
             {
-                var content = await BlobFor(environmentName).DownloadTextAsync();
-                var result = JsonConvert.DeserializeObject<RenderingEnvironment>(content);
+                var result = await _configCoordinator.Get<RenderingEnvironment>(environmentName);
 
                 if (result.KeyVault != null)
                 {
@@ -74,15 +55,14 @@ namespace WebApp.Config.Coordinators
             }
         }
 
-        public Task<bool> RemoveEnvironment(RenderingEnvironment environment)
+        public async Task<bool> RemoveEnvironment(RenderingEnvironment environment)
         {
-            return BlobFor(environment.Name).DeleteIfExistsAsync();
+            return await _configCoordinator.Remove(environment.Name);
         }
 
         public async Task UpdateEnvironment(RenderingEnvironment environment, string originalName = null)
         {
-            var content = JsonConvert.SerializeObject(environment, Formatting.Indented);
-            await HandleContainerDoesNotExist(() => BlobFor(environment.Name).UploadTextAsync(content));
+            await _configCoordinator.Update(environment, environment.Name, originalName);
 
             if (environment.KeyVault != null)
             {
@@ -96,35 +76,11 @@ namespace WebApp.Config.Coordinators
                     Console.WriteLine(e);
                 }
             }
-
-            if (originalName != null && originalName != environment.Name)
-            {
-                await BlobFor(originalName).DeleteIfExistsAsync();
-            }
         }
 
         public async Task<List<string>> ListEnvironments()
         {
-            var result = new List<string>();
-
-            BlobContinuationToken token = null;
-            try
-            {
-                do
-                {
-                    var page = await _environmentContainer.ListBlobsSegmentedAsync(token);
-
-                    result.AddRange(page.Results.OfType<CloudBlockBlob>().Select(b => b.Name));
-                    token = page.ContinuationToken;
-                } while (token != null);
-
-                return result;
-            }
-            catch (StorageException ex) when (ex.RequestInformation.HttpStatusCode == 404)
-            {
-                // nothing found
-                return result;
-            }
+            return await _configCoordinator.List();
         }
 
         private async Task FindAndSaveCredentials(RenderingEnvironment environment, object obj)

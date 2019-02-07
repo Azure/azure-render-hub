@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using System;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using WebApp.Models;
@@ -15,7 +16,7 @@ namespace WebApp.Config.Storage
         [JsonConverter(typeof(StringEnumConverter))]
         public AssetRepositoryType RepositoryType { get; set; }
 
-        public string SubscriptionId { get; set; }
+        public Guid SubscriptionId { get; set; }
 
         public string EnvironmentName { get; set; }
 
