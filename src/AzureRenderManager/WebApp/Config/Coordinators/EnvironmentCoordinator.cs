@@ -33,7 +33,7 @@ namespace WebApp.Config.Coordinators
             {
                 var result = await _configCoordinator.Get<RenderingEnvironment>(environmentName);
 
-                if (result.KeyVault != null)
+                if (result != null && result.KeyVault != null)
                 {
                     try
                     {
