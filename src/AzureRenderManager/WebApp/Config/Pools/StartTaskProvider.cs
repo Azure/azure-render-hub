@@ -73,6 +73,8 @@ namespace WebApp.Config.Pools
 
             AppendDomainSetup(startTask, environment);
 
+            await AppendGeneralPackages(startTask, generalPackages);
+
             await AppendQubeSetupToStartTask(
                 environment,
                 poolName,
@@ -80,8 +82,6 @@ namespace WebApp.Config.Pools
                 environment.RenderManagerConfig.Qube,
                 qubePackage,
                 isWindows);
-
-            await AppendGeneralPackages(startTask, generalPackages);
 
             // Wrap all the start task command
             startTask.CommandLine = $"powershell.exe -ExecutionPolicy RemoteSigned -NoProfile \"$ErrorActionPreference='Stop'; {startTask.CommandLine}\"";
@@ -118,6 +118,8 @@ namespace WebApp.Config.Pools
 
             await AppendGpu(startTask, gpuPackage);
 
+            await AppendGeneralPackages(startTask, generalPackages);
+
             await AppendDeadlineSetupToStartTask(
                 environment,
                 poolName,
@@ -126,8 +128,6 @@ namespace WebApp.Config.Pools
                 deadlinePackage,
                 isWindows,
                 useGroups);
-
-            await AppendGeneralPackages(startTask, generalPackages);
 
             // Wrap all the start task command
             startTask.CommandLine = $"powershell.exe -ExecutionPolicy RemoteSigned -NoProfile \"$ErrorActionPreference='Stop'; {startTask.CommandLine}\"";
@@ -160,8 +160,8 @@ namespace WebApp.Config.Pools
 
             if (deadlinePackage != null && !string.IsNullOrEmpty(deadlinePackage.Container))
             {
-                resourceFiles.AddRange(await GetResourceFilesFromContainer(deadlinePackage.Container));
-                commandLine += $" -installerPath .";
+                resourceFiles.Add(GetContainerResourceFile(deadlinePackage.Container, deadlinePackage.PackageName));
+                commandLine += $" -installerPath {deadlinePackage.PackageName}";
             }
 
             if (environment.Domain.JoinDomain)
@@ -229,7 +229,7 @@ namespace WebApp.Config.Pools
                 commandLine += $" -excludeFromLimitGroups '{deadlineConfig.ExcludeFromLimitGroups}'";
             }
 
-            commandLine += " 2>&1;";
+            commandLine += ";";
 
             startTask.CommandLine = commandLine;
             startTask.ResourceFiles = resourceFiles;
@@ -287,13 +287,12 @@ namespace WebApp.Config.Pools
             if (gpuPackage != null)
             {
                 var resourceFiles = new List<ResourceFile>(startTask.ResourceFiles);
-                var gpuResourceFiles = await GetResourceFilesFromContainer(gpuPackage.Container);
-                resourceFiles.AddRange(gpuResourceFiles);
+                resourceFiles.Add(GetContainerResourceFile(gpuPackage.Container, gpuPackage.PackageName));
                 startTask.ResourceFiles = resourceFiles;
                 if (!string.IsNullOrWhiteSpace(gpuPackage.PackageInstallCommand))
                 {
                     var cmd = gpuPackage.PackageInstallCommand.Replace("{filename}", resourceFiles.First().FilePath);
-                    startTask.CommandLine += $"{cmd}; ";
+                    startTask.CommandLine += $"cd {gpuPackage.PackageName}; {cmd}; cd..; ";
                 }
             }
         }
@@ -305,11 +304,11 @@ namespace WebApp.Config.Pools
                 foreach (var package in generalPackages)
                 {
                     var resourceFiles = new List<ResourceFile>(startTask.ResourceFiles);
-                    resourceFiles.AddRange(await GetResourceFilesFromContainer(package.Container));
+                    resourceFiles.Add(GetContainerResourceFile(package.Container, package.PackageName));
                     startTask.ResourceFiles = resourceFiles;
                     if (!string.IsNullOrWhiteSpace(package.PackageInstallCommand))
                     {
-                        startTask.CommandLine += $"{package.PackageInstallCommand}; ";
+                        startTask.CommandLine += $"cd {package.PackageName}; {package.PackageInstallCommand}; cd ..; ";
                     }
                 }
             }
@@ -359,6 +358,19 @@ namespace WebApp.Config.Pools
             } while (blobContinuationToken != null);
 
             return resourceFiles;
+        }
+
+        private ResourceFile GetContainerResourceFile(string containerName, string filePath)
+        {
+            var container = _blobClient.GetContainerReference(containerName);
+            var policy = new SharedAccessBlobPolicy
+            {
+                SharedAccessStartTime = DateTime.UtcNow.Subtract(TimeSpan.FromMinutes(15)),
+                SharedAccessExpiryTime = DateTime.UtcNow.AddYears(1),
+                Permissions = SharedAccessBlobPermissions.Read | SharedAccessBlobPermissions.List,
+            };
+            var containerSas = container.GetSharedAccessSignature(policy);
+            return new ResourceFile(storageContainerUrl: container.Uri + containerSas, filePath: filePath);
         }
 
         private static ResourceFile GetJoinDomainResourceFile()
