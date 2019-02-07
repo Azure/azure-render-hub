@@ -22,11 +22,7 @@ namespace WebApp.Models.Storage.Create
             RepositoryName = fileServer.Name;
             RepositoryType = fileServer.RepositoryType;
             NewResourceGroupName = fileServer.ResourceGroupName;
-
-            if (fileServer.SubscriptionId != null)
-            {
-                SubscriptionId = new Guid(fileServer.SubscriptionId);
-            }
+            SubscriptionId = fileServer.SubscriptionId;
 
             if (fileServer.Subnet?.ResourceId != null)
             {

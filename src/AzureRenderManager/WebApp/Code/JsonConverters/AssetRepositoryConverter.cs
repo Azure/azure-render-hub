@@ -57,8 +57,6 @@ namespace WebApp.Code.JsonConverters
             {
                 case AssetRepositoryType.AvereCluster:
                     return typeof(AvereCluster);
-//                case AssetRepositoryType.AzureFilesShare:
-//                    return typeof(AzureFilesShare);
                 case AssetRepositoryType.NfsFileServer:
                     return typeof(NfsFileServer);
                 default:

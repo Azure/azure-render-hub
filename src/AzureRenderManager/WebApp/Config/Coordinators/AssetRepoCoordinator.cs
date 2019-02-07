@@ -25,39 +25,34 @@ namespace WebApp.Config.Coordinators
 {
     public class AssetRepoCoordinator : IAssetRepoCoordinator
     {
-        private readonly IPortalConfigurationProvider _portalConfigurationProvider;
+        private readonly IGenericConfigCoordinator _configCoordinator;
         private readonly ITemplateProvider _templateProvider;
         private readonly IIdentityProvider _identityProvider;
         private readonly IDeploymentQueue _deploymentQueue;
         private readonly ILogger _logger;
 
         public AssetRepoCoordinator(
-            IPortalConfigurationProvider portalConfigurationProvider,
+            IGenericConfigCoordinator configCoordinator,
             ITemplateProvider templateProvider,
             IIdentityProvider identityProvider,
             IDeploymentQueue deploymentQueue,
             ILogger<AssetRepoCoordinator> logger)
         {
-            _portalConfigurationProvider = portalConfigurationProvider;
+            _configCoordinator = configCoordinator;
             _templateProvider = templateProvider;
             _identityProvider = identityProvider;
             _deploymentQueue = deploymentQueue;
             _logger = logger;
         }
 
-        public async Task<List<AssetRepository>> GetRepositories()
+        public async Task<List<string>> ListRepositories()
         {
-            var config = await _portalConfigurationProvider.GetConfig();
-            var repositories = config != null ? config.Repositories : new List<AssetRepository>();
-            return repositories;
+            return await _configCoordinator.List();
         }
 
         public async Task<AssetRepository> GetRepository(string repoName)
         {
-            var repositories = await GetRepositories();
-            var found = repositories?.FirstOrDefault(repo => repo.Name.Equals(repoName, StringComparison.OrdinalIgnoreCase));
-
-            return found;
+            return await _configCoordinator.Get<AssetRepository>(repoName);
         }
 
         public AssetRepository CreateRepository(AddAssetRepoBaseModel model)
@@ -77,43 +72,12 @@ namespace WebApp.Config.Coordinators
 
         public async Task UpdateRepository(AssetRepository repository, string originalName = null)
         {
-            var repositories = await GetRepositories() ?? new List<AssetRepository>();
-            var index = repositories.FindIndex(env => env.Name.Equals(originalName ?? repository.Name, StringComparison.OrdinalIgnoreCase));
-            if (index < 0)
-            {
-                repositories.Add(repository);
-            }
-            else
-            {
-                repositories[index] = repository;
-            }
-
-            await UpdateRepositories(repositories);
-        }
-
-        public async Task UpdateRepositories(IEnumerable<AssetRepository> repositories)
-        {
-            var config = await _portalConfigurationProvider.GetConfig();
-            if (config != null)
-            {
-                config.Repositories = repositories.ToList();
-                await _portalConfigurationProvider.SetConfig(config);
-            }
+            await _configCoordinator.Update(repository, repository.Name, originalName);
         }
 
         public async Task<bool> RemoveRepository(AssetRepository repository)
         {
-            var repositories = await GetRepositories();
-            var index = repositories?.FindIndex(env => env.Name.Equals(repository.Name, StringComparison.OrdinalIgnoreCase));
-            if (index.GetValueOrDefault(-1) > -1)
-            {
-                repositories?.RemoveAt(index.Value);
-                await UpdateRepositories(repositories);
-
-                return true;
-            }
-
-            return false;
+            return await _configCoordinator.Remove(repository.Name);
         }
 
         //
@@ -121,7 +85,7 @@ namespace WebApp.Config.Coordinators
         //
         public async Task BeginRepositoryDeploymentAsync(AssetRepository repository, IManagementClientProvider managementClientProvider, IAzureResourceProvider azureResourceProvider)
         {
-            using (var client = await managementClientProvider.CreateResourceManagementClient(Guid.Parse(repository.SubscriptionId)))
+            using (var client = await managementClientProvider.CreateResourceManagementClient(repository.SubscriptionId))
             {
                 await client.ResourceGroups.CreateOrUpdateAsync(
                     repository.ResourceGroupName,
@@ -130,7 +94,7 @@ namespace WebApp.Config.Coordinators
                         tags: AzureResourceProvider.GetEnvironmentTags(repository.EnvironmentName)));
 
                 await azureResourceProvider.AssignManagementIdentityAsync(
-                    Guid.Parse(repository.SubscriptionId),
+                    repository.SubscriptionId,
                     repository.ResourceGroupResourceId,
                     AzureResourceProvider.ContributorRole,
                     _identityProvider.GetPortalManagedServiceIdentity());
@@ -199,9 +163,9 @@ namespace WebApp.Config.Coordinators
                 return;
             }
 
-            using (var resourceClient = await managementClientProvider.CreateResourceManagementClient(Guid.Parse(repository.SubscriptionId)))
-            using (var computeClient = await managementClientProvider.CreateComputeManagementClient(Guid.Parse(repository.SubscriptionId)))
-            using (var networkClient = await managementClientProvider.CreateNetworkManagementClient(Guid.Parse(repository.SubscriptionId)))
+            using (var resourceClient = await managementClientProvider.CreateResourceManagementClient(repository.SubscriptionId))
+            using (var computeClient = await managementClientProvider.CreateComputeManagementClient(repository.SubscriptionId))
+            using (var networkClient = await managementClientProvider.CreateNetworkManagementClient(repository.SubscriptionId))
             {
                 try
                 {
@@ -290,8 +254,8 @@ namespace WebApp.Config.Coordinators
 
         private async Task<(string privateIp, string publicIp)> GetIpAddressesAsync(NfsFileServer fileServer, IManagementClientProvider managementClientProvider)
         {
-            using (var computeClient = await managementClientProvider.CreateComputeManagementClient(Guid.Parse(fileServer.SubscriptionId)))
-            using (var networkClient = await managementClientProvider.CreateNetworkManagementClient(Guid.Parse(fileServer.SubscriptionId)))
+            using (var computeClient = await managementClientProvider.CreateComputeManagementClient(fileServer.SubscriptionId))
+            using (var networkClient = await managementClientProvider.CreateNetworkManagementClient(fileServer.SubscriptionId))
             {
                 var vm = await computeClient.VirtualMachines.GetAsync(fileServer.ResourceGroupName, fileServer.VmName);
                 var networkIfaceName = vm.NetworkProfile.NetworkInterfaces.First().Id.Split("/").Last();
@@ -313,7 +277,7 @@ namespace WebApp.Config.Coordinators
 
         private async Task<DeploymentExtended> GetDeploymentAsync(AssetRepository assetRepo, IManagementClientProvider managementClientProvider)
         {
-            using (var resourceClient = await managementClientProvider.CreateResourceManagementClient(Guid.Parse(assetRepo.SubscriptionId)))
+            using (var resourceClient = await managementClientProvider.CreateResourceManagementClient(assetRepo.SubscriptionId))
             {
                 try
                 {
@@ -337,7 +301,7 @@ namespace WebApp.Config.Coordinators
         {
             try
             {
-                using (var client = await managementClientProvider.CreateResourceManagementClient(Guid.Parse(repository.SubscriptionId)))
+                using (var client = await managementClientProvider.CreateResourceManagementClient(repository.SubscriptionId))
                 {
                     await client.ResourceGroups.CreateOrUpdateAsync(repository.ResourceGroupName,
                         new ResourceGroup { Location = repository.Subnet.Location });

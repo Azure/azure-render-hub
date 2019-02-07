@@ -21,11 +21,7 @@ namespace WebApp.Models.Storage.Create
             RepositoryName = cluster.Name;
             RepositoryType = cluster.RepositoryType;
             NewResourceGroupName = cluster.ResourceGroupName;
-
-            if (cluster.SubscriptionId != null)
-            {
-                SubscriptionId = new Guid(cluster.SubscriptionId);
-            }
+            SubscriptionId = cluster.SubscriptionId;
 
             if (cluster.Subnet?.ResourceId != null)
             {

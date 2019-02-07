@@ -108,10 +108,8 @@ namespace WebApp
             services.AddSingleton(p => p.GetRequiredService<CloudStorageAccount>().CreateCloudBlobClient());
             services.AddSingleton(p => p.GetRequiredService<CloudStorageAccount>().CreateCloudQueueClient());
             services.AddSingleton(p => p.GetRequiredService<CloudStorageAccount>().CreateCloudTableClient());
-            services.AddSingleton<BlobConfigurationStore>();
             services.AddSingleton<IKeyVaultMsiClient, KeyVaultMsiClient>();
 
-            services.AddSingleton<IPortalConfigurationProvider, PortalConfigurationProvider>();
             services.AddSingleton<BatchClientMsiProvider>();
             services.AddSingleton(Environment);
 
@@ -120,8 +118,6 @@ namespace WebApp
             services.AddMemoryCache();
 
             // These are scoped as they use the credentials of the user:
-            services.AddScoped<PortalConfigurationAccessor>();
-            services.AddScoped<ComputeManagementClientAccessor>();
             services.AddScoped<IAzureResourceProvider, AzureResourceProvider>();
 
             services.AddSingleton<IIdentityProvider, IdentityProvider>();
@@ -134,13 +130,31 @@ namespace WebApp
                 var cbc = p.GetRequiredService<CloudBlobClient>();
                 var kvClient = p.GetRequiredService<IKeyVaultMsiClient>();
                 var cache = p.GetRequiredService<IMemoryCache>();
-                return new CachingEnvironmentCoordinator(new EnvironmentCoordinator(cbc.GetContainerReference("environments"), kvClient), cache);
+                return new CachingEnvironmentCoordinator(new EnvironmentCoordinator(
+                    new GenericConfigCoordinator(cbc.GetContainerReference("environments")),
+                    kvClient), cache);
+            });
+
+            services.AddSingleton<IAssetRepoCoordinator>(p =>
+            {
+                var cbc = p.GetRequiredService<CloudBlobClient>();
+                return new AssetRepoCoordinator(
+                    new GenericConfigCoordinator(cbc.GetContainerReference("storage")),
+                    p.GetRequiredService<ITemplateProvider>(),
+                    p.GetRequiredService<IIdentityProvider>(),
+                    p.GetRequiredService<IDeploymentQueue>(),
+                    p.GetRequiredService<ILogger<AssetRepoCoordinator>>());
+            });
+
+            services.AddSingleton<IPackageCoordinator>(p =>
+            {
+                var cbc = p.GetRequiredService<CloudBlobClient>();
+                return new PackageCoordinator(
+                    new GenericConfigCoordinator(cbc.GetContainerReference("packages")));
             });
 
             services.AddScoped<IManagementClientProvider, ManagementClientHttpContextProvider>();
             services.AddScoped<IPoolCoordinator, PoolCoordinator>();
-            services.AddScoped<IPackageCoordinator, PackageCoordinator>();
-            services.AddSingleton<IAssetRepoCoordinator, AssetRepoCoordinator>();
             services.AddSingleton<IScaleUpRequestStore, ScaleUpRequestStore>();
 
             // While this does use credentials of the user, the data is not sensitive
