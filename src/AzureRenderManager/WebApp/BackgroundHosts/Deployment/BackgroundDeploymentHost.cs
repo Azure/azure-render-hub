@@ -110,8 +110,8 @@ namespace WebApp.BackgroundHosts.Deployment
                 return;
             }
 
-            using (var computeClient = await _managementClientProvider.CreateComputeManagementClient(Guid.Parse(fileServer.SubscriptionId)))
-            using (var networkClient = await _managementClientProvider.CreateNetworkManagementClient(Guid.Parse(fileServer.SubscriptionId)))
+            using (var computeClient = await _managementClientProvider.CreateComputeManagementClient(fileServer.SubscriptionId))
+            using (var networkClient = await _managementClientProvider.CreateNetworkManagementClient(fileServer.SubscriptionId))
             using (var cts = new CancellationTokenSource())
             {
                 // runs in background
@@ -193,7 +193,7 @@ namespace WebApp.BackgroundHosts.Deployment
 
         private async Task<DeploymentExtended> GetDeploymentAsync(AssetRepository assetRepo)
         {
-            using (var resourceClient = await _managementClientProvider.CreateResourceManagementClient(Guid.Parse(assetRepo.SubscriptionId)))
+            using (var resourceClient = await _managementClientProvider.CreateResourceManagementClient(assetRepo.SubscriptionId))
             {
                 try
                 {
@@ -210,8 +210,8 @@ namespace WebApp.BackgroundHosts.Deployment
 
         private async Task<(string privateIp, string publicIp)> GetIpAddressesAsync(NfsFileServer fileServer)
         {
-            using (var computeClient = await _managementClientProvider.CreateComputeManagementClient(Guid.Parse(fileServer.SubscriptionId)))
-            using (var networkClient = await _managementClientProvider.CreateNetworkManagementClient(Guid.Parse(fileServer.SubscriptionId)))
+            using (var computeClient = await _managementClientProvider.CreateComputeManagementClient(fileServer.SubscriptionId))
+            using (var networkClient = await _managementClientProvider.CreateNetworkManagementClient(fileServer.SubscriptionId))
             {
                 var vm = await computeClient.VirtualMachines.GetAsync(fileServer.ResourceGroupName, fileServer.VmName);
                 var networkIfaceName = vm.NetworkProfile.NetworkInterfaces.First().Id.Split("/").Last();

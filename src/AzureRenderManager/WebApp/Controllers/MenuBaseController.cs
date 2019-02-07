@@ -16,7 +16,8 @@ namespace WebApp.Controllers
         private readonly IPackageCoordinator _packageCoordinator;
         private readonly IEnvironmentCoordinator _environmentCoordinator;
 
-        public MenuBaseController(IEnvironmentCoordinator environmentCoordinator,
+        public MenuBaseController(
+            IEnvironmentCoordinator environmentCoordinator,
             IPackageCoordinator packageCoordinator,
             IAssetRepoCoordinator assetRepoCoordinator)
         {

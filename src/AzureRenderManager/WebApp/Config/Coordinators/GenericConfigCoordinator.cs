@@ -14,19 +14,21 @@ namespace WebApp.Config.Coordinators
     public class GenericConfigCoordinator : IGenericConfigCoordinator
     {
         private readonly JsonSerializerSettings _serializerSettings;
+        private readonly CloudBlobContainer _container;
 
-        public GenericConfigCoordinator()
+        public GenericConfigCoordinator(CloudBlobContainer container)
         {
+            _container = container;
             _serializerSettings = new JsonSerializerSettings();
             _serializerSettings.Converters.Add(new StringEnumConverter());
             _serializerSettings.Converters.Add(new AssetRepositoryConverter());
         }
 
-        public async Task<T> Get<T>(CloudBlobContainer container, string configName)
+        public async Task<T> Get<T>(string configName)
         {
             try
             {
-                var content = await BlobFor(container, configName).DownloadTextAsync();
+                var content = await BlobFor(_container, configName).DownloadTextAsync();
                 return JsonConvert.DeserializeObject<T>(content, _serializerSettings);
             }
             catch (StorageException ex) when (ex.RequestInformation.HttpStatusCode == 404)
@@ -36,22 +38,22 @@ namespace WebApp.Config.Coordinators
             }
         }
 
-        public async Task<bool> Remove(CloudBlobContainer container, string configName)
+        public async Task<bool> Remove(string configName)
         {
-            return await BlobFor(container, configName).DeleteIfExistsAsync();
+            return await BlobFor(_container, configName).DeleteIfExistsAsync();
         }
 
-        public async Task Update<T>(CloudBlobContainer container, T config, string configName, string originalName = null)
+        public async Task Update<T>(T config, string configName, string originalName = null)
         {
             var content = JsonConvert.SerializeObject(config, Formatting.Indented);
-            await HandleContainerDoesNotExist(container, () => BlobFor(container, configName).UploadTextAsync(content));
+            await HandleContainerDoesNotExist(() => BlobFor(_container, configName).UploadTextAsync(content));
             if (originalName != null && originalName != configName)
             {
-                await BlobFor(container, originalName).DeleteIfExistsAsync();
+                await BlobFor(_container, originalName).DeleteIfExistsAsync();
             }
         }
 
-        public async Task<List<string>> List(CloudBlobContainer container)
+        public async Task<List<string>> List()
         {
             var result = new List<string>();
 
@@ -60,7 +62,7 @@ namespace WebApp.Config.Coordinators
             {
                 do
                 {
-                    var page = await container.ListBlobsSegmentedAsync(token);
+                    var page = await _container.ListBlobsSegmentedAsync(token);
                     result.AddRange(page.Results.OfType<CloudBlockBlob>().Select(b => b.Name));
                     token = page.ContinuationToken;
                 } while (token != null);
@@ -77,7 +79,7 @@ namespace WebApp.Config.Coordinators
         private CloudBlockBlob BlobFor(CloudBlobContainer container, string configName)
             => container.GetBlockBlobReference(configName);
 
-        private async Task HandleContainerDoesNotExist(CloudBlobContainer container, Func<Task> action)
+        private async Task HandleContainerDoesNotExist(Func<Task> action)
         {
             try
             {
@@ -85,7 +87,7 @@ namespace WebApp.Config.Coordinators
             }
             catch (StorageException ex) when (ex.RequestInformation.ErrorCode == BlobErrorCodeStrings.ContainerNotFound)
             {
-                await container.CreateIfNotExistsAsync();
+                await _container.CreateIfNotExistsAsync();
                 await action();
             }
         }

@@ -39,28 +39,28 @@ namespace WebApp.Controllers
         private readonly IConfiguration _configuration;
         private readonly IHostingEnvironment _environment;
         private readonly IDeploymentQueue _deploymentQueue;
-        private readonly ComputeManagementClientAccessor _computeClient;
         private readonly IAzureResourceProvider _azureResourceProvider;
         private readonly IIdentityProvider _identityProvider;
+        private readonly IManagementClientProvider _managementClientProvider;
 
         public StorageController(
             IHostingEnvironment environment,
             IConfiguration configuration,
             IDeploymentQueue deploymentQueue,
-            ComputeManagementClientAccessor computeClient,
             CloudBlobClient cloudBlobClient,
             IAssetRepoCoordinator assetRepoCoordinator,
             IEnvironmentCoordinator environmentCoordinator,
             IPackageCoordinator packageCoordinator,
             IIdentityProvider identityProvider,
-            IAzureResourceProvider azureResourceProvider) : base(environmentCoordinator, packageCoordinator, assetRepoCoordinator)
+            IAzureResourceProvider azureResourceProvider,
+            IManagementClientProvider managementClientProvider) : base(environmentCoordinator, packageCoordinator, assetRepoCoordinator)
         {
             _environment = environment;
             _configuration = configuration;
             _deploymentQueue = deploymentQueue;
-            _computeClient = computeClient;
             _identityProvider = identityProvider;
             _azureResourceProvider = azureResourceProvider;
+            _managementClientProvider = managementClientProvider;
         }
 
         [HttpGet]
@@ -86,24 +86,24 @@ namespace WebApp.Controllers
                 return Conflict("Safeguard to stop me accidentally deleting this one");
             }
 
-            var networkClient = await GetNetworkManagementClient(repository.SubscriptionId);
-            var computeClient = await _computeClient.ForSubscription(repository.SubscriptionId);
-
             repository.ProvisioningState = "Deleting";
             await _assetRepoCoordinator.UpdateRepository(repository);
 
-            switch (repository)
+            using (var networkClient = await _managementClientProvider.CreateNetworkManagementClient(repository.SubscriptionId))
+            using (var computeClient = await _managementClientProvider.CreateComputeManagementClient(repository.SubscriptionId))
             {
-                case AvereCluster avere:
-                    await DeleteAvereClusterDeployment(networkClient, computeClient, avere);
-                    break;
+                switch (repository)
+                {
+                    case AvereCluster avere:
+                        throw new NotSupportedException("Unknown type of repository");
 
-                case NfsFileServer nfs:
-                    await DeleteNfsFileServerDeployment(networkClient, computeClient, nfs);
-                    break;
+                    case NfsFileServer nfs:
+                        await DeleteNfsFileServerDeployment(networkClient, computeClient, nfs);
+                        break;
 
-                default:
-                    throw new NotSupportedException("Unknown type of repository");
+                    default:
+                        throw new NotSupportedException("Unknown type of repository");
+                }
             }
 
             var removed = await _assetRepoCoordinator.RemoveRepository(repository);
@@ -200,7 +200,7 @@ namespace WebApp.Controllers
                 repository.Name = model.RepositoryName;
                 repository.ResourceGroupName = model.RepositoryName;
                 repository.RepositoryType = model.RepositoryType;
-                repository.SubscriptionId = model.SubscriptionId.ToString();
+                repository.SubscriptionId = model.SubscriptionId.Value;
                 repository.Subnet = new Subnet
                 {
                     ResourceId = model.SubnetResourceIdLocationAndAddressPrefix.Split(";")[0],
@@ -240,8 +240,7 @@ namespace WebApp.Controllers
             string error = null;
             string errorMessage = null;
 
-            var canCreate = await _azureResourceProvider.CanCreateResources(
-                Guid.Parse(repository.SubscriptionId));
+            var canCreate = await _azureResourceProvider.CanCreateResources(repository.SubscriptionId);
             if (!canCreate)
             {
                 error = "You don't have the required permissions to create resources";
@@ -251,7 +250,7 @@ namespace WebApp.Controllers
             else
             {
                 var canAssign = await _azureResourceProvider.CanCreateRoleAssignments(
-                    Guid.Parse(repository.SubscriptionId),
+                    repository.SubscriptionId,
                     repository.ResourceGroupName);
                 if (!canAssign)
                 {
@@ -315,7 +314,7 @@ namespace WebApp.Controllers
                         new ResourceGroup(repository.Subnet.Location));
 
                     await _azureResourceProvider.AssignManagementIdentityAsync(
-                        Guid.Parse(repository.SubscriptionId),
+                        repository.SubscriptionId,
                         repository.ResourceGroupResourceId,
                         AzureResourceProvider.ContributorRole,
                         _identityProvider.GetPortalManagedServiceIdentity());
@@ -398,9 +397,10 @@ namespace WebApp.Controllers
                 return NotFound($"No NFS File Server found with the name: {fileServerName}");
             }
 
-            // TODO: handle errors here
-            var computeClient = await _computeClient.ForSubscription(fileServer.SubscriptionId);
-            await computeClient.VirtualMachines.BeginDeallocateAsync(fileServer.ResourceGroupName, fileServer.VmName);
+            using (var computeClient = await _managementClientProvider.CreateComputeManagementClient(fileServer.SubscriptionId))
+            {
+                await computeClient.VirtualMachines.BeginDeallocateAsync(fileServer.ResourceGroupName, fileServer.VmName);
+            }
 
             return NoContent();
         }
@@ -414,9 +414,10 @@ namespace WebApp.Controllers
                 return NotFound($"No NFS File Server found with the name: {fileServerName}");
             }
 
-            // TODO: handle errors here
-            var computeClient = await _computeClient.ForSubscription(fileServer.SubscriptionId);
-            await computeClient.VirtualMachines.BeginStartWithHttpMessagesAsync(fileServer.ResourceGroupName, fileServer.VmName);
+            using (var computeClient = await _managementClientProvider.CreateComputeManagementClient(fileServer.SubscriptionId))
+            {
+                await computeClient.VirtualMachines.BeginStartWithHttpMessagesAsync(fileServer.ResourceGroupName, fileServer.VmName);
+            }
 
             return NoContent();
         }
@@ -425,7 +426,7 @@ namespace WebApp.Controllers
         // TODO: below here are other methods that can be injectable
         // #########################################################
 
-        private async Task<string> GetVirtualMachineStatus(string subscriptionId, string rgName, string vmName)
+        private async Task<string> GetVirtualMachineStatus(Guid subscriptionId, string rgName, string vmName)
         {
             var status = "Unknown";
             if (string.IsNullOrEmpty(rgName) || string.IsNullOrEmpty(vmName))
@@ -433,23 +434,25 @@ namespace WebApp.Controllers
                 return status;
             }
 
-            var computeClient = await _computeClient.ForSubscription(subscriptionId);
-            try
+            using (var computeClient = await _managementClientProvider.CreateComputeManagementClient(subscriptionId))
             {
-                var node = await computeClient.VirtualMachines.GetAsync(rgName, vmName, InstanceViewTypes.InstanceView);
-                status = node?.InstanceView?.Statuses?.FirstOrDefault(s => s.Code.StartsWith("PowerState/"))?.DisplayStatus;
-            }
-            catch (CloudException cEx)
-            {
-                if (cEx.Response.StatusCode == HttpStatusCode.NotFound || cEx.Body.Code == "NotFound")
+                try
                 {
-                    // Ignore
-                    Console.WriteLine($"Failed to get VM status as VM: {vmName} was not found.");
+                    var node = await computeClient.VirtualMachines.GetAsync(rgName, vmName, InstanceViewTypes.InstanceView);
+                    status = node?.InstanceView?.Statuses?.FirstOrDefault(s => s.Code.StartsWith("PowerState/"))?.DisplayStatus;
                 }
-                else
+                catch (CloudException cEx)
                 {
-                    // TODO: Log or do something else ...
-                    Console.WriteLine($"Failed to get VM status with error: {cEx.Message}.\n{cEx.StackTrace}");
+                    if (cEx.Response.StatusCode == HttpStatusCode.NotFound || cEx.Body.Code == "NotFound")
+                    {
+                        // Ignore
+                        Console.WriteLine($"Failed to get VM status as VM: {vmName} was not found.");
+                    }
+                    else
+                    {
+                        // TODO: Log or do something else ...
+                        Console.WriteLine($"Failed to get VM status with error: {cEx.Message}.\n{cEx.StackTrace}");
+                    }
                 }
             }
 
@@ -466,13 +469,6 @@ namespace WebApp.Controllers
             await Task.CompletedTask;
         }
 
-        private async Task<bool> DeleteAvereClusterDeployment(INetworkManagementClient networkClient
-            , IComputeManagementClient computeClient, AvereCluster repository)
-        {
-            await Task.CompletedTask;
-            return true;
-        }
-
         private async Task<bool> DeployNfsFileServer(ResourceManagementClient client, NfsFileServer repository, string password)
         {
             if (repository == null)
@@ -485,7 +481,6 @@ namespace WebApp.Controllers
                 await client.ResourceGroups.CreateOrUpdateAsync(repository.ResourceGroupName,
                     new ResourceGroup {Location = repository.Subnet.Location});
 
-                // TODO: Support multiple
                 var fileShare = repository.FileShares.FirstOrDefault();
                 var templateParams = new Dictionary<string, Dictionary<string, object>>
                 {
@@ -497,7 +492,6 @@ namespace WebApp.Controllers
                     {"sharesToExport", new Dictionary<string, object> {{"value", fileShare?.Name ?? ""}}},
                 };
 
-                // TODO: Tied to Linux?
                 var file = new FileInfo(Path.Combine(_environment.ContentRootPath, "Templates", "linux-file-server.json"));
                 var properties = new Deployment
                 {

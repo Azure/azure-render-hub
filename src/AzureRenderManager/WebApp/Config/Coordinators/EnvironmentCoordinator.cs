@@ -7,7 +7,6 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.WindowsAzure.Storage;
-using Microsoft.WindowsAzure.Storage.Blob;
 using WebApp.Arm;
 using WebApp.Code.Attributes;
 using WebApp.Code.Contract;
@@ -18,16 +17,13 @@ namespace WebApp.Config.Coordinators
     public class EnvironmentCoordinator : IEnvironmentCoordinator
     {
         private readonly IKeyVaultMsiClient _keyVaultClient;
-        private readonly CloudBlobContainer _environmentContainer;
         private readonly IGenericConfigCoordinator _configCoordinator;
 
         public EnvironmentCoordinator(
             IGenericConfigCoordinator configCoordinator,
-            CloudBlobContainer environmentContainer,
             IKeyVaultMsiClient keyVaultClient)
         {
             _configCoordinator = configCoordinator;
-            _environmentContainer = environmentContainer;
             _keyVaultClient = keyVaultClient;
         }
 
@@ -35,7 +31,7 @@ namespace WebApp.Config.Coordinators
         {
             try
             {
-                var result = await _configCoordinator.Get<RenderingEnvironment>(_environmentContainer, environmentName);
+                var result = await _configCoordinator.Get<RenderingEnvironment>(environmentName);
 
                 if (result.KeyVault != null)
                 {
@@ -61,12 +57,12 @@ namespace WebApp.Config.Coordinators
 
         public async Task<bool> RemoveEnvironment(RenderingEnvironment environment)
         {
-            return await _configCoordinator.Remove(_environmentContainer, environment.Name);
+            return await _configCoordinator.Remove(environment.Name);
         }
 
         public async Task UpdateEnvironment(RenderingEnvironment environment, string originalName = null)
         {
-            await _configCoordinator.Update(_environmentContainer, environment, environment.Name, originalName);
+            await _configCoordinator.Update(environment, environment.Name, originalName);
 
             if (environment.KeyVault != null)
             {
@@ -84,7 +80,7 @@ namespace WebApp.Config.Coordinators
 
         public async Task<List<string>> ListEnvironments()
         {
-            return await _configCoordinator.List(_environmentContainer);
+            return await _configCoordinator.List();
         }
 
         private async Task FindAndSaveCredentials(RenderingEnvironment environment, object obj)

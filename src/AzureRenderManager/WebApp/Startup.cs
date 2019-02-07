@@ -107,11 +107,8 @@ namespace WebApp
             services.AddSingleton(p => p.GetRequiredService<CloudStorageAccount>().CreateCloudBlobClient());
             services.AddSingleton(p => p.GetRequiredService<CloudStorageAccount>().CreateCloudQueueClient());
             services.AddSingleton(p => p.GetRequiredService<CloudStorageAccount>().CreateCloudTableClient());
-            services.AddSingleton<BlobConfigurationStore>();
             services.AddSingleton<IKeyVaultMsiClient, KeyVaultMsiClient>();
 
-            services.AddSingleton<IGenericConfigCoordinator, GenericConfigCoordinator>();
-            services.AddSingleton<IPortalConfigurationProvider, PortalConfigurationProvider>();
             services.AddSingleton<BatchClientMsiProvider>();
             services.AddSingleton(Environment);
 
@@ -120,8 +117,6 @@ namespace WebApp
             services.AddMemoryCache();
 
             // These are scoped as they use the credentials of the user:
-            services.AddScoped<PortalConfigurationAccessor>();
-            services.AddScoped<ComputeManagementClientAccessor>();
             services.AddScoped<IAzureResourceProvider, AzureResourceProvider>();
 
             services.AddSingleton<IIdentityProvider, IdentityProvider>();
@@ -135,8 +130,7 @@ namespace WebApp
                 var kvClient = p.GetRequiredService<IKeyVaultMsiClient>();
                 var cache = p.GetRequiredService<IMemoryCache>();
                 return new CachingEnvironmentCoordinator(new EnvironmentCoordinator(
-                    p.GetRequiredService<IGenericConfigCoordinator>(),
-                    cbc.GetContainerReference("environments"),
+                    new GenericConfigCoordinator(cbc.GetContainerReference("environments")),
                     kvClient), cache);
             });
 
@@ -144,16 +138,14 @@ namespace WebApp
             {
                 var cbc = p.GetRequiredService<CloudBlobClient>();
                 return new AssetRepoCoordinator(
-                    p.GetRequiredService<IGenericConfigCoordinator>(),
-                    cbc.GetContainerReference("storage"));
+                    new GenericConfigCoordinator(cbc.GetContainerReference("storage")));
             });
 
             services.AddSingleton<IPackageCoordinator>(p =>
             {
                 var cbc = p.GetRequiredService<CloudBlobClient>();
                 return new PackageCoordinator(
-                    p.GetRequiredService<IGenericConfigCoordinator>(),
-                    cbc.GetContainerReference("packages"));
+                    new GenericConfigCoordinator(cbc.GetContainerReference("packages")));
             });
 
             services.AddScoped<IManagementClientProvider, ManagementClientHttpContextProvider>();

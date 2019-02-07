@@ -18,12 +18,8 @@ namespace WebApp.Models.Storage.Create
                 OriginalName = repository.Name;
                 RepositoryName = repository.Name;
                 RepositoryType = repository.RepositoryType;
+                SubscriptionId = repository.SubscriptionId;
 
-                if (repository.SubscriptionId != null)
-                {
-                    SubscriptionId = new Guid(repository.SubscriptionId);
-                }
-                
                 if (repository.Subnet?.ResourceId != null)
                 {
                     SubnetResourceIdLocationAndAddressPrefix = repository.Subnet.ToString();

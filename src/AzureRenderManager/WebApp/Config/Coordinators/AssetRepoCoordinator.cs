@@ -14,22 +14,20 @@ namespace WebApp.Config.Coordinators
     public class AssetRepoCoordinator : IAssetRepoCoordinator
     {
         private readonly IGenericConfigCoordinator _configCoordinator;
-        private readonly CloudBlobContainer _container;
 
-        public AssetRepoCoordinator(IGenericConfigCoordinator configCoordinator, CloudBlobContainer container)
+        public AssetRepoCoordinator(IGenericConfigCoordinator configCoordinator)
         {
             _configCoordinator = configCoordinator;
-            _container = container;
         }
 
         public async Task<List<string>> ListRepositories()
         {
-            return await _configCoordinator.List(_container);
+            return await _configCoordinator.List();
         }
 
         public async Task<AssetRepository> GetRepository(string repoName)
         {
-            return await _configCoordinator.Get<AssetRepository>(_container, repoName);
+            return await _configCoordinator.Get<AssetRepository>(repoName);
         }
 
         public AssetRepository CreateRepository(AddAssetRepoBaseModel model)
@@ -49,12 +47,12 @@ namespace WebApp.Config.Coordinators
 
         public async Task UpdateRepository(AssetRepository repository, string originalName = null)
         {
-            await _configCoordinator.Update(_container, repository, repository.Name, originalName);
+            await _configCoordinator.Update(repository, repository.Name, originalName);
         }
 
         public async Task<bool> RemoveRepository(AssetRepository repository)
         {
-            return await _configCoordinator.Remove(_container, repository.Name);
+            return await _configCoordinator.Remove(repository.Name);
         }
     }
 }

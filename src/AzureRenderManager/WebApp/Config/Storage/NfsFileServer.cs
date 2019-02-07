@@ -39,7 +39,7 @@ namespace WebApp.Config.Storage
             }
 
             Name = nfsModel.RepositoryName;
-            SubscriptionId = nfsModel.SubscriptionId.ToString();
+            SubscriptionId = nfsModel.SubscriptionId.Value;
             ResourceGroupName = nfsModel.NewResourceGroupName;
             Subnet = new Subnet
             {
