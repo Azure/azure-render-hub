@@ -100,7 +100,7 @@ namespace WebApp.BackgroundHosts.Deployment
 
                         if (deploymentState == ProvisioningState.Running)
                         {
-                            Thread.Sleep(TimeSpan.FromSeconds(15));
+                            await Task.Delay(TimeSpan.FromSeconds(15), cts.Token);
                         }
                     }
                 }

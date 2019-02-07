@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.Management.Compute;
@@ -295,21 +296,18 @@ namespace WebApp.Config.Coordinators
                 var vm = await computeClient.VirtualMachines.GetAsync(fileServer.ResourceGroupName, fileServer.VmName);
                 var networkIfaceName = vm.NetworkProfile.NetworkInterfaces.First().Id.Split("/").Last();
                 var net = await networkClient.NetworkInterfaces.GetAsync(fileServer.ResourceGroupName, networkIfaceName);
+                var firstConfiguration = net.IpConfigurations.First();
 
-                var privateIp = net.IpConfigurations.First().PrivateIPAddress;
-                string publicIp = null;
+                var privateIp = firstConfiguration.PrivateIPAddress;
+                var publicIpId = firstConfiguration.PublicIPAddress?.Id;
+                var publicIp =
+                    publicIpId != null
+                        ? await networkClient.PublicIPAddresses.GetAsync(
+                            fileServer.ResourceGroupName,
+                            publicIpId.Split("/").Last())
+                        : null;
 
-                if (net.IpConfigurations.First().PublicIPAddress != null &&
-                    net.IpConfigurations.First().PublicIPAddress.Id != null)
-                {
-                    var pip = await networkClient.PublicIPAddresses.GetAsync(
-                        fileServer.ResourceGroupName,
-                        net.IpConfigurations.First().PublicIPAddress.Id.Split("/").Last());
-
-                    publicIp = pip.IpAddress;
-                }
-
-                return (privateIp, publicIp);
+                return (privateIp, publicIp?.IpAddress);
             }
         }
 
@@ -378,7 +376,8 @@ namespace WebApp.Config.Coordinators
             }
             catch (CloudException ex)
             {
-                Console.WriteLine($"Failed to deploy NFS server: {ex.Message}.\n{ex.StackTrace}");
+
+                _logger.LogError(ex, $"Failed to deploy NFS server: {ex.Message}.");
                 throw;
             }
         }
@@ -416,7 +415,7 @@ namespace WebApp.Config.Coordinators
 
         private static bool ResourceNotFound(CloudException ce)
         {
-            return ce.Body.Code == "ResourceNotFound" || ce.Body.Code == "ResourceGroupNotFound";
+            return ce.Response.StatusCode == HttpStatusCode.NotFound;
         }
     }
 }

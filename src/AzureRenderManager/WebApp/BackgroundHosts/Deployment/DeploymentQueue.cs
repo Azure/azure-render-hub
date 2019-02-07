@@ -47,7 +47,7 @@ namespace WebApp.BackgroundHosts.Deployment
 
         }
 
-        public async Task<IEnumerable<ActiveDeployment>> Get()
+        public async Task<List<ActiveDeployment>> Get()
         {
             var queue = _queueClient.GetQueueReference(QueueName);
             if (await queue.ExistsAsync())
@@ -57,17 +57,14 @@ namespace WebApp.BackgroundHosts.Deployment
                     TimeSpan.FromSeconds(60),
                     new QueueRequestOptions { RetryPolicy = new ExponentialRetry() },
                     null);
-                if (cloudMessages != null)
+                return cloudMessages.Select(cloudMessage =>
                 {
-                    return cloudMessages.Select(cloudMessage =>
-                    {
-                        var activeDeployment = JsonConvert.DeserializeObject<ActiveDeployment>(cloudMessage.AsString);
-                        activeDeployment.MessageId = cloudMessage.Id;
-                        activeDeployment.PopReceipt = cloudMessage.PopReceipt;
-                        activeDeployment.QueueName = QueueName;
-                        return activeDeployment;
-                    }).ToList();
-                }
+                    var activeDeployment = JsonConvert.DeserializeObject<ActiveDeployment>(cloudMessage.AsString);
+                    activeDeployment.MessageId = cloudMessage.Id;
+                    activeDeployment.PopReceipt = cloudMessage.PopReceipt;
+                    activeDeployment.QueueName = QueueName;
+                    return activeDeployment;
+                }).ToList();
             }
             return null;
         }

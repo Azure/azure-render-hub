@@ -8,7 +8,7 @@ namespace WebApp.BackgroundHosts.Deployment
 {
     public interface IDeploymentQueue
     {
-        Task<IEnumerable<ActiveDeployment>> Get();
+        Task<List<ActiveDeployment>> Get();
         Task Add(ActiveDeployment activeDeployment);
         Task Delete(string messageId, string popReceipt);
     }
