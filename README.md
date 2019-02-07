@@ -30,9 +30,9 @@ Login to the Azure portal and navigate to the Azure Active Directory application
 
  1. Click Settings on the application
  2. Click Required permissions
- 3. Click Add, Select the Microsoft Graph API and 'Sign in and read user profile' Delegated Permissions
+ 3. Click Add -> Select an API -> Select the Microsoft Graph API and 'Sign in and read user profile' Delegated Permissions
  4. Click Done to Save
- 5. Click Add, Select the Windows Azure Service Management API and 'Access Azure Service Management as organization users (preview)' Delegated Permissions
+ 5. Click Add -> Select an API -> Select the Windows Azure Service Management API and 'Access Azure Service Management as organization users (preview)' Delegated Permissions
  6. Click Done to Save
 
 #### Create a Client Key (Secret)
