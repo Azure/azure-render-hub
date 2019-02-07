@@ -3,8 +3,8 @@
 
 namespace WebApp.Models.Packages
 {
-    public class EditPackageModel {
-
+    public class EditPackageModel
+    {
         public string PackageName { get; set; }
 
         public string InstallCommandLine { get; set; }
