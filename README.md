@@ -3,11 +3,11 @@
 # Azure Render Farm Manager
 
 The Azure Render Farm Manager is an Azure Web App to create and manage your cloud or hybrid render farm with native support for PipelineFx Qube! and Thinkbox Deadline 10.
-The portal web app can be easily deployed into your existing Azure subscription.
+The portal Web App can be easily deployed into your existing Azure subscription.
 
 # Deploying the Portal
 
-Before you deploy the portal you'll need to create a Azure AD application to login.  You can create the application via the Azure cloud shell [here](https://shell.azure.com/powershell).
+Before you deploy the portal you'll need to create an Azure AD application to login.  You can create the application via the Azure Cloud Shell [here](https://shell.azure.com/powershell).
 
 ## Create an Azure AD Application
 
@@ -30,10 +30,10 @@ Login to the Azure portal and navigate to the Azure Active Directory application
 
  1. Click Settings on the application
  2. Click Required permissions
- 3. Click Add, Select the Microsoft Graph API and 'Sign in and read user profile' Delegated Permissions
- 4. Click Done to Save
- 5. Click Add, Select the Windows Azure Service Management API and 'Access Azure Service Management as organization users (preview)' Delegated Permissions
- 6. Click Done to Save
+ 3. Click Add, select the Microsoft Graph API and 'Sign in and read user profile' Delegated Permissions
+ 4. Click Done to save
+ 5. Click Add, select the Windows Azure Service Management API and 'Access Azure Service Management as organization users (preview)' Delegated Permissions
+ 6. Click Done to save
 
 #### Create a Client Key (Secret)
 
@@ -49,7 +49,7 @@ Login to the Azure portal and navigate to the Azure Active Directory application
 
 #### Set Application Access Permissions
 
-The following instructions allow you to restrict access to specific users in your organisation.
+The following instructions allow you to restrict access to specific users in your organization.
 
  1. In the Azure portal navigate to Azure Active Directory -> Enterprise Applications
  2. Search for the AAD application you created above using the Application ID
@@ -58,13 +58,13 @@ The following instructions allow you to restrict access to specific users in you
  5. Click Users and Groups
  6. Add each user that requires access to the portal
 
-#### Get the AAD Tenant Id
+#### Get the AAD Tenant ID
 
 In the Azure Portal navigate to Azure Active Directory -> Properties.  Note down the Directory ID, this is your Tenant ID that is required when you deploy the portal.
 
 ### Using Cloud Shell
 
-Simply copy the script snippet below, update the $webAppName variable and paste the script below into the cloud shell to create a new AAD application.  Keep in mind the Web App name must be globally unique and be a valid DNS name as it becomes the host in your web sites URL, e.g. https://< webAppName >.azurewebsites.net.
+Simply copy the script snippet below, update the $webAppName variable and paste the script below into the cloud shell to create a new AAD application.  Keep in mind the Web App name must be globally unique and be a valid DNS name as it becomes the host in your website's URL, e.g. https://< webAppName >.azurewebsites.net.
 
 ```
 $webAppName = "contosorenderfarmmanager"
@@ -96,18 +96,18 @@ Click the following link to start a deployment into your existing Azure subscrip
    <img alt="Deploy to Azure" src="http://azuredeploy.net/deploybutton.png"/>
 </a>
 
- - webSiteName - The Azure Web App name.  This must be globally unique and is also part of the websites DNS name.
+ - webSiteName - The Azure Web App name.  This must be globally unique and is also part of the website's DNS name.
  - hostingPlanName - The name of the hosting plan service, you can leave the default.
  - skuTier* - The Hosting Plan tier that determines the performance and cost for the Web App.  Plans and prices are available [here](https://azure.microsoft.com/en-au/pricing/details/app-service/plans/).
- - skuSize* - The instance size in the hosting plan tier, choose F1 for the free tier, SX for shared, BX for Basic, PX for premium.
- - aadTenantId - the AAD application tenant Id from the application you created above.
+ - skuSize* - The instance size in the hosting plan tier, choose F1 for the Free tier, SX for Shared, BX for Basic, PX for Premium.
+ - aadTenantId - the AAD application tenant ID from the application you created above.
  - aadDomain - the AAD tenant domain, i.e. constos.microsoft.com.
- - aadClientId - the AAD application (or client) Id from above.
+ - aadClientId - the AAD application (or client) ID from above.
  - aadClientSecret - the AAD application/client secret from above.
 
 \* Note that auto scale functionality requires the web site to always be running which requires Basic/B1 SKU or higher.
  
-After submitting the deployment your instance of the Portal will be deployed into your subscription.  You'll see a link to the deployment to monitor it's progress.
+After submitting the deployment your instance of the Portal will be deployed into your subscription.  You'll see a link to the deployment to monitor its progress.
 
 ## Accessing the Portal
 
@@ -115,7 +115,7 @@ Once the deployment is complete you can access the portal at: https://[webSiteNa
 
 ## Updating the Portal
 
-If updates or fixes have been pushed to the Azure Render Farm Manager portal repository you can deploy the latest changes with the click of a button.  Login to the Azure [portal](https://portal.azure.com) and navigate to the portals Resource Group -> Web App.  Click on Deployment Center and then click Sync to pull the latest changes.
+If updates or fixes have been pushed to the Azure Render Farm Manager portal repository you can deploy the latest changes with the click of a button.  Login to the Azure [portal](https://portal.azure.com) and navigate to the portal's Resource Group -> Web App.  Click on Deployment Center and then click Sync to pull the latest changes.
 
 # Contributing
 
