@@ -4,14 +4,14 @@ using WebApp.Config.Storage;
 
 namespace WebApp.Models.Storage.Details
 {
-    public class AvereClusterDetailsModel : AssetRepositoryDetailsModel
+    public class AvereClusterOverviewModel : AssetRepositoryOverviewModel
     {
-        public AvereClusterDetailsModel()
+        public AvereClusterOverviewModel()
         {
             // default constructor needed for model binding
         }
 
-        public AvereClusterDetailsModel(AvereCluster avereCluster)
+        public AvereClusterOverviewModel(AvereCluster avereCluster)
         {
             if (avereCluster != null)
             {
@@ -30,9 +30,11 @@ namespace WebApp.Models.Storage.Details
             }
         }
 
-        // overrides 
+        // overrides
 
-        public override string Status { get; set; }
+        public override ProvisioningState ProvisioningState { get; set; }
+
+        public override string PowerStatus { get; set; }
 
         public override string DisplayName => "Avere Cluster";
 

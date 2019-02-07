@@ -24,6 +24,9 @@ namespace WebApp.Models.Storage.Create
                 {
                     SubnetResourceIdLocationAndAddressPrefix = repository.Subnet.ToString();
                 }
+
+                UseEnvironment = !string.IsNullOrEmpty(repository.EnvironmentName);
+                SelectedEnvironmentName = repository.EnvironmentName;
             }
         }
 

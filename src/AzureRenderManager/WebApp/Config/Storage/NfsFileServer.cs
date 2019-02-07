@@ -17,6 +17,8 @@ namespace WebApp.Config.Storage
 
         public string Username { get; set; }
 
+        public string Password { get; set; }
+
         public string VmName { get; set; }
 
         public string PublicIp { get; set; }
@@ -28,7 +30,7 @@ namespace WebApp.Config.Storage
         public List<NfsFileShare> FileShares { get; set; }
 
         // e.g. 10.2.0.0/24
-        public List<string> AllowedNetworks { get; set; }
+        public List<string> AllowedNetworks { get; set; } = new List<string>();
 
         public override void UpdateFromModel(AddAssetRepoBaseModel addModel)
         {
@@ -51,15 +53,15 @@ namespace WebApp.Config.Storage
             VmSize = nfsModel.VmSize;
             VmName = nfsModel.VmName;
             Username = nfsModel.UserName;
+            Password = nfsModel.Password;
 
             AllowedNetworks = nfsModel.AllowedNetworks?.Split(",").ToList();
 
-            // TODO: allow for multiple of these
             FileShares = new List<NfsFileShare>(new[]
             {
                 new NfsFileShare
                 {
-                    Name = nfsModel.FileShareName,
+                    Name = nfsModel.FileShareName.StartsWith("/") ? nfsModel.FileShareName : $"/{nfsModel.FileShareName}",
                     Type = nfsModel.FileShareType,
                 }
             });

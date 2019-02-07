@@ -18,9 +18,12 @@ namespace WebApp.Config.Storage
 
         public Guid SubscriptionId { get; set; }
 
+        public string EnvironmentName { get; set; }
+
         public Subnet Subnet { get; set; }
 
-        public string ProvisioningState { get; set; }
+        [JsonConverter(typeof(StringEnumConverter))]
+        public ProvisioningState ProvisioningState { get; set; }
 
         public string ResourceGroupName { get; set; }
 
@@ -45,5 +48,15 @@ namespace WebApp.Config.Storage
         /// </summary>
         /// <param name="model"></param>
         public abstract void UpdateFromModel(AddAssetRepoBaseModel model);
+    }
+
+    public enum ProvisioningState
+    {
+        Unknown,
+        Creating, // Config creted, not deploying yet
+        Running, // ARM deployment
+        Succeeded, // Deployed and ready
+        Failed, // Something failed in the deployment
+        Deleting // Deleting
     }
 }

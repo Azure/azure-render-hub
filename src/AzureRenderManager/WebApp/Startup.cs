@@ -32,6 +32,7 @@ using WebApp.Config.Pools;
 using WebApp.Identity;
 using WebApp.Operations;
 using WebApp.Providers.Resize;
+using WebApp.Providers.Templates;
 using WebApp.Util;
 
 namespace WebApp
@@ -138,7 +139,11 @@ namespace WebApp
             {
                 var cbc = p.GetRequiredService<CloudBlobClient>();
                 return new AssetRepoCoordinator(
-                    new GenericConfigCoordinator(cbc.GetContainerReference("storage")));
+                    new GenericConfigCoordinator(cbc.GetContainerReference("storage")),
+                    p.GetRequiredService<ITemplateProvider>(),
+                    p.GetRequiredService<IIdentityProvider>(),
+                    p.GetRequiredService<IDeploymentQueue>(),
+                    p.GetRequiredService<ILogger<AssetRepoCoordinator>>());
             });
 
             services.AddSingleton<IPackageCoordinator>(p =>
@@ -159,13 +164,15 @@ namespace WebApp
             services.AddScoped<IPoolUsageProvider, PoolUsageProvider>();
 
             // Deployment background server
+            services.AddSingleton<ITemplateProvider, TemplateProvider>();
             services.AddSingleton<ILeaseMaintainer, LeaseMaintainer>();
             services.AddSingleton<IDeploymentQueue, DeploymentQueue>();
             services.AddSingleton<IHostedService>(p => new BackgroundDeploymentHost(
                 p.GetRequiredService<IAssetRepoCoordinator>(),
                 p.GetRequiredService<ManagementClientMsiProvider>(),
                 p.GetRequiredService<IDeploymentQueue>(),
-                p.GetRequiredService<ILeaseMaintainer>()));
+                p.GetRequiredService<ILeaseMaintainer>(),
+                p.GetRequiredService<ILogger<BackgroundDeploymentHost>>()));
             services.AddSingleton<IHostedService, AutoScaleHost>();
             services.AddSingleton<IAppInsightsQueryProvider, AppInsightsQueryProvider>();
             services.AddSingleton<IActiveNodeProvider, ActiveNodeProvider>();

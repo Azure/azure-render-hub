@@ -29,8 +29,8 @@
         <div class="section-title">
             <span class="step-index">1</span>
             <div class="step-header">
-                <h3>Configure NFS File Server</h3>
-                <p>Set up the details specific to the NFS file server</p>
+                <h3>Configure the File Server</h3>
+                <p>Set up the details specific to the file server</p>
             </div>
         </div>
         <div class="section-wrapper">
@@ -73,6 +73,7 @@
                     <label asp-for="AllowedNetworks">Allowed Networks</label>
                     <input asp-for="AllowedNetworks" placeholder="e.g. 10.2.0.0/24 (Optional)" value="@Model.AllowedNetworks" />
                     <span asp-validation-for="AllowedNetworks" class=""></span>
+                    <small>Optional networks to restrict incoming file share traffic to.  This is defaulted to the VNet's subnet range.</small>
                 </div>
             </div>
         </div>
@@ -92,6 +93,7 @@
                     <label asp-for="FileShareName">Share Name</label>
                     <input asp-for="FileShareName" placeholder="e.g. /exports/share" value="@Model.FileShareName"/>
                     <span asp-validation-for="FileShareName" class=""></span>
+                    <small>The share cannot be at the root of of the filesystem, e.g. /share</small>
                 </div>
                 <div class="form-element">
                     <label asp-for="FileShareType">Share Type</label>

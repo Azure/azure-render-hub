@@ -1,15 +1,12 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Azure.Management.Compute;
-using Microsoft.Azure.Management.Network;
-using Microsoft.Azure.Management.ResourceManager;
-using Microsoft.Azure.Management.ResourceManager.Models;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Rest;
+using Microsoft.Extensions.Logging;
 using Microsoft.Rest.Azure;
 using WebApp.BackgroundHosts.LeaseMaintainer;
 using WebApp.Code.Contract;
@@ -24,94 +21,61 @@ namespace WebApp.BackgroundHosts.Deployment
         private readonly IManagementClientProvider _managementClientProvider;
         private readonly IDeploymentQueue _deploymentQueue;
         private readonly ILeaseMaintainer _leaseMaintainer;
+        private readonly ILogger _logger;
 
         public BackgroundDeploymentHost(
             IAssetRepoCoordinator assetRepoCoordinator,
             IManagementClientProvider managementClientProvider,
             IDeploymentQueue deploymentQueue,
-            ILeaseMaintainer leaseMaintainer)
+            ILeaseMaintainer leaseMaintainer,
+            ILogger<BackgroundDeploymentHost> logger)
         {
             _assetRepoCoordinator = assetRepoCoordinator;
             _managementClientProvider = managementClientProvider;
             _deploymentQueue = deploymentQueue;
             _leaseMaintainer = leaseMaintainer;
+            _logger = logger;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             var interval = TimeSpan.FromSeconds(15);
+
             while (!stoppingToken.IsCancellationRequested)
             {
                 try
                 {
-                    var activeDeployment = await _deploymentQueue.Get();
-                    if (activeDeployment != null)
+                    var activeDeployments = await _deploymentQueue.Get();
+                    if (activeDeployments != null)
                     {
-                        if (activeDeployment.Action != null && activeDeployment.Action == "DeleteVM")
-                        {
-                            await DeleteDeployment(activeDeployment);
-                        }
-                        else
-                        {
-                            await MonitorDeployment(activeDeployment);
-                        }
+                        await Task.WhenAll(activeDeployments.Select(ExecuteMessage));
                     }
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine(ex);
+                    _logger.LogError(ex, ex.Message);
                 }
 
                 await Task.Delay(interval, stoppingToken);
             }
         }
 
-        private async Task MonitorDeployment(ActiveDeployment activeDeployment)
+        private async Task ExecuteMessage(ActiveDeployment activeDeployment)
         {
-            var state = "Succeeded";
-
-            var fileServer = (NfsFileServer) await _assetRepoCoordinator.GetRepository(activeDeployment.FileServerName);
-            if (fileServer != null)
+            if (activeDeployment.Action == "DeleteVM")
             {
-                string privateIp = null;
-                string publicIp = null;
-
-                var deployment = await GetDeploymentAsync(fileServer);
-                if (deployment != null)
-                {
-                    state = deployment.Properties.ProvisioningState;
-                    if (state != "Running")
-                    {
-                        (privateIp, publicIp) = await GetIpAddressesAsync(fileServer);
-                    }
-                }
-
-                fileServer = (NfsFileServer) await _assetRepoCoordinator.GetRepository(activeDeployment.FileServerName);
-                if (fileServer != null && (fileServer.ProvisioningState != state || privateIp != null))
-                {
-                    fileServer.ProvisioningState = state;
-                    fileServer.PrivateIp = privateIp;
-                    fileServer.PublicIp = publicIp;
-                    await _assetRepoCoordinator.UpdateRepository(fileServer);
-                }
+                await DeleteDeployment(activeDeployment);
             }
-
-            if (fileServer == null || state != "Running")
+            else
             {
-                await _deploymentQueue.Delete(activeDeployment.MessageId, activeDeployment.PopReceipt);
+                await MonitorDeployment(activeDeployment);
             }
         }
 
-        private async Task DeleteDeployment(ActiveDeployment activeDeployment)
+        private async Task MonitorDeployment(ActiveDeployment activeDeployment)
         {
-            var fileServer = (NfsFileServer) await _assetRepoCoordinator.GetRepository(activeDeployment.FileServerName);
-            if (fileServer == null)
-            {
-                return;
-            }
+            _logger.LogDebug($"Waiting for file server {activeDeployment.FileServerName} deployment to complete");
 
-            using (var computeClient = await _managementClientProvider.CreateComputeManagementClient(fileServer.SubscriptionId))
-            using (var networkClient = await _managementClientProvider.CreateNetworkManagementClient(fileServer.SubscriptionId))
             using (var cts = new CancellationTokenSource())
             {
                 // runs in background
@@ -119,46 +83,66 @@ namespace WebApp.BackgroundHosts.Deployment
 
                 try
                 {
-                    await IgnoreNotFound(async () =>
-                    {
-                        var vm = await computeClient.VirtualMachines.GetAsync(fileServer.ResourceGroupName, fileServer.VmName);
-                        await computeClient.VirtualMachines.DeleteAsync(fileServer.ResourceGroupName, fileServer.VmName);
-                    });
+                    var deploymentState = ProvisioningState.Running;
 
-                    if (activeDeployment.NicName != null)
+                    while (deploymentState == ProvisioningState.Running)
                     {
-                        await IgnoreNotFound(() => networkClient.NetworkInterfaces.DeleteAsync(fileServer.ResourceGroupName, activeDeployment.NicName));
+                        var fileServer = (NfsFileServer)await _assetRepoCoordinator.GetRepository(activeDeployment.FileServerName);
+                        if (fileServer == null)
+                        {
+                            break;
+                        }
+
+                        deploymentState =
+                            await _assetRepoCoordinator.UpdateRepositoryFromDeploymentAsync(
+                                fileServer,
+                                _managementClientProvider);
+
+                        if (deploymentState == ProvisioningState.Running)
+                        {
+                            await Task.Delay(TimeSpan.FromSeconds(15), cts.Token);
+                        }
+                    }
+                }
+                finally
+                {
+                    await _deploymentQueue.Delete(activeDeployment.MessageId, activeDeployment.PopReceipt);
+
+                    cts.Cancel();
+                    try
+                    {
+                        await renewer;
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        // expected
+                    }
+                }
+            }
+        }
+
+        private async Task DeleteDeployment(ActiveDeployment activeDeployment)
+        {
+            _logger.LogDebug($"Deleting file server {activeDeployment.FileServerName}");
+
+            using (var cts = new CancellationTokenSource())
+            {
+                // runs in background
+                var renewer = _leaseMaintainer.MaintainLease(activeDeployment, cts.Token);
+
+                try
+                {
+                    var repository = await _assetRepoCoordinator.GetRepository(activeDeployment.FileServerName);
+                    if (repository != null)
+                    {
+                        await _assetRepoCoordinator.DeleteRepositoryResourcesAsync(repository, _managementClientProvider);
                     }
 
-                    if (activeDeployment.NsgName != null)
-                    {
-                        await IgnoreNotFound(() => networkClient.NetworkSecurityGroups.BeginDeleteAsync(fileServer.ResourceGroupName, activeDeployment.NsgName));
-                    }
-
-                    if (activeDeployment.PipName != null)
-                    {
-                        await IgnoreNotFound(() => networkClient.PublicIPAddresses.BeginDeleteAsync(fileServer.ResourceGroupName, activeDeployment.PipName));
-                    }
-
-                    await IgnoreNotFound(() => computeClient.Disks.BeginDeleteAsync(fileServer.ResourceGroupName, activeDeployment.OsDiskName));
-
-                    await Task.WhenAll(
-                        activeDeployment.DataDiskNames.Select(
-                            dd => IgnoreNotFound(() => computeClient.Disks.BeginDeleteAsync(fileServer.ResourceGroupName, dd))));
-
-                    if (activeDeployment.AvSetName != null)
-                    {
-                        await IgnoreNotFound(() => computeClient.AvailabilitySets.DeleteAsync(fileServer.ResourceGroupName, activeDeployment.AvSetName));
-                    }
-
-                    await _assetRepoCoordinator.RemoveRepository(fileServer);
+                    await _deploymentQueue.Delete(activeDeployment.MessageId, activeDeployment.PopReceipt);
                 }
                 catch (CloudException e)
                 {
-                    if (e.Body != null && e.Body.Code != null && e.Body.Code == "ExpiredAuthenticationToken")
-                    {
-                        await _deploymentQueue.Delete(activeDeployment.MessageId, activeDeployment.PopReceipt);
-                    }
+                    _logger.LogError(e, $"Error deleting file server {activeDeployment.FileServerName}");
                 }
                 finally
                 {
@@ -173,64 +157,6 @@ namespace WebApp.BackgroundHosts.Deployment
                         // expected
                     }
                 }
-            }
-        }
-
-        private static async Task IgnoreNotFound(Func<Task> action)
-        {
-            try
-            {
-                await action();
-            }
-            catch (CloudException e)
-            {
-                if (e.Body.Code != "ResourceNotFound")
-                {
-                    throw;
-                }
-            }
-        }
-
-        private async Task<DeploymentExtended> GetDeploymentAsync(AssetRepository assetRepo)
-        {
-            using (var resourceClient = await _managementClientProvider.CreateResourceManagementClient(assetRepo.SubscriptionId))
-            {
-                try
-                {
-                    return await resourceClient.Deployments.GetAsync(
-                        assetRepo.ResourceGroupName,
-                        assetRepo.DeploymentName);
-                }
-                catch (CloudException)
-                {
-                    return null;
-                }
-            }
-        }
-
-        private async Task<(string privateIp, string publicIp)> GetIpAddressesAsync(NfsFileServer fileServer)
-        {
-            using (var computeClient = await _managementClientProvider.CreateComputeManagementClient(fileServer.SubscriptionId))
-            using (var networkClient = await _managementClientProvider.CreateNetworkManagementClient(fileServer.SubscriptionId))
-            {
-                var vm = await computeClient.VirtualMachines.GetAsync(fileServer.ResourceGroupName, fileServer.VmName);
-                var networkIfaceName = vm.NetworkProfile.NetworkInterfaces.First().Id.Split("/").Last();
-                var net = await networkClient.NetworkInterfaces.GetAsync(fileServer.ResourceGroupName, networkIfaceName);
-
-                var privateIp = net.IpConfigurations.First().PrivateIPAddress;
-                string publicIp = null;
-
-                if (net.IpConfigurations.First().PublicIPAddress != null &&
-                    net.IpConfigurations.First().PublicIPAddress.Id != null)
-                {
-                    var pip = await networkClient.PublicIPAddresses.GetAsync(
-                        fileServer.ResourceGroupName,
-                        net.IpConfigurations.First().PublicIPAddress.Id.Split("/").Last());
-
-                    publicIp = pip.IpAddress;
-                }
-
-                return (privateIp, publicIp);
             }
         }
     }

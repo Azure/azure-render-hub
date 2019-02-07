@@ -84,6 +84,13 @@
       "metadata": {
         "description": "Comma separated list of shares to export, e.g. myscenes,mytextures"
       }
+    },
+    "environmentTag": {
+      "type": "string",
+      "defaultValue": "Global",
+      "metadata": {
+        "description": "Environment tag"
+      }
     }
   },
   "variables": {
@@ -103,6 +110,9 @@
       "name": "[variables('avSetName')]",
       "apiVersion": "[variables('computeApiVersion')]",
       "location": "[resourceGroup().location]",
+      "tags": {
+        "Environment": "parameters('environmentTag')"
+      },
       "properties": {
         "platformFaultDomainCount": "2",
         "platformUpdateDomainCount": "2",
@@ -114,6 +124,9 @@
       "name": "nsg",
       "apiVersion": "[variables('armApiVersion')]",
       "location": "[resourceGroup().location]",
+      "tags": {
+        "Environment": "parameters('environmentTag')"
+      },
       "properties": {
         "securityRules": [
           {
@@ -140,6 +153,9 @@
       "type": "Microsoft.Network/networkInterfaces",
       "name": "nic",
       "location": "[resourceGroup().location]",
+      "tags": {
+        "Environment": "parameters('environmentTag')"
+      },
       "dependsOn": [
         "Microsoft.Network/networkSecurityGroups/nsg"
       ],
@@ -164,6 +180,9 @@
       "name": "[concat('datadisk', copyindex())]",
       "apiVersion": "[variables('computeApiVersion')]",
       "location": "[resourceGroup().location]",
+      "tags": {
+        "Environment": "parameters('environmentTag')"
+      },
       "copy": {
         "name": "foo",
         "count": "[variables('masterDiskCount')]"
@@ -181,6 +200,9 @@
       "type": "Microsoft.Compute/virtualMachines",
       "name": "[parameters('vmName')]",
       "location": "[resourceGroup().location]",
+      "tags": {
+        "Environment": "parameters('environmentTag')"
+      },
       "dependsOn": [
         "[concat('Microsoft.Network/networkInterfaces/', 'nic')]",
         "[concat('Microsoft.Compute/availabilitySets/', variables('avSetName'))]",

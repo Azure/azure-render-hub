@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 using System;
 using System.ComponentModel.DataAnnotations;
-
+using System.Text.RegularExpressions;
 using WebApp.Code;
 using WebApp.Code.Validators;
 using WebApp.Config.Storage;
@@ -59,6 +59,7 @@ namespace WebApp.Models.Storage.Create
         public string Password { get; set; }
 
         [Required]
+        [RegularExpression("^(/[^/ ]*)+/?$", ErrorMessage = "Invalid Linux file path")]
         public string FileShareName { get; set; }
 
         // NFS or SMB
@@ -66,6 +67,8 @@ namespace WebApp.Models.Storage.Create
         public string FileShareType { get; set; }
 
         // e.g. 10.2.0.0/24
+        [RegularExpression(@"^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/(3[0-2]|[1-2][0-9]|[0-9]))$",
+            ErrorMessage = Validation.Errors.Regex.SubnetAddressRange)]
         public string AllowedNetworks { get; set; }
     }
 }
