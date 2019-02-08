@@ -27,7 +27,7 @@ namespace WebApp.CostManagement
 
         public async Task<UsageResponse> GetUsageForResourceGroup(Guid subscriptionId, string resourceGroupName, UsageRequest usageRequest)
         {
-            var uri = GetUri($"/subscriptions/{subscriptionId}/resourcegroups/{resourceGroupName}");
+            var uri = GetUri($"subscriptions/{subscriptionId}/resourcegroups/{resourceGroupName}");
 
             var request =
                 new HttpRequestMessage(HttpMethod.Post, uri)
