@@ -29,6 +29,7 @@ using WebApp.Code.Extensions;
 using WebApp.Config;
 using WebApp.Config.Coordinators;
 using WebApp.Config.Pools;
+using WebApp.CostManagement;
 using WebApp.Identity;
 using WebApp.Operations;
 using WebApp.Providers.Resize;
@@ -118,6 +119,7 @@ namespace WebApp
             services.AddMemoryCache();
 
             // These are scoped as they use the credentials of the user:
+            services.AddHttpClient<CostManagementClientAccessor>(); // register for CostManagementClientAccessor
             services.AddScoped<IAzureResourceProvider, AzureResourceProvider>();
 
             services.AddSingleton<IIdentityProvider, IdentityProvider>();

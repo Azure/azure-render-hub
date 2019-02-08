@@ -1,15 +1,73 @@
-﻿@{
+﻿@using Newtonsoft.Json;
+@using System.Linq;
+@model IReadOnlyList<(string envName, WebApp.CostManagement.UsageResponse data)>
+@{
     ViewBag.Title = "Reporting";
 }
 
 @section Breadcrumb
-    {
+{
     <a asp-controller="Reporting" asp-action="Index">Reporting</a>
 }
 
 <script src="~/js/Chart.bundle.min.js" asp-append-version="true"></script>
 
 <div class="page-header">
-    <h1>Reporting - Coming Soon</h1>
-    <p>Reporting will give you and overview of your environments and their associated compute, storage and networking costs.</p>
+    <h1>Reporting</h1>
+    @foreach (var env in Model.OrderBy(env => env.envName))
+    {
+        <h2>@env.envName</h2>
+        @if (env.data.Properties == null)
+        {
+            <p>Cost not yet supported for this environment.</p>
+
+            continue;
+        }
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Item</th>
+                    <th>Cost</th>
+                </tr>
+            </thead>
+            <tbody>
+                @{
+                    var cols = env.data.Properties.Columns;
+                    var dateIndex = cols.FindIndex(col => col.Name == "UsageDate");
+                    var costIndex = cols.FindIndex(col => col.Name == "PreTaxCost");
+                    var currencyIndex = cols.FindIndex(col => col.Name == "Currency");
+                    var meterCategoryIndex = cols.FindIndex(col => col.Name == "MeterSubCategory");
+                }
+
+                @foreach (var day in env.data.Properties.Rows.GroupBy(row => row[dateIndex]).OrderBy(g => g.Key))
+                {
+                    string FormatCost(IReadOnlyList<object> row)
+                        => string.Format("{0:0.00} {1}", row[costIndex], row[currencyIndex]);
+
+                    string FormatItem(IReadOnlyList<object> row)
+                        => row[meterCategoryIndex].ToString();
+
+                    // Render the first item with the header
+                    <tr>
+                        <th rowspan="@day.Count()" scope="row">
+                            @day.Key
+                        </th>
+                        <td>@FormatItem(day.First())</td>
+                        <td>@FormatCost(day.First())</td>
+                    </tr>
+
+                    // Render the rest without
+                    @foreach (var item in day.Skip(1))
+                    { 
+                        <tr>
+                            <td>@FormatItem(item)</td>
+                            <td>@FormatCost(item)</td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    }
 </div>
