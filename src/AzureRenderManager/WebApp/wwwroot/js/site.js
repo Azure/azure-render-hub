@@ -39,7 +39,7 @@ function getChartJsConfig(title, label) {
                 mode: 'x'
             },
             zoom: {
-                enabled: false,
+                enabled: true,
                 mode: 'x'
             },
             responsive: true,
