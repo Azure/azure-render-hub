@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 using System;
 using System.Threading.Tasks;
-using Microsoft.ApplicationInsights;
+
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Builder;
@@ -13,9 +13,11 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Blob;
+using Polly;
 using WebApp.AppInsights;
 using WebApp.AppInsights.ActiveNodes;
 using WebApp.AppInsights.PoolUsage;
@@ -29,6 +31,7 @@ using WebApp.Code.Extensions;
 using WebApp.Config;
 using WebApp.Config.Coordinators;
 using WebApp.Config.Pools;
+using WebApp.Config.Storage;
 using WebApp.CostManagement;
 using WebApp.Identity;
 using WebApp.Operations;
@@ -118,8 +121,14 @@ namespace WebApp
             services.AddHttpContextAccessor();
             services.AddMemoryCache();
 
+            // Add HttpClient with retry policy for contacting Cost Management
+            services.AddHttpClient<CostManagementClientAccessor>();
+                // -- This is to be restored when CostManagement returns a non-500 for invalid subs.
+                ////.AddTransientHttpErrorPolicy(b =>
+                ////    b.WaitAndRetryAsync(
+                ////        new[] { TimeSpan.Zero, TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(5) }));
+
             // These are scoped as they use the credentials of the user:
-            services.AddHttpClient<CostManagementClientAccessor>(); // register for CostManagementClientAccessor
             services.AddScoped<IAzureResourceProvider, AzureResourceProvider>();
 
             services.AddSingleton<IIdentityProvider, IdentityProvider>();
@@ -132,16 +141,28 @@ namespace WebApp
                 var cbc = p.GetRequiredService<CloudBlobClient>();
                 var kvClient = p.GetRequiredService<IKeyVaultMsiClient>();
                 var cache = p.GetRequiredService<IMemoryCache>();
-                return new CachingEnvironmentCoordinator(new EnvironmentCoordinator(
-                    new GenericConfigCoordinator(cbc.GetContainerReference("environments")),
-                    kvClient), cache);
+                var logger = p.GetRequiredService<ILogger<EnvironmentSecretsRepository>>();
+
+                // note that cache is around the secrets so they don't have to be re-fetched
+                return
+                    new EnvironmentCoordinator(
+                        new CachingConfigRepository<RenderingEnvironment>(
+                            new EnvironmentSecretsRepository(
+                                new GenericConfigRepository<RenderingEnvironment>(
+                                    cbc.GetContainerReference("environments")),
+                                    kvClient,
+                                    logger),
+                            cache));
             });
 
             services.AddSingleton<IAssetRepoCoordinator>(p =>
             {
                 var cbc = p.GetRequiredService<CloudBlobClient>();
+                var cache = p.GetRequiredService<IMemoryCache>();
                 return new AssetRepoCoordinator(
-                    new GenericConfigCoordinator(cbc.GetContainerReference("storage")),
+                    new CachingConfigRepository<AssetRepository>(
+                        new GenericConfigRepository<AssetRepository>(cbc.GetContainerReference("storage")), 
+                        cache),
                     p.GetRequiredService<ITemplateProvider>(),
                     p.GetRequiredService<IIdentityProvider>(),
                     p.GetRequiredService<IDeploymentQueue>(),
@@ -151,8 +172,11 @@ namespace WebApp
             services.AddSingleton<IPackageCoordinator>(p =>
             {
                 var cbc = p.GetRequiredService<CloudBlobClient>();
+                var cache = p.GetRequiredService<IMemoryCache>();
                 return new PackageCoordinator(
-                    new GenericConfigCoordinator(cbc.GetContainerReference("packages")));
+                    new CachingConfigRepository<InstallationPackage>(
+                        new GenericConfigRepository<InstallationPackage>(cbc.GetContainerReference("packages")),
+                        cache));
             });
 
             services.AddScoped<IManagementClientProvider, ManagementClientHttpContextProvider>();

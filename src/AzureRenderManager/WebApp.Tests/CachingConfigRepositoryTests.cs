@@ -11,32 +11,32 @@ using Xunit;
 
 namespace WebApp.Tests
 {
-    public class CachingEnvironmentCoordinatorTests
+    public class CachingConfigRepositoryTests
     {
-        class TestEnvironmentCoordinator : IEnvironmentCoordinator
+        class TestEnvironmentCoordinator : IConfigRepository<RenderingEnvironment>
         {
             private readonly Dictionary<string, RenderingEnvironment> _map = new Dictionary<string, RenderingEnvironment>();
 
-            public Task<RenderingEnvironment> GetEnvironment(string envId)
+            public Task<RenderingEnvironment> Get(string envId)
             {
                 _map.TryGetValue(envId, out var result);
                 return Task.FromResult(result);
             }
 
-            public Task<List<string>> ListEnvironments()
+            public Task<List<string>> List()
             {
                 return Task.FromResult(_map.Keys.ToList());
             }
 
-            public Task<bool> RemoveEnvironment(RenderingEnvironment environment)
+            public Task<bool> Remove(string name)
             {
-                return Task.FromResult(_map.Remove(environment.Name));
+                return Task.FromResult(_map.Remove(name));
             }
 
-            public Task UpdateEnvironment(RenderingEnvironment environment, string originalName = null)
+            public Task Update(RenderingEnvironment environment, string newName, string originalName)
             {
-                _map[environment.Name] = environment;
-                if (originalName != null && originalName != environment.Name)
+                _map[newName] = environment;
+                if (originalName != null && originalName != newName)
                 {
                     _map.Remove(originalName);
                 }
@@ -52,19 +52,19 @@ namespace WebApp.Tests
         public async Task CachesOnGet()
         {
             var inner = new TestEnvironmentCoordinator();
-            var outer = new CachingEnvironmentCoordinator(inner, NewCache());
+            var outer = new CachingConfigRepository<RenderingEnvironment>(inner, NewCache());
 
             var env = NewEnv();
 
             // load cache
-            await inner.UpdateEnvironment(env);
-            await outer.GetEnvironment(env.Name);
+            await inner.Update(env, env.Name, null);
+            await outer.Get(env.Name);
 
             // remove real value
-            await inner.RemoveEnvironment(env);
+            await inner.Remove(env.Name);
 
             // check it's still cached
-            var result = await outer.GetEnvironment(env.Name);
+            var result = await outer.Get(env.Name);
             Assert.Equal(env, result);
         }
 
@@ -72,17 +72,17 @@ namespace WebApp.Tests
         public async Task CachesToListOnGet()
         {
             var inner = new TestEnvironmentCoordinator();
-            var outer = new CachingEnvironmentCoordinator(inner, NewCache());
+            var outer = new CachingConfigRepository<RenderingEnvironment>(inner, NewCache());
 
             var env = NewEnv();
 
-            await outer.ListEnvironments(); // load list cache
+            await outer.List(); // load list cache
 
             // load inner then get it 
-            await inner.UpdateEnvironment(env);
-            await outer.GetEnvironment(env.Name);
+            await inner.Update(env, env.Name, null);
+            await outer.Get(env.Name);
 
-            var result = await outer.ListEnvironments();
+            var result = await outer.List();
             Assert.Equal(env.Name, result.Single());
         }
 
@@ -90,19 +90,19 @@ namespace WebApp.Tests
         public async Task OverallListUpdatedWhenAdded()
         {
             var inner = new TestEnvironmentCoordinator();
-            var outer = new CachingEnvironmentCoordinator(inner, NewCache());
+            var outer = new CachingConfigRepository<RenderingEnvironment>(inner, NewCache());
 
             // load list cache
-            await outer.ListEnvironments();
+            await outer.List();
 
             var env = NewEnv();
-            await outer.UpdateEnvironment(env);
+            await outer.Update(env, env.Name, null);
 
             // remove from inner
-            await inner.RemoveEnvironment(env);
+            await inner.Remove(env.Name);
 
             // make sure list is cached
-            var result = await outer.ListEnvironments();
+            var result = await outer.List();
             Assert.Equal(env.Name, result.Single());
         }
 
@@ -110,14 +110,14 @@ namespace WebApp.Tests
         public async Task EnvironmentUncachedWhenRemoved()
         {
             var inner = new TestEnvironmentCoordinator();
-            var outer = new CachingEnvironmentCoordinator(inner, NewCache());
+            var outer = new CachingConfigRepository<RenderingEnvironment>(inner, NewCache());
 
             var env = NewEnv();
-            await outer.UpdateEnvironment(env);
+            await outer.Update(env, env.Name, null);
 
-            await outer.RemoveEnvironment(env);
+            await outer.Remove(env.Name);
 
-            Assert.Null(await outer.GetEnvironment(env.Name));
+            Assert.Null(await outer.Get(env.Name));
         }
 
         [Fact]
@@ -127,18 +127,18 @@ namespace WebApp.Tests
             for (int i = 0; i < 3; ++i)
             {
                 var inner = new TestEnvironmentCoordinator();
-                var outer = new CachingEnvironmentCoordinator(inner, NewCache());
+                var outer = new CachingConfigRepository<RenderingEnvironment>(inner, NewCache());
 
-                if (i == 0) await outer.ListEnvironments();
+                if (i == 0) await outer.List();
 
                 var env = NewEnv();
-                await outer.UpdateEnvironment(env);
+                await outer.Update(env, env.Name, null);
 
-                if (i == 1) await outer.ListEnvironments();
+                if (i == 1) await outer.List();
 
-                await outer.RemoveEnvironment(env);
+                await outer.Remove(env.Name);
 
-                Assert.Empty(await outer.ListEnvironments());
+                Assert.Empty(await outer.List());
             }
         }
 
@@ -146,15 +146,15 @@ namespace WebApp.Tests
         public async Task OriginalEnvironmentUncachedWhenRenamed()
         {
             var inner = new TestEnvironmentCoordinator();
-            var outer = new CachingEnvironmentCoordinator(inner, NewCache());
+            var outer = new CachingConfigRepository<RenderingEnvironment>(inner, NewCache());
 
             var env = NewEnv();
-            await outer.UpdateEnvironment(env);
+            await outer.Update(env, env.Name, null);
 
             var renamedEnv = NewEnv();
-            await outer.UpdateEnvironment(renamedEnv, env.Name);
+            await outer.Update(renamedEnv, renamedEnv.Name, env.Name);
 
-            var result = await outer.GetEnvironment(env.Name);
+            var result = await outer.Get(env.Name);
             Assert.Null(result);
         }
 
@@ -165,19 +165,19 @@ namespace WebApp.Tests
             for (int i = 0; i < 3; ++i)
             {
                 var inner = new TestEnvironmentCoordinator();
-                var outer = new CachingEnvironmentCoordinator(inner, NewCache());
+                var outer = new CachingConfigRepository<RenderingEnvironment>(inner, NewCache());
 
-                if (i == 0) await outer.ListEnvironments();
+                if (i == 0) await outer.List();
                 
                 var env = NewEnv();
-                await outer.UpdateEnvironment(env);
+                await outer.Update(env, env.Name, null);
 
-                if (i == 1) await outer.ListEnvironments();
+                if (i == 1) await outer.List();
 
                 var renamedEnv = NewEnv();
-                await outer.UpdateEnvironment(renamedEnv, env.Name);
+                await outer.Update(renamedEnv, renamedEnv.Name, env.Name);
 
-                var result = await outer.ListEnvironments();
+                var result = await outer.List();
                 Assert.Equal(renamedEnv.Name, result.Single());
             }
         }

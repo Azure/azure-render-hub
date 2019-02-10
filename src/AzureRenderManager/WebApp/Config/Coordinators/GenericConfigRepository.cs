@@ -11,20 +11,27 @@ using WebApp.Code.JsonConverters;
 
 namespace WebApp.Config.Coordinators
 {
-    public class GenericConfigCoordinator : IGenericConfigCoordinator
+    // This stores the configs as JSON-serialized blobs in the specified container.
+    public class GenericConfigRepository<T> : IConfigRepository<T>
     {
-        private readonly JsonSerializerSettings _serializerSettings;
+        private static readonly JsonSerializerSettings _serializerSettings
+            = new JsonSerializerSettings
+            {
+                Converters =
+                {
+                    new StringEnumConverter(),
+                    new AssetRepositoryConverter(),
+                }
+            };
+
         private readonly CloudBlobContainer _container;
 
-        public GenericConfigCoordinator(CloudBlobContainer container)
+        public GenericConfigRepository(CloudBlobContainer container)
         {
             _container = container;
-            _serializerSettings = new JsonSerializerSettings();
-            _serializerSettings.Converters.Add(new StringEnumConverter());
-            _serializerSettings.Converters.Add(new AssetRepositoryConverter());
         }
 
-        public async Task<T> Get<T>(string configName)
+        public async Task<T> Get(string configName)
         {
             try
             {
@@ -34,7 +41,7 @@ namespace WebApp.Config.Coordinators
             catch (StorageException ex) when (ex.RequestInformation.HttpStatusCode == 404)
             {
                 // handle both blob does not exist and container does not exist
-                return default(T);
+                return default;
             }
         }
 
@@ -43,7 +50,7 @@ namespace WebApp.Config.Coordinators
             return await BlobFor(_container, configName).DeleteIfExistsAsync();
         }
 
-        public async Task Update<T>(T config, string configName, string originalName = null)
+        public async Task Update(T config, string configName, string originalName = null)
         {
             var content = JsonConvert.SerializeObject(config, Formatting.Indented);
             await HandleContainerDoesNotExist(() => BlobFor(_container, configName).UploadTextAsync(content));

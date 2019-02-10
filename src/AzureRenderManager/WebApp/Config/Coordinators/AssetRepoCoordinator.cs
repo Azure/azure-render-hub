@@ -25,14 +25,14 @@ namespace WebApp.Config.Coordinators
 {
     public class AssetRepoCoordinator : IAssetRepoCoordinator
     {
-        private readonly IGenericConfigCoordinator _configCoordinator;
+        private readonly IConfigRepository<AssetRepository> _configCoordinator;
         private readonly ITemplateProvider _templateProvider;
         private readonly IIdentityProvider _identityProvider;
         private readonly IDeploymentQueue _deploymentQueue;
         private readonly ILogger _logger;
 
         public AssetRepoCoordinator(
-            IGenericConfigCoordinator configCoordinator,
+            IConfigRepository<AssetRepository> configCoordinator,
             ITemplateProvider templateProvider,
             IIdentityProvider identityProvider,
             IDeploymentQueue deploymentQueue,
@@ -52,7 +52,7 @@ namespace WebApp.Config.Coordinators
 
         public async Task<AssetRepository> GetRepository(string repoName)
         {
-            return await _configCoordinator.Get<AssetRepository>(repoName);
+            return await _configCoordinator.Get(repoName);
         }
 
         public AssetRepository CreateRepository(AddAssetRepoBaseModel model)
