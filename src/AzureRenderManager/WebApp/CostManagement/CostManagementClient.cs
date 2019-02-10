@@ -25,9 +25,9 @@ namespace WebApp.CostManagement
         private static Uri GetUri(string scope)
             => new Uri($"https://management.azure.com/{scope}/providers/Microsoft.CostManagement/query?api-version=2019-01-01");
 
-        public async Task<UsageResponse> GetUsageForResourceGroup(Guid subscriptionId, string resourceGroupName, UsageRequest usageRequest)
+        public async Task<UsageResponse> GetUsageForSubscription(Guid subscriptionId, UsageRequest usageRequest)
         {
-            var uri = GetUri($"subscriptions/{subscriptionId}/resourcegroups/{resourceGroupName}");
+            var uri = GetUri($"subscriptions/{subscriptionId}");
 
             var request =
                 new HttpRequestMessage(HttpMethod.Post, uri)
