@@ -6,7 +6,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using WebApp.Config;
-using WebApp.Operations;
 
 namespace WebApp.AppInsights.PoolUsage
 {
@@ -14,7 +13,7 @@ namespace WebApp.AppInsights.PoolUsage
     {
         private const string EnvironmentUsage = @"
 customMetrics
-| where timestamp > ago(7d)
+| where timestamp > ago(14d)
 | extend poolName = cloud_RoleName
 | where poolName != """"
 | summarize coreCount = dcountif(strcat(cloud_RoleInstance, tostring(customDimensions[""CPU #""])), customDimensions[""CPU #""] != """"), nodeCount = dcount(cloud_RoleInstance) by poolName, bin(timestamp, 15m)
@@ -24,7 +23,7 @@ customMetrics
 
         private const string PoolUsage = @"
 customMetrics
-| where timestamp > ago(7d)
+| where timestamp > ago(14d)
 | extend poolName = cloud_RoleName
 | where poolName != """"
 | extend isLowPriority = iif(cloud_RoleInstance endswith 'p', true, false)
@@ -58,6 +57,23 @@ customMetrics
                 {
                     var poolUsage = new PoolUsageResult {PoolName = poolName};
                     poolUsage.Values = values.Where(p => p.PoolName == poolName).OrderBy(p => p.Timestamp).ToList();
+                    var lastUsage = poolUsage.Values.LastOrDefault();
+                    if (lastUsage != null && lastUsage.Timestamp < DateTime.UtcNow.Subtract(TimeSpan.FromMinutes(10)))
+                    {
+                        // The pools last metric was > 10 minutes ago, hence the nodes are probably gone, so
+                        // let's append a zero to cleanup the chart
+                        poolUsage.Values.Add(new PoolUsageMetric
+                        {
+                            DedicatedCores = 0,
+                            DedicatedNodes = 0,
+                            LowPriorityCores = 0,
+                            LowPriorityNodes = 0,
+                            TotalCores = 0,
+                            TotalNodes = 0,
+                            PoolName = lastUsage.PoolName,
+                            Timestamp = lastUsage.Timestamp.AddMinutes(1),
+                        });
+                    }
                     usage.Add(poolUsage);
                 }
             }
@@ -81,6 +97,23 @@ customMetrics
             if (result.Success)
             {
                 usage.Values = GetPoolUsageMetrics(result.Results);
+                var lastUsage = usage.Values.LastOrDefault();
+                if (lastUsage != null && lastUsage.Timestamp < DateTime.UtcNow.Subtract(TimeSpan.FromMinutes(10)))
+                {
+                    // The pools last metric was > 10 minutes ago, hence the nodes are probably gone, so
+                    // let's append a zero to cleanup the chart
+                    usage.Values.Add(new PoolUsageMetric
+                    {
+                        DedicatedCores = 0,
+                        DedicatedNodes = 0,
+                        LowPriorityCores = 0,
+                        LowPriorityNodes = 0,
+                        TotalCores = 0,
+                        TotalNodes = 0,
+                        PoolName = lastUsage.PoolName,
+                        Timestamp = lastUsage.Timestamp.AddMinutes(1),
+                    });
+                }
             }
             else
             {
