@@ -1,6 +1,6 @@
 ﻿@using Newtonsoft.Json;
 @using System.Linq;
-@model IReadOnlyList<(string envName, WebApp.CostManagement.UsageResponse data)>
+@model WebApp.Controllers.ReportingController.IndexModel
 @{
     ViewBag.Title = "Reporting";
 }
@@ -14,12 +14,38 @@
 
 <div class="page-header">
     <h1>Reporting</h1>
-    @foreach (var env in Model.OrderBy(env => env.envName))
+
+    @if(Model.PreviousMonthLink != null)
     {
-        <h2>@env.envName</h2>
-        @if (env.data.Properties == null)
+        <a href="@Model.PreviousMonthLink">Previous Month</a>
+
+        if (Model.NextMonthLink != null)
         {
-            <p>Cost not yet supported for this environment.</p>
+            <span>&bull;</span>
+        }
+    }
+
+    @if(Model.NextMonthLink != null)
+    {
+        <a href="@Model.NextMonthLink">Next Month</a>
+    }
+
+    @foreach (var kvp in Model.UsagePerEnvironment)
+    {
+        var envName = kvp.Key;
+        var data = kvp.Value;
+
+        <h2>@envName</h2>
+        @if (data.Properties == null)
+        {
+            <p>Cost management is not yet supported for this environment.</p>
+
+            continue;
+        }
+
+        @if (!data.Properties.Rows.Any())
+        {
+            <p>No cost data is available for this month.</p>
 
             continue;
         }
@@ -34,14 +60,14 @@
             </thead>
             <tbody>
                 @{
-                    var cols = env.data.Properties.Columns;
+                    var cols = data.Properties.Columns;
                     var dateIndex = cols.FindIndex(col => col.Name == "UsageDate");
                     var costIndex = cols.FindIndex(col => col.Name == "PreTaxCost");
                     var currencyIndex = cols.FindIndex(col => col.Name == "Currency");
                     var meterCategoryIndex = cols.FindIndex(col => col.Name == "MeterSubCategory");
                 }
 
-                @foreach (var day in env.data.Properties.Rows.GroupBy(row => row[dateIndex]).OrderBy(g => g.Key))
+                @foreach (var day in data.Properties.Rows.GroupBy(row => row[dateIndex]).OrderBy(g => g.Key))
                 {
                     string FormatCost(IReadOnlyList<object> row)
                         => string.Format("{0:0.00} {1}", row[costIndex], row[currencyIndex]);
