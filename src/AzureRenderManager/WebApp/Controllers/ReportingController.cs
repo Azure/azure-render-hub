@@ -162,7 +162,7 @@ namespace WebApp.Controllers
 
                 usageRequest.TimePeriod = timePeriod;
 
-                return client.GetUsageForResourceGroup(env.SubscriptionId, env.ResourceGroupName, usageRequest);
+                return client.GetUsageForSubscription(env.SubscriptionId, usageRequest);
             }
         }
     }
