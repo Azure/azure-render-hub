@@ -40,6 +40,7 @@ function getChartJsConfig(title, label) {
             },
             zoom: {
                 enabled: true,
+                drag: false, // Enable to support 'zoom to selection'
                 mode: 'x'
             },
             responsive: true,
