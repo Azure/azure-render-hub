@@ -133,6 +133,7 @@ namespace WebApp
                 var cbc = p.GetRequiredService<CloudBlobClient>();
                 var kvClient = p.GetRequiredService<IKeyVaultMsiClient>();
                 var cache = p.GetRequiredService<IMemoryCache>();
+                var logger = p.GetRequiredService<ILogger<EnvironmentSecretsRepository>>();
 
                 // note that cache is around the secrets so they don't have to be re-fetched
                 return
@@ -141,7 +142,8 @@ namespace WebApp
                             new EnvironmentSecretsRepository(
                                 new GenericConfigRepository<RenderingEnvironment>(
                                     cbc.GetContainerReference("environments")),
-                                    kvClient),
+                                    kvClient,
+                                    logger),
                             cache));
             });
 
