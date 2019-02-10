@@ -88,7 +88,7 @@ namespace WebApp.Config.Coordinators
 
         public async Task Update(T entity, string newName, string originalName)
         {
-            await _inner.Update(entity, originalName);
+            await _inner.Update(entity, newName, originalName);
 
             // overwrite cached value
             _cache.Set(CacheKey(newName), entity, CacheEntryFor);

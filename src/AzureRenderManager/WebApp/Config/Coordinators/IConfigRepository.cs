@@ -11,7 +11,7 @@ namespace WebApp.Config.Coordinators
 
         Task<bool> Remove(string configName);
 
-        Task Update(T config, string configName, string originalName = null);
+        Task Update(T config, string configName, string originalName);
 
         Task<List<string>> List();
     }

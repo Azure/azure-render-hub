@@ -27,7 +27,7 @@ namespace WebApp.Config.Coordinators
 
         public async Task UpdatePackage(InstallationPackage package)
         {
-            await _configCoordinator.Update(package, package.PackageName);
+            await _configCoordinator.Update(package, package.PackageName, null);
         }
 
         public async Task<bool> RemovePackage(InstallationPackage package)
