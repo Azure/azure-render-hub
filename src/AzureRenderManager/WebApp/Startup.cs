@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 using System;
 using System.Threading.Tasks;
-using Microsoft.ApplicationInsights;
+
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Builder;
@@ -13,9 +13,11 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Blob;
+using Polly;
 using WebApp.AppInsights;
 using WebApp.AppInsights.ActiveNodes;
 using WebApp.AppInsights.PoolUsage;
@@ -119,8 +121,13 @@ namespace WebApp
             services.AddHttpContextAccessor();
             services.AddMemoryCache();
 
+            // Add HttpClient with retry policy for contacting Cost Management
+            services.AddHttpClient<CostManagementClientAccessor>()
+                .AddTransientHttpErrorPolicy(b =>
+                    b.WaitAndRetryAsync(
+                        new[] { TimeSpan.Zero, TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(5) }));
+
             // These are scoped as they use the credentials of the user:
-            services.AddHttpClient<CostManagementClientAccessor>(); // register for CostManagementClientAccessor
             services.AddScoped<IAzureResourceProvider, AzureResourceProvider>();
 
             services.AddSingleton<IIdentityProvider, IdentityProvider>();
