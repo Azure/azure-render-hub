@@ -69,7 +69,15 @@ namespace WebApp.Controllers
             => Url.RouteUrl(nameof(Index), new { from = PrevMonthStart(period.From), to = PrevMonthEnd(period.From) });
 
         public string GetNextMonthLink(QueryTimePeriod period)
-            => Url.RouteUrl(nameof(Index), new { from = NextMonthStart(period.To), to = NextMonthEnd(period.To) });
+        {
+            var now = DateTimeOffset.UtcNow;
+            if (period.To >= now)
+            {
+                return null;
+            }
+
+            return Url.RouteUrl(nameof(Index), new { from = NextMonthStart(period.To), to = NextMonthEnd(period.To) });
+        }
 
         public static QueryTimePeriod GetQueryPeriod(DateTimeOffset? from, DateTimeOffset? to)
         {
