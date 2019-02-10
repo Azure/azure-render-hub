@@ -5,11 +5,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Memory;
 using TaskTupleAwaiter;
 using WebApp.Code.Attributes;
 using WebApp.Code.Contract;
 using WebApp.Config;
 using WebApp.CostManagement;
+
+using static System.FormattableString;
 
 namespace WebApp.Controllers
 {
@@ -17,16 +20,21 @@ namespace WebApp.Controllers
     [EnvironmentsActionFilter]
     public class ReportingController : MenuBaseController
     {
+        private static readonly TimeSpan CacheResultsFor = TimeSpan.FromMinutes(10);
+
         private readonly CostManagementClientAccessor _clientAccessor;
+        private readonly IMemoryCache _memoryCache;
 
         public ReportingController(
             IEnvironmentCoordinator environmentCoordinator,
             IPackageCoordinator packageCoordinator,
             IAssetRepoCoordinator assetRepoCoordinator,
-            CostManagementClientAccessor clientAccessor)
+            CostManagementClientAccessor clientAccessor,
+            IMemoryCache memoryCache)
             : base(environmentCoordinator, packageCoordinator, assetRepoCoordinator)
         {
             _clientAccessor = clientAccessor;
+            _memoryCache = memoryCache;
         }
 
         [HttpGet]
@@ -123,29 +131,39 @@ namespace WebApp.Controllers
             return new QueryTimePeriod(from: StartOfMonth(today), to: EndOfMonth(today));
         }
 
-        private static async Task<(string envName, UsageResponse)> GetUsage(
+        private async Task<(string envName, UsageResponse)> GetUsage(
             CostManagementClient client,
             RenderingEnvironment env,
             QueryTimePeriod timePeriod)
         {
-            var usageRequest =
-                new UsageRequest(
-                    Timeframe.Custom,
-                    new Dataset(
-                        Granularity.Daily,
-                        new Dictionary<string, Aggregation>
-                        {
+            var cacheKey = Invariant($"Reporting/{env.Name}/{timePeriod.From}/{timePeriod.To}");
+
+            var usageResponse = await _memoryCache.GetOrCreateAsync(cacheKey, Fetch); 
+            return (env.Name, usageResponse);
+
+            Task<UsageResponse> Fetch(ICacheEntry ice)
+            {
+                ice.AbsoluteExpirationRelativeToNow = CacheResultsFor;
+                
+                var usageRequest =
+                    new UsageRequest(
+                        Timeframe.Custom,
+                        new Dataset(
+                            Granularity.Daily,
+                            new Dictionary<string, Aggregation>
+                            {
                             { "totalCost", new Aggregation(AggregationFunction.Sum, "PreTaxCost") }
-                        },
-                        new List<Grouping>
-                        {
+                            },
+                            new List<Grouping>
+                            {
                             new Grouping("MeterSubCategory", ColumnType.Dimension)
-                        },
-                        FilterExpression.Tag("environment", Operator.In, new[] { env.Id })));
+                            },
+                            FilterExpression.Tag("environment", Operator.In, new[] { env.Id })));
 
-            usageRequest.TimePeriod = timePeriod;
+                usageRequest.TimePeriod = timePeriod;
 
-            return (env.Name, await client.GetUsageForResourceGroup(env.SubscriptionId, env.ResourceGroupName, usageRequest));
+                return client.GetUsageForResourceGroup(env.SubscriptionId, env.ResourceGroupName, usageRequest);
+            }
         }
     }
 }
