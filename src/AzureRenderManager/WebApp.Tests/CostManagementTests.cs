@@ -4,7 +4,9 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
+using WebApp.Controllers;
 using WebApp.CostManagement;
 using Xunit;
 
@@ -15,6 +17,15 @@ namespace WebApp.Tests
     // version of the API, so they have been tweaked.
     public class CostManagementTests
     {
+        private static readonly JsonSerializerSettings SerializerSettings =
+            new JsonSerializerSettings
+            {
+                ContractResolver = new CamelCasePropertyNamesContractResolver()
+            };
+
+        private static string Serialize(object obj)
+            => JsonConvert.SerializeObject(obj, Formatting.Indented, SerializerSettings);
+
         [Fact]
         public void UsageRequestMatchesExample()
         {
@@ -87,15 +98,7 @@ namespace WebApp.Tests
                                 Operator.In,
                                 new[] {"API"}))));
 
-            Assert.Equal(
-                example,
-                JsonConvert.SerializeObject(
-                    request,
-                    Formatting.Indented,
-                    new JsonSerializerSettings
-                    {
-                        ContractResolver = new CamelCasePropertyNamesContractResolver()
-                    }));
+            Assert.Equal(example, Serialize(request));
         }
 
         [Fact]
@@ -146,6 +149,57 @@ namespace WebApp.Tests
             // weak test but ok
             var response = JsonConvert.DeserializeObject<UsageResponse>(example);
             Assert.NotNull(response.Properties);
+        }
+
+        [Fact]
+        public void CanSerializeQueryTimePeriodAsExpected()
+        {
+            var timePeriod =
+                new QueryTimePeriod(
+                    from: new DateTimeOffset(2018, 11, 01, 00, 00, 00, TimeSpan.Zero),
+                    to: new DateTimeOffset(2018, 11, 30, 23, 59, 59, TimeSpan.Zero));
+
+            var expected = @"{
+  ""from"": ""2018-11-01T00:00:00+00:00"",
+  ""to"": ""2018-11-30T23:59:59+00:00""
+}";
+
+            Assert.Equal(expected, Serialize(timePeriod));
+        }
+
+        private static DateTimeOffset ParseDate(string input)
+            => DateTimeOffset.Parse(input, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal);
+
+        [Theory]
+        [InlineData("2018-01-01", "2018-01-01")] // Simple: from start
+        [InlineData("2018-01-31", "2018-01-01")] // Simple: from last day
+        [InlineData("2018-12-31", "2018-12-01")] // Year boundary end
+        [InlineData("2020-02-29", "2020-02-01")] // Leap year
+        [InlineData("2019-02-28", "2019-02-01")] // Not leap year
+        public void StartOfMonthCalculationIsCorrect(string input, string expected)
+        {
+            var dto = ParseDate(input);
+            var expectedDTO = ParseDate(expected);
+
+            var actual = ReportingController.StartOfMonth(dto);
+
+            Assert.Equal(expectedDTO, actual);
+        }
+
+        [Theory]
+        [InlineData("2018-01-01", "2018-01-31T23:59:59")] // Simple: from start
+        [InlineData("2018-01-31", "2018-01-31T23:59:59")] // Simple: from last day
+        [InlineData("2018-12-31", "2018-12-31T23:59:59")] // Year boundary
+        [InlineData("2020-02-01", "2020-02-29T23:59:59")] // Leap year
+        [InlineData("2019-02-01", "2019-02-28T23:59:59")] // Not leap year
+        public void EndOfMonthCalculationIsCorrect(string input, string expected)
+        {
+            var dto = ParseDate(input);
+            var expectedDTO = ParseDate(expected);
+
+            var actual = ReportingController.EndOfMonth(dto);
+
+            Assert.Equal(expectedDTO, actual);
         }
     }
 }

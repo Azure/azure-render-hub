@@ -79,7 +79,23 @@ namespace WebApp.CostManagement
         [JsonConverter(typeof(StringEnumConverter))]
         public Timeframe Timeframe { get; }
 
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public QueryTimePeriod TimePeriod { get; set; }
+
         public Dataset Dataset { get; }
+    }
+
+    public class QueryTimePeriod
+    {
+        public QueryTimePeriod(DateTimeOffset from, DateTimeOffset to)
+        {
+            From = from;
+            To = to;
+        }
+
+        public DateTimeOffset From { get; }
+
+        public DateTimeOffset To { get; }
     }
 
     public class Dataset
@@ -214,6 +230,7 @@ namespace WebApp.CostManagement
 
     public enum Timeframe
     {
+        Custom,
         MonthToDate,
         YearToDate,
         WeekToDate,
