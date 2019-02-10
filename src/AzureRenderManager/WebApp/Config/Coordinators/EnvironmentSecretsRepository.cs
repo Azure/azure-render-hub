@@ -3,9 +3,9 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Microsoft.WindowsAzure.Storage;
 using WebApp.Arm;
 using WebApp.Code.Attributes;
@@ -16,14 +16,17 @@ namespace WebApp.Config.Coordinators
     public class EnvironmentSecretsRepository : IConfigRepository<RenderingEnvironment>
     {
         private readonly IKeyVaultMsiClient _keyVaultClient;
+        private readonly ILogger<EnvironmentSecretsRepository> _logger;
         private readonly IConfigRepository<RenderingEnvironment> _configCoordinator;
 
         public EnvironmentSecretsRepository(
             IConfigRepository<RenderingEnvironment> configCoordinator,
-            IKeyVaultMsiClient keyVaultClient)
+            IKeyVaultMsiClient keyVaultClient,
+            ILogger<EnvironmentSecretsRepository> logger)
         {
             _configCoordinator = configCoordinator;
             _keyVaultClient = keyVaultClient;
+            _logger = logger;
         }
 
         public async Task<RenderingEnvironment> Get(string environmentName)
@@ -40,8 +43,7 @@ namespace WebApp.Config.Coordinators
                     }
                     catch (Exception e)
                     {
-                        // TODO: ???
-                        Console.WriteLine(e);
+                        _logger.LogError(e, "Unable to load credentials");
                     }
                 }
 
@@ -71,8 +73,7 @@ namespace WebApp.Config.Coordinators
                 }
                 catch (Exception e)
                 {
-                    // TODO: ???
-                    Console.WriteLine(e);
+                    _logger.LogError(e, "Unable to save credentials");
                 }
             }
         }
