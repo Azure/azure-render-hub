@@ -136,7 +136,7 @@ namespace WebApp.Controllers
             RenderingEnvironment env,
             QueryTimePeriod timePeriod)
         {
-            var cacheKey = Invariant($"Reporting/{env.Name}/{timePeriod.From}/{timePeriod.To}");
+            var cacheKey = Invariant($"REPORTING:{env.Name}/{timePeriod.From}/{timePeriod.To}");
 
             var usageResponse = await _memoryCache.GetOrCreateAsync(cacheKey, Fetch); 
             return (env.Name, usageResponse);
