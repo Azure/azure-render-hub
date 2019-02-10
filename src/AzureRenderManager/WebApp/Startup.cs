@@ -122,10 +122,11 @@ namespace WebApp
             services.AddMemoryCache();
 
             // Add HttpClient with retry policy for contacting Cost Management
-            services.AddHttpClient<CostManagementClientAccessor>()
-                .AddTransientHttpErrorPolicy(b =>
-                    b.WaitAndRetryAsync(
-                        new[] { TimeSpan.Zero, TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(5) }));
+            services.AddHttpClient<CostManagementClientAccessor>();
+                // -- This is to be restored when CostManagement returns a non-500 for invalid subs.
+                ////.AddTransientHttpErrorPolicy(b =>
+                ////    b.WaitAndRetryAsync(
+                ////        new[] { TimeSpan.Zero, TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(5) }));
 
             // These are scoped as they use the credentials of the user:
             services.AddScoped<IAzureResourceProvider, AzureResourceProvider>();
