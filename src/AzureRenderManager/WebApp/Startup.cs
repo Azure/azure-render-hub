@@ -29,6 +29,7 @@ using WebApp.Code.Extensions;
 using WebApp.Config;
 using WebApp.Config.Coordinators;
 using WebApp.Config.Pools;
+using WebApp.Config.Storage;
 using WebApp.CostManagement;
 using WebApp.Identity;
 using WebApp.Operations;
@@ -132,16 +133,26 @@ namespace WebApp
                 var cbc = p.GetRequiredService<CloudBlobClient>();
                 var kvClient = p.GetRequiredService<IKeyVaultMsiClient>();
                 var cache = p.GetRequiredService<IMemoryCache>();
-                return new CachingEnvironmentCoordinator(new EnvironmentCoordinator(
-                    new GenericConfigCoordinator(cbc.GetContainerReference("environments")),
-                    kvClient), cache);
+
+                // note that cache is around the secrets so they don't have to be re-fetched
+                return
+                    new EnvironmentCoordinator(
+                        new CachingConfigRepository<RenderingEnvironment>(
+                            new EnvironmentSecretsRepository(
+                                new GenericConfigRepository<RenderingEnvironment>(
+                                    cbc.GetContainerReference("environments")),
+                                    kvClient),
+                            cache));
             });
 
             services.AddSingleton<IAssetRepoCoordinator>(p =>
             {
                 var cbc = p.GetRequiredService<CloudBlobClient>();
+                var cache = p.GetRequiredService<IMemoryCache>();
                 return new AssetRepoCoordinator(
-                    new GenericConfigCoordinator(cbc.GetContainerReference("storage")),
+                    new CachingConfigRepository<AssetRepository>(
+                        new GenericConfigRepository<AssetRepository>(cbc.GetContainerReference("storage")), 
+                        cache),
                     p.GetRequiredService<ITemplateProvider>(),
                     p.GetRequiredService<IIdentityProvider>(),
                     p.GetRequiredService<IDeploymentQueue>(),
@@ -151,8 +162,11 @@ namespace WebApp
             services.AddSingleton<IPackageCoordinator>(p =>
             {
                 var cbc = p.GetRequiredService<CloudBlobClient>();
+                var cache = p.GetRequiredService<IMemoryCache>();
                 return new PackageCoordinator(
-                    new GenericConfigCoordinator(cbc.GetContainerReference("packages")));
+                    new CachingConfigRepository<InstallationPackage>(
+                        new GenericConfigRepository<InstallationPackage>(cbc.GetContainerReference("packages")),
+                        cache));
             });
 
             services.AddScoped<IManagementClientProvider, ManagementClientHttpContextProvider>();

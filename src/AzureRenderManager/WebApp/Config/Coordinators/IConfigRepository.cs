@@ -5,13 +5,13 @@ using System.Threading.Tasks;
 
 namespace WebApp.Config.Coordinators
 {
-    public interface IGenericConfigCoordinator
+    public interface IConfigRepository<T>
     {
-        Task<T> Get<T>(string configName);
+        Task<T> Get(string configName);
 
         Task<bool> Remove(string configName);
 
-        Task Update<T>(T config, string configName, string originalName = null);
+        Task Update(T config, string configName, string originalName = null);
 
         Task<List<string>> List();
     }

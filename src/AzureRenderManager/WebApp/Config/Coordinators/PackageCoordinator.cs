@@ -1,8 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using WebApp.Code.Contract;
 
@@ -10,9 +8,9 @@ namespace WebApp.Config.Coordinators
 {
     public class PackageCoordinator : IPackageCoordinator
     {
-        private readonly IGenericConfigCoordinator _configCoordinator;
+        private readonly IConfigRepository<InstallationPackage> _configCoordinator;
 
-        public PackageCoordinator(IGenericConfigCoordinator configCoordinator)
+        public PackageCoordinator(IConfigRepository<InstallationPackage> configCoordinator)
         {
             _configCoordinator = configCoordinator;
         }
@@ -24,7 +22,7 @@ namespace WebApp.Config.Coordinators
 
         public async Task<InstallationPackage> GetPackage(string packageName)
         {
-            return await _configCoordinator.Get<InstallationPackage>(packageName);
+            return await _configCoordinator.Get(packageName);
         }
 
         public async Task UpdatePackage(InstallationPackage package)
