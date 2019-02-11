@@ -31,6 +31,15 @@
     <div class="section-wrapper">
         <div class="section-bar"></div>
         <div class="section-content">
+            <div class="form-element">
+                <label>Time Range</label>
+                <select id="ChartRange" class="half">
+                    <option value="1">Last Day</option>
+                    <option value="3" selected>Last 3 Days</option>
+                    <option value="7">Last Week</option>
+                    <option value="14">Last 2 Weeks</option>
+                </select>
+            </div>
             <div id="canvas-container">
                 <canvas id="env-usage"></canvas>
             </div>
@@ -74,7 +83,31 @@
 @section Scripts
 {
     <script>
-        $(document).ready(function() {
+        function getAllData() {
+            return @Html.Raw(Json.Serialize(Model.PoolUsageResults));
+        }
+
+        function updateChart(days) {
+            var envName = "@Model.EnvironmentName";
+            var poolUsageResults = getAllData();
+            var config = getTimeChartForEnvironment(envName, poolUsageResults);
+            var now = new Date();
+            var min = new Date();
+            min.setDate(min.getDate() - days);
+            config.options.scales.xAxes[0].time.min = min;
+            config.options.scales.xAxes[0].time.max = now;
+            var ctx = document.getElementById('env-usage').getContext('2d');
+            ctx.canvas.parentNode.style.height = '300px';
+            ctx.canvas.parentNode.style.width = '680px';
+            window.chart = new Chart(ctx, config);
+        }
+
+        $(document).ready(function () {
+            $("#ChartRange").change(function(){
+                var days = $(this).children("option:selected").val();
+                updateChart(days);
+            });
+
             // Show a warning if the sub is locked
             var deleteErrors = '@Model.DeleteErrors';
             if (deleteErrors !== '') {
@@ -88,16 +121,8 @@
 
                 toastr.warning(message, title).css("width", "600px");
             }
-        });
 
-        window.onload = function () {
-            var envName = "@Model.EnvironmentName";
-            var poolUsageResults = @Html.Raw(Json.Serialize(Model.PoolUsageResults));
-            var config = getTimeChartForEnvironment(envName, poolUsageResults);
-            var ctx = document.getElementById('env-usage').getContext('2d');
-            ctx.canvas.parentNode.style.height = '300px';
-            ctx.canvas.parentNode.style.width = '680px';
-            window.chart = new Chart(ctx, config);
-        };
+            $("#ChartRange").change();
+        });
     </script>
 }

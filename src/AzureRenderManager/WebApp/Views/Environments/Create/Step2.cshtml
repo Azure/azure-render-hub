@@ -366,7 +366,6 @@ set in the model.
                     $("#NewApplicationInsightsLocation").attr("selectedIndex", 1).change();
                     $("#InsightsLocationSpinner").removeClass("loading");
 
-                    console.log(location);
                     if ($("#NewApplicationInsightsLocation option[value=" + location + "]").length > 0) {
                         $("#NewApplicationInsightsLocation").val(location);
                         $("#InsightsLocationSpinner").hide();
