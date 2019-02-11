@@ -39,7 +39,8 @@ function getChartJsConfig(title, label) {
                 mode: 'x'
             },
             zoom: {
-                enabled: false,
+                enabled: true,
+                drag: false, // Enable to support 'zoom to selection'
                 mode: 'x'
             },
             responsive: true,
@@ -188,11 +189,9 @@ function registerCheckboxEnabledFormSection(checkboxId, outerDivId) {
 
     $(id).change(function () {
         if ($(id).is(':checked') === true) {
-            console.log('checked');
             $(divId + ' :input').removeAttr('readonly');
         } else {
             $(divId + ' :input').attr('readonly', 'readonly');
-            console.log('unchecked');
         }
     });
 
