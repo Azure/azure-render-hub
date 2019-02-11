@@ -189,11 +189,9 @@ function registerCheckboxEnabledFormSection(checkboxId, outerDivId) {
 
     $(id).change(function () {
         if ($(id).is(':checked') === true) {
-            console.log('checked');
             $(divId + ' :input').removeAttr('readonly');
         } else {
             $(divId + ' :input').attr('readonly', 'readonly');
-            console.log('unchecked');
         }
     });
 
