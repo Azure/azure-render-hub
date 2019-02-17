@@ -82,38 +82,36 @@
             var datasets = [
             @foreach (var meterCategory in data.Properties.Rows.GroupBy(row => (string)row[meterCategoryIndex]))
             {
-                var category = meterCategory.Key;
+                var category = string.IsNullOrWhiteSpace(meterCategory.Key) ? "uncategorized" : meterCategory.Key;
 
-                <text>{
-                    label: '@(string.IsNullOrWhiteSpace(category) ? "uncategorized" : category)',
-                    data: [
-                </text>
-                var current = Model.From;
-                foreach (var day in meterCategory.OrderBy(x => x[dateIndex]))
+                IEnumerable<double> GetData()
                 {
-                    // we have to pad the data with zeroes because ChartJS can't handle it otherwise
-                    var got = DateTimeOffset.ParseExact(((long)day[dateIndex]).ToString(CultureInfo.InvariantCulture), "yyyyMMdd", CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal);
-                    current = current.AddDays(1);
-                    while (current < got)
+                    var currentDay = Model.From;
+                    foreach (var day in meterCategory.OrderBy(x => x[dateIndex]))
                     {
-                        <text>0,</text>
-                        current = current.AddDays(1);
+                        // we have to pad the data with zeroes because ChartJS can't handle it otherwise
+                        var dataDay = DateTimeOffset.ParseExact(((long)day[dateIndex]).ToString(CultureInfo.InvariantCulture), "yyyyMMdd", CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal);
+                        currentDay = currentDay.AddDays(1);
+                        while (currentDay < dataDay)
+                        {
+                            yield return 0;
+                            currentDay = currentDay.AddDays(1);
+                        }
+
+                        yield return (double)day[costIndex];
                     }
 
-                    <text>@day[costIndex],</text>
-                }
+                    // we have to pad the data with zeroes because ChartJS can't handle it otherwise
+                    currentDay = currentDay.AddDays(1);
+                    while (currentDay <= Model.To)
+                    {
+                        yield return 0;
+                        currentDay = currentDay.AddDays(1);
+                    }
+                };
 
-                // we have to pad the data with zeroes because ChartJS can't handle it otherwise
-                current = current.AddDays(1);
-                while (current <= Model.To)
-                {
-                    <text>0,</text>
-                    current = current.AddDays(1);
-                }
-
-                <text>] },</text>
-            }
-            ];
+                <text>{ label: '@category', data: [@string.Join(", ", GetData())] }, </text>
+            } ];
 
             var cfg = {
                 type: 'bar',
