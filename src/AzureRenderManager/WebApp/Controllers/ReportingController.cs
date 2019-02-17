@@ -50,20 +50,34 @@ namespace WebApp.Controllers
             var nextMonthLink = GetNextMonthLink(period);
             var prevMonthLink = GetPrevMonthLink(period);
 
-            return View(new IndexModel(usages, nextMonthLink, prevMonthLink));
+            return View(
+                new IndexModel(
+                    period.From,
+                    period.To,
+                    usages,
+                    nextMonthLink,
+                    prevMonthLink));
         }
 
         public class IndexModel
         {
             public IndexModel(
+                DateTimeOffset from,
+                DateTimeOffset to,
                 (string env, UsageResponse usage)[] usages,
                 string nextMonth,
                 string prevMonth)
             {
+                From = from;
+                To = to;
                 UsagePerEnvironment = new SortedDictionary<string, UsageResponse>(usages.ToDictionary(pair => pair.env, pair => pair.usage));
                 NextMonthLink = nextMonth;
                 PreviousMonthLink = prevMonth;
             }
+
+            public DateTimeOffset From { get; }
+
+            public DateTimeOffset To { get; }
 
             public SortedDictionary<string, UsageResponse> UsagePerEnvironment { get; }
 
