@@ -15,20 +15,31 @@
 
 <div class="page-header">
     <h1>Reporting</h1>
+    <p>Date range: <input type="date" id="fromInput" value="@Model.From.ToString("yyyy-MM-dd")"/> &ndash; <input type="date" id="toInput" value="@Model.To.ToString("yyyy-MM-dd")"/></p>
+
+    <script>
+        var fromInput = document.getElementById("fromInput");
+        var toInput = document.getElementById("toInput");
+
+        var go = () => document.location.search = "from=" + fromInput.value + "&to=" + toInput.value;
+
+        fromInput.onchange = go;
+        toInput.onchange = go;
+    </script>
 
     <p>
+        Jump to:
         @if (Model.PreviousMonthLink != null)
         {
             <a href="@Model.PreviousMonthLink">Previous Month</a>
-
-            if (Model.NextMonthLink != null)
-            {
-                <span>&bull;</span>
-            }
+            <span>&bull;</span>
         }
+
+        <a href="@Model.CurrentMonthLink">Current Month</a>
 
         @if (Model.NextMonthLink != null)
         {
+            <span>&bull;</span>
             <a href="@Model.NextMonthLink">Next Month</a>
         }
     </p>
@@ -41,14 +52,14 @@
         <h2>@envName</h2>
         @if (data.Properties == null)
         {
-            <p>Cost management is not yet supported for this environment.</p>
+            <p>Cost management is not supported for this environment.</p>
 
             continue;
         }
 
         @if (!data.Properties.Rows.Any())
         {
-            <p>No cost data is available for this month.</p>
+            <p>No cost data is available for this period.</p>
 
             continue;
         }
