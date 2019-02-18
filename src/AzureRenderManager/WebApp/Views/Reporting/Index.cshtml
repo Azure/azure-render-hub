@@ -15,7 +15,7 @@
 
 <div class="page-header">
     <h1>Reporting</h1>
-    <p>Date range: <input type="date" id="fromInput" value="@Model.From.ToString("yyyy-MM-dd")"/> &ndash; <input type="date" id="toInput" value="@Model.To.ToString("yyyy-MM-dd")"/></p>
+    <p>Date range: <input type="date" id="fromInput" value="@Model.From.ToString("yyyy-MM-dd")" /> &ndash; <input type="date" id="toInput" value="@Model.To.ToString("yyyy-MM-dd")" /></p>
 
     <script>
         var fromInput = document.getElementById("fromInput");
@@ -43,6 +43,7 @@
             <a href="@Model.NextMonthLink">Next Month</a>
         }
     </p>
+    <br />
 
     @foreach (var kvp in Model.UsagePerEnvironment)
     {
@@ -50,6 +51,7 @@
         var data = kvp.Value;
 
         <h2>@envName</h2>
+        <h3 id="env-cost-@envName"></h3>
         @if (data.Properties == null)
         {
             <p>Cost management is not supported for this environment.</p>
@@ -71,8 +73,9 @@
         var currencyIndex = cols.FindIndex(col => col.Name == "Currency");
         var meterCategoryIndex = cols.FindIndex(col => col.Name == "MeterSubCategory");
         var currency = (string)data.Properties.Rows.First()[currencyIndex]; // assumption: all values have same currency
-        
-        <canvas id="graph-@id" ></canvas>
+        var totalCostForEnv = 0d;
+
+        <canvas id="graph-@id"></canvas>
 
         <script type="text/javascript">
             var ctx = document.getElementById("graph-@id").getContext('2d');
@@ -80,38 +83,44 @@
             ctx.canvas.height = 400;
 
             var datasets = [
-            @foreach (var meterCategory in data.Properties.Rows.GroupBy(row => (string)row[meterCategoryIndex]))
-            {
-                var category = string.IsNullOrWhiteSpace(meterCategory.Key) ? "uncategorized" : meterCategory.Key;
-
-                IEnumerable<double> GetData()
+                @foreach (var meterCategory in data.Properties.Rows.GroupBy(row => (string)row[meterCategoryIndex]))
                 {
-                    var currentDay = Model.From;
-                    foreach (var day in meterCategory.OrderBy(x => x[dateIndex]))
+                    var category = string.IsNullOrWhiteSpace(meterCategory.Key) ? "uncategorized" : meterCategory.Key;
+
+                    IEnumerable<double> GetData()
                     {
+                        var currentDay = Model.From;
+                        foreach (var day in meterCategory.OrderBy(x => x[dateIndex]))
+                        {
+                            // we have to pad the data with zeroes because ChartJS can't handle it otherwise
+                            var dataDay = DateTimeOffset.ParseExact(((long)day[dateIndex]).ToString(CultureInfo.InvariantCulture), "yyyyMMdd", CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal);
+                            currentDay = currentDay.AddDays(1);
+                            while (currentDay < dataDay)
+                            {
+                                yield return 0;
+                                currentDay = currentDay.AddDays(1);
+                            }
+
+                            yield return (double)day[costIndex];
+                        }
+
                         // we have to pad the data with zeroes because ChartJS can't handle it otherwise
-                        var dataDay = DateTimeOffset.ParseExact(((long)day[dateIndex]).ToString(CultureInfo.InvariantCulture), "yyyyMMdd", CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal);
                         currentDay = currentDay.AddDays(1);
-                        while (currentDay < dataDay)
+                        while (currentDay <= Model.To)
                         {
                             yield return 0;
                             currentDay = currentDay.AddDays(1);
                         }
+                    };
 
-                        yield return (double)day[costIndex];
-                    }
+                    var d = GetData().ToList();
+                    totalCostForEnv += d.Sum();
 
-                    // we have to pad the data with zeroes because ChartJS can't handle it otherwise
-                    currentDay = currentDay.AddDays(1);
-                    while (currentDay <= Model.To)
-                    {
-                        yield return 0;
-                        currentDay = currentDay.AddDays(1);
-                    }
-                };
+                    <text>{ label: '@category', data: [@string.Join(", ", d)] }, </text>
+                } ];
 
-                <text>{ label: '@category', data: [@string.Join(", ", GetData())] }, </text>
-            } ];
+            // Update the env costs
+            $('#env-cost-' + '@envName').html('@totalCostForEnv.ToString("C2") - Cost for period');
 
             var cfg = {
                 type: 'bar',
@@ -157,45 +166,8 @@
 
             var chart = new Chart(ctx, cfg);
         </script>
-
-        /*
-        <table>
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Item</th>
-                    <th>Cost</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var day in data.Properties.Rows.GroupBy(row => row[dateIndex]).OrderBy(g => g.Key))
-                {
-                    string FormatCost(IReadOnlyList<object> row)
-                        => string.Format("{0:0.00} {1}", row[costIndex], row[currencyIndex]);
-
-                    string FormatItem(IReadOnlyList<object> row)
-                        => row[meterCategoryIndex].ToString();
-
-                    // Render the first item with the header
-                    <tr>
-                        <th rowspan="@day.Count()" scope="row">
-                            @day.Key
-                        </th>
-                        <td>@FormatItem(day.First())</td>
-                        <td>@FormatCost(day.First())</td>
-                    </tr>
-
-                    // Render the rest without
-                    @foreach (var item in day.Skip(1))
-                    {
-                        <tr>
-                            <td>@FormatItem(item)</td>
-                            <td>@FormatCost(item)</td>
-                        </tr>
-                    }
-                }
-            </tbody>
-        </table>
-        */
+        <br />
+        <br />
+        <br />
     }
 </div>
