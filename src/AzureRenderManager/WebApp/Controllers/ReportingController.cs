@@ -48,26 +48,46 @@ namespace WebApp.Controllers
             var usages = await Task.WhenAll(envs.Select(env => GetUsage(client, env, period)));
 
             var nextMonthLink = GetNextMonthLink(period);
+            var currentMonthLink = GetCurrentMonthLink();
             var prevMonthLink = GetPrevMonthLink(period);
 
-            return View(new IndexModel(usages, nextMonthLink, prevMonthLink));
+            return View(
+                new IndexModel(
+                    period.From,
+                    period.To,
+                    usages,
+                    nextMonthLink,
+                    currentMonthLink,
+                    prevMonthLink));
         }
 
         public class IndexModel
         {
             public IndexModel(
+                DateTimeOffset from,
+                DateTimeOffset to,
                 (string env, UsageResponse usage)[] usages,
                 string nextMonth,
+                string currentMonth,
                 string prevMonth)
             {
+                From = from;
+                To = to;
                 UsagePerEnvironment = new SortedDictionary<string, UsageResponse>(usages.ToDictionary(pair => pair.env, pair => pair.usage));
                 NextMonthLink = nextMonth;
+                CurrentMonthLink = currentMonth;
                 PreviousMonthLink = prevMonth;
             }
+
+            public DateTimeOffset From { get; }
+
+            public DateTimeOffset To { get; }
 
             public SortedDictionary<string, UsageResponse> UsagePerEnvironment { get; }
 
             public string NextMonthLink { get; }
+
+            public string CurrentMonthLink { get; }
 
             public string PreviousMonthLink { get; }
 
@@ -85,6 +105,12 @@ namespace WebApp.Controllers
             }
 
             return Url.RouteUrl(nameof(Index), new { from = NextMonthStart(period.To), to = NextMonthEnd(period.To) });
+        }
+
+        public string GetCurrentMonthLink()
+        {
+            var thisMonth = ThisMonth();
+            return Url.RouteUrl(nameof(Index), new { from = thisMonth.From, to = thisMonth.To });
         }
 
         public static QueryTimePeriod GetQueryPeriod(DateTimeOffset? from, DateTimeOffset? to)
