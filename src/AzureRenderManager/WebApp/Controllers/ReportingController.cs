@@ -11,7 +11,7 @@ using WebApp.Code.Attributes;
 using WebApp.Code.Contract;
 using WebApp.Config;
 using WebApp.CostManagement;
-
+using WebApp.Models.Reporting;
 using static System.FormattableString;
 
 namespace WebApp.Controllers
@@ -61,37 +61,30 @@ namespace WebApp.Controllers
                     prevMonthLink));
         }
 
-        public class IndexModel
+        [HttpGet]
+        [Route("Reporting/{envId}", Name = nameof(Environment))]
+        public async Task<ActionResult<EnvironmentUsage>> Environment(string envId, [FromQuery] DateTimeOffset? from, [FromQuery] DateTimeOffset? to)
         {
-            public IndexModel(
-                DateTimeOffset from,
-                DateTimeOffset to,
-                (string env, UsageResponse usage)[] usages,
-                string nextMonth,
-                string currentMonth,
-                string prevMonth)
-            {
-                From = from;
-                To = to;
-                UsagePerEnvironment = new SortedDictionary<string, UsageResponse>(usages.ToDictionary(pair => pair.env, pair => pair.usage));
-                NextMonthLink = nextMonth;
-                CurrentMonthLink = currentMonth;
-                PreviousMonthLink = prevMonth;
-            }
+            var (env, client) = await (Environment(envId), _clientAccessor.GetClient());
 
-            public DateTimeOffset From { get; }
+            var period = GetQueryPeriod(from, to);
 
-            public DateTimeOffset To { get; }
+            var usage = await GetUsage(client, env, period);
 
-            public SortedDictionary<string, UsageResponse> UsagePerEnvironment { get; }
+            var nextMonthLink = GetNextMonthLink(period);
+            var currentMonthLink = GetCurrentMonthLink();
+            var prevMonthLink = GetPrevMonthLink(period);
 
-            public string NextMonthLink { get; }
-
-            public string CurrentMonthLink { get; }
-
-            public string PreviousMonthLink { get; }
-
+            return View(
+                new IndividualModel(
+                    period.From,
+                    period.To,
+                    usage,
+                    nextMonthLink,
+                    currentMonthLink,
+                    prevMonthLink));
         }
+
 
         public string GetPrevMonthLink(QueryTimePeriod period)
             => Url.RouteUrl(nameof(Index), new { from = PrevMonthStart(period.From), to = PrevMonthEnd(period.From) });
@@ -157,7 +150,7 @@ namespace WebApp.Controllers
             return new QueryTimePeriod(from: StartOfMonth(today), to: EndOfMonth(today));
         }
 
-        private async Task<(string envName, UsageResponse)> GetUsage(
+        private async Task<EnvironmentUsage> GetUsage(
             CostManagementClient client,
             RenderingEnvironment env,
             QueryTimePeriod timePeriod)
@@ -165,7 +158,13 @@ namespace WebApp.Controllers
             var cacheKey = Invariant($"REPORTING:{env.Name}/{timePeriod.From}/{timePeriod.To}");
 
             var usageResponse = await _memoryCache.GetOrCreateAsync(cacheKey, Fetch); 
-            return (env.Name, usageResponse);
+
+            if (usageResponse.Properties == null)
+            {
+                return new EnvironmentUsage(env.Name, null);
+            }
+            
+            return new EnvironmentUsage(env.Name, new Usage(timePeriod, usageResponse));
 
             Task<UsageResponse> Fetch(ICacheEntry ice)
             {
