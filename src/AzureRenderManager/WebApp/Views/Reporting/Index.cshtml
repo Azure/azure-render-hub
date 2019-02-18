@@ -1,6 +1,6 @@
 ﻿@using System.Linq;
-@using System.Globalization;
-@model WebApp.Controllers.ReportingController.IndexModel
+@using WebApp.Models.Reporting;
+@model WebApp.Models.Reporting.IndexModel
 @{
     ViewBag.Title = "Reporting";
 }
@@ -44,80 +44,48 @@
         }
     </p>
 
-    @foreach (var kvp in Model.UsagePerEnvironment)
+    @foreach (var envUsage in new[] { new EnvironmentUsage("Total Costs", Model.SummaryUsage) }.Concat(Model.UsagePerEnvironment))
     {
-        var envName = kvp.Key;
-        var data = kvp.Value;
-
-        <h2>@envName</h2>
-        @if (data.Properties == null)
+        @if (envUsage.Usage == null)
         {
+            <h2>@envUsage.EnvironmentId</h2>
             <p>Cost management is not supported for this environment.</p>
 
             continue;
         }
 
-        @if (!data.Properties.Rows.Any())
+        @if (!envUsage.Usage.Categorized.Any())
         {
+            <h2>@envUsage.EnvironmentId</h2>
             <p>No cost data is available for this period.</p>
 
             continue;
         }
 
+        <h2>@envUsage.EnvironmentId (@envUsage.Usage.Total.ToString("F2") @envUsage.Usage.Currency)</h2>
+
         var id = Guid.NewGuid().ToString();
-        var cols = data.Properties.Columns;
-        var dateIndex = cols.FindIndex(col => col.Name == "UsageDate");
-        var costIndex = cols.FindIndex(col => col.Name == "PreTaxCost");
-        var currencyIndex = cols.FindIndex(col => col.Name == "Currency");
-        var meterCategoryIndex = cols.FindIndex(col => col.Name == "MeterSubCategory");
-        var currency = (string)data.Properties.Rows.First()[currencyIndex]; // assumption: all values have same currency
-        
-        <canvas id="graph-@id" ></canvas>
+        var usage = envUsage.Usage;
+        var period = usage.Period;
+
+        <div class="chart-container" style="width: 100%">
+            <canvas id="graph-@id"></canvas>
+        </div>
 
         <script type="text/javascript">
             var ctx = document.getElementById("graph-@id").getContext('2d');
-            ctx.canvas.width = 800;
-            ctx.canvas.height = 400;
 
             var datasets = [
-            @foreach (var meterCategory in data.Properties.Rows.GroupBy(row => (string)row[meterCategoryIndex]))
+            @foreach (var category in usage.Categorized)
             {
-                var category = string.IsNullOrWhiteSpace(meterCategory.Key) ? "uncategorized" : meterCategory.Key;
-
-                IEnumerable<double> GetData()
-                {
-                    var currentDay = Model.From;
-                    foreach (var day in meterCategory.OrderBy(x => x[dateIndex]))
-                    {
-                        // we have to pad the data with zeroes because ChartJS can't handle it otherwise
-                        var dataDay = DateTimeOffset.ParseExact(((long)day[dateIndex]).ToString(CultureInfo.InvariantCulture), "yyyyMMdd", CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal);
-                        currentDay = currentDay.AddDays(1);
-                        while (currentDay < dataDay)
-                        {
-                            yield return 0;
-                            currentDay = currentDay.AddDays(1);
-                        }
-
-                        yield return (double)day[costIndex];
-                    }
-
-                    // we have to pad the data with zeroes because ChartJS can't handle it otherwise
-                    currentDay = currentDay.AddDays(1);
-                    while (currentDay <= Model.To)
-                    {
-                        yield return 0;
-                        currentDay = currentDay.AddDays(1);
-                    }
-                };
-
-                <text>{ label: '@category', data: [@string.Join(", ", GetData())] }, </text>
+                <text>{ label: '@category.Key', data: [@string.Join(", ", category.Value.Select(x => x.Value))] }, </text>
             } ];
 
             var cfg = {
                 type: 'bar',
                 data: {
                     labels: [
-                        @for (var day = Model.From; day <= Model.To; day = day.AddDays(1))
+                        @for (var day = period.From; day <= period.To; day = day.AddDays(1))
                         {
                             <text>"@day.ToString("yyyyMMdd")",</text>
                         }
@@ -125,21 +93,24 @@
                     datasets: datasets
                 },
                 options: {
+                    legend: {
+                        position: 'bottom'
+                    },
                     scales: {
                         xAxes: [{
                             stacked: true,
                             type: 'time',
                             time: {
                                 unit: 'day',
-                                min: '@Model.From.ToString("yyyyMMdd")',
-                                max: '@Model.To.ToString("yyyyMMdd")'
+                                min: '@period.From.ToString("yyyyMMdd")',
+                                max: '@period.To.ToString("yyyyMMdd")'
                             }
                         }],
                         yAxes: [{
                             stacked: true,
                             scaleLabel: {
                                 display: true,
-                                labelString: 'Cost (@currency)'
+                                labelString: 'Cost (@envUsage.Usage.Currency)'
                             },
                             ticks: {
                                 precision: 2,
@@ -157,45 +128,5 @@
 
             var chart = new Chart(ctx, cfg);
         </script>
-
-        /*
-        <table>
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Item</th>
-                    <th>Cost</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var day in data.Properties.Rows.GroupBy(row => row[dateIndex]).OrderBy(g => g.Key))
-                {
-                    string FormatCost(IReadOnlyList<object> row)
-                        => string.Format("{0:0.00} {1}", row[costIndex], row[currencyIndex]);
-
-                    string FormatItem(IReadOnlyList<object> row)
-                        => row[meterCategoryIndex].ToString();
-
-                    // Render the first item with the header
-                    <tr>
-                        <th rowspan="@day.Count()" scope="row">
-                            @day.Key
-                        </th>
-                        <td>@FormatItem(day.First())</td>
-                        <td>@FormatCost(day.First())</td>
-                    </tr>
-
-                    // Render the rest without
-                    @foreach (var item in day.Skip(1))
-                    {
-                        <tr>
-                            <td>@FormatItem(item)</td>
-                            <td>@FormatCost(item)</td>
-                        </tr>
-                    }
-                }
-            </tbody>
-        </table>
-        */
     }
 </div>

@@ -26,6 +26,9 @@ namespace WebApp.Controllers
             _assetRepoCoordinator = assetRepoCoordinator;
         }
 
+        public Task<RenderingEnvironment> Environment(string envId)
+            => _environmentCoordinator.GetEnvironment(envId);
+
         public async Task<IReadOnlyList<RenderingEnvironment>> Environments()
         {
             var envs = await Task.WhenAll((await _environmentCoordinator.ListEnvironments())
