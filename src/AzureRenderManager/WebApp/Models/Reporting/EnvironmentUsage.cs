@@ -3,17 +3,16 @@
 
 namespace WebApp.Models.Reporting
 {
-    public class EnvironmentUsage
+    public class EnvironmentCost
     {
-        public EnvironmentUsage(string envId, Usage usage)
+        public EnvironmentCost(string envId, Cost cost)
         {
             EnvironmentId = envId;
-            Usage = usage;
+            Cost = cost;
         }
 
         public string EnvironmentId { get; }
 
-        public Usage Usage { get; }
+        public Cost Cost { get; }
     }
-
 }

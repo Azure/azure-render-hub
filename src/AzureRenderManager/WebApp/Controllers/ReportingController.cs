@@ -16,18 +16,16 @@ namespace WebApp.Controllers
     [EnvironmentsActionFilter]
     public class ReportingController : MenuBaseController
     {
-        private static readonly TimeSpan CacheResultsFor = TimeSpan.FromMinutes(10);
-
-        private readonly IUsageCoordinator _usageCoordinator;
+        private readonly ICostCoordinator _costCoordinator;
 
         public ReportingController(
             IEnvironmentCoordinator environmentCoordinator,
             IPackageCoordinator packageCoordinator,
             IAssetRepoCoordinator assetRepoCoordinator,
-            IUsageCoordinator usageCoordinator)
+            ICostCoordinator usageCoordinator)
             : base(environmentCoordinator, packageCoordinator, assetRepoCoordinator)
         {
-            _usageCoordinator = usageCoordinator;
+            _costCoordinator = usageCoordinator;
         }
 
         [HttpGet]
@@ -38,7 +36,7 @@ namespace WebApp.Controllers
 
             var period = GetQueryPeriod(from, to);
 
-            var usages = await Task.WhenAll(envs.Select(env => _usageCoordinator.GetUsage(env, period)));
+            var usages = await Task.WhenAll(envs.Select(env => _costCoordinator.GetCost(env, period)));
 
             var nextMonthLink = GetNextMonthLink(period);
             var currentMonthLink = GetCurrentMonthLink();
@@ -56,13 +54,13 @@ namespace WebApp.Controllers
 
         [HttpGet]
         [Route("Reporting/{envId}", Name = nameof(Environment))]
-        public async Task<ActionResult<EnvironmentUsage>> Environment(string envId, [FromQuery] DateTimeOffset? from, [FromQuery] DateTimeOffset? to)
+        public async Task<ActionResult<EnvironmentCost>> Environment(string envId, [FromQuery] DateTimeOffset? from, [FromQuery] DateTimeOffset? to)
         {
             var env = await Environment(envId);
 
             var period = GetQueryPeriod(from, to);
 
-            var usage = await _usageCoordinator.GetUsage(env, period);
+            var usage = await _costCoordinator.GetCost(env, period);
 
             var nextMonthLink = GetNextMonthLink(period);
             var currentMonthLink = GetCurrentMonthLink();

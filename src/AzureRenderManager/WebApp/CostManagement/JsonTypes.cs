@@ -85,7 +85,7 @@ namespace WebApp.CostManagement
         public Dataset Dataset { get; }
     }
 
-    public class QueryTimePeriod
+    public readonly struct QueryTimePeriod : IEquatable<QueryTimePeriod>
     {
         public QueryTimePeriod(DateTimeOffset from, DateTimeOffset to)
         {
@@ -96,6 +96,21 @@ namespace WebApp.CostManagement
         public DateTimeOffset From { get; }
 
         public DateTimeOffset To { get; }
+
+        public override bool Equals(object obj)
+            => obj is QueryTimePeriod other && Equals(other);
+
+        public bool Equals(QueryTimePeriod other)
+            => From == other.From && To == other.To;
+
+        public override int GetHashCode()
+            => HashCode.Combine(From, To);
+
+        public static bool operator ==(QueryTimePeriod left, QueryTimePeriod right)
+            => left.Equals(right);
+
+        public static bool operator !=(QueryTimePeriod left, QueryTimePeriod right)
+            => !left.Equals(right);
     }
 
     public class Dataset

@@ -11,12 +11,12 @@ namespace WebApp.Models.Reporting
     /// <summary>
     /// A more usable presentation of the data from <see cref="UsageResponse"/>
     /// </summary>
-    public sealed class Usage
+    public sealed class Cost
     {
         /// <summary>
         /// Merges two usages into one. They must be for the same time period.
         /// </summary>
-        public Usage(Usage left, Usage right)
+        public Cost(Cost left, Cost right)
         {
             if (left.Period != right.Period)
             {
@@ -72,7 +72,7 @@ namespace WebApp.Models.Reporting
             }
         }
 
-        public Usage(QueryTimePeriod period, UsageResponse response)
+        public Cost(QueryTimePeriod period, UsageResponse response)
         {
             Period = period;
             Currency = ExtractCurrency(response);
