@@ -7,6 +7,7 @@ using WebApp.AppInsights.PoolUsage;
 using WebApp.Code.Extensions;
 using WebApp.Config;
 using WebApp.Models.Environments.Create;
+using WebApp.Models.Reporting;
 
 namespace WebApp.Models.Environments.Details
 {
@@ -24,7 +25,8 @@ namespace WebApp.Models.Environments.Details
         public ViewEnvironmentModel(
             RenderingEnvironment environment,
             Microsoft.Azure.Management.Batch.Models.BatchAccount batchAccount = null,
-            IList<PoolUsageResult> poolUsageResults = null)
+            IList<PoolUsageResult> poolUsageResults = null,
+            EnvironmentCost usage = null)
         {
             if (environment != null)
             {
@@ -137,6 +139,7 @@ namespace WebApp.Models.Environments.Details
             }
 
             PoolUsageResults = poolUsageResults;
+            EnvironmentCost = usage;
         }
 
         // Details
@@ -235,5 +238,7 @@ namespace WebApp.Models.Environments.Details
         public int BatchPoolQuota { get; set; }
 
         public IList<PoolUsageResult> PoolUsageResults { get; set; }
+
+        public EnvironmentCost EnvironmentCost { get; set; }
     }
 }

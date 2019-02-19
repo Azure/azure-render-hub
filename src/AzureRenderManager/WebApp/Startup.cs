@@ -130,6 +130,12 @@ namespace WebApp
 
             // These are scoped as they use the credentials of the user:
             services.AddScoped<IAzureResourceProvider, AzureResourceProvider>();
+            services.AddScoped<ICostCoordinator>(p =>
+            {
+                var client = p.GetRequiredService<CostManagementClientAccessor>();
+                var memoryCache = p.GetRequiredService<IMemoryCache>();
+                return new CachingCostCoordinator(new CostCoordinator(client), memoryCache);
+            });
 
             services.AddSingleton<IIdentityProvider, IdentityProvider>();
             services.AddSingleton<IManagementClientProvider, ManagementClientMsiProvider>();

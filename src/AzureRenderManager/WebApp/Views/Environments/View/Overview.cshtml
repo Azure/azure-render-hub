@@ -4,11 +4,13 @@
 }
 
 @section Breadcrumb
-    {
+{
     <a asp-controller="Environments" asp-action="Index">Environments</a> &gt;
     <a asp-controller="Environments" asp-action="Details" asp-route-envId="@Model.EnvironmentName">@Model.EnvironmentName</a> &gt;
     <span>Overview</span>
 }
+
+<script src="~/js/chartjs-plugin-colorschemes.min.js" asp-append-version="true"></script>
 
 <h2>@Model.EnvironmentName - details</h2>
 <p>View the details of a pre-configured render farm environment.</p>
@@ -19,6 +21,8 @@
     { "Step", 1 },
     { "Type", "view" }
 })
+
+<div class="page-header">
 
 <div class="form-section">
     <div class="section-title">
@@ -73,11 +77,31 @@
         </div>
     </div>
 </div>
+
+<div class="form-section">
+    <div class="section-title">
+        <span class="step-index">3</span>
+        <div class="step-header">
+            <h3>Monthly Cost</h3>
+            <p>For more costs please see the <a href="@Url.Action("Index", "Reporting")">reporting page</a>.</p>
+        </div>
+    </div>
+    <div class="section-wrapper">
+        <div class="section-bar"></div>
+        <div class="section-content">
+            @{ await Html.RenderPartialAsync("Cost/Chart", Model.EnvironmentCost); }
+        </div>
+    </div>
+</div>
+
+</div>
+
 <div class="form-footer">
     <div class="button-bar">
         <a class="button" asp-controller="Environments" asp-action="Delete" asp-route-envId="@Model.EnvironmentName">Delete Environment <i class="fa fa-trash"></i></a>
     </div>
 </div>
+
 <p>&nbsp;</p>
 
 @section Scripts
