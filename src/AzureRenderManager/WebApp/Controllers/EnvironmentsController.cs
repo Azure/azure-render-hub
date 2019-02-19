@@ -57,7 +57,8 @@ namespace WebApp.Controllers
             IPackageCoordinator packageCoordinator,
             IAssetRepoCoordinator assetRepoCoordinator,
             StartTaskProvider startTaskProvider,
-            ILogger<EnvironmentsController> logger) : base(environmentCoordinator, packageCoordinator, assetRepoCoordinator)
+            ILogger<EnvironmentsController> logger)
+            : base(environmentCoordinator, packageCoordinator, assetRepoCoordinator)
         {
             _configuration = configuration;
             _azureResourceProvider = azureResourceProvider;
