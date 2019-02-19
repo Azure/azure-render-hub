@@ -52,31 +52,6 @@ namespace WebApp.Controllers
                     prevMonthLink));
         }
 
-        [HttpGet]
-        [Route("Reporting/{envId}", Name = nameof(Environment))]
-        public async Task<ActionResult<EnvironmentCost>> Environment(string envId, [FromQuery] DateTimeOffset? from, [FromQuery] DateTimeOffset? to)
-        {
-            var env = await Environment(envId);
-
-            var period = GetQueryPeriod(from, to);
-
-            var usage = await _costCoordinator.GetCost(env, period);
-
-            var nextMonthLink = GetNextMonthLink(period);
-            var currentMonthLink = GetCurrentMonthLink();
-            var prevMonthLink = GetPrevMonthLink(period);
-
-            return View(
-                new IndividualModel(
-                    period.From,
-                    period.To,
-                    usage,
-                    nextMonthLink,
-                    currentMonthLink,
-                    prevMonthLink));
-        }
-
-
         public string GetPrevMonthLink(QueryTimePeriod period)
             => Url.RouteUrl(nameof(Index), new { from = PrevMonthStart(period.From), to = PrevMonthEnd(period.From) });
 
