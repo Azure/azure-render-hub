@@ -85,7 +85,7 @@ namespace WebApp.CostManagement
         public Dataset Dataset { get; }
     }
 
-    public readonly struct QueryTimePeriod : IEquatable<QueryTimePeriod>
+    public class QueryTimePeriod : IEquatable<QueryTimePeriod>
     {
         public QueryTimePeriod(DateTimeOffset from, DateTimeOffset to)
         {
