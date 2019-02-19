@@ -29,7 +29,7 @@ using WebApp.Config.Resources;
 using WebApp.Identity;
 using WebApp.Models.Environments;
 using WebApp.Operations;
-
+using WebApp.CostManagement;
 
 namespace WebApp.Controllers
 {
@@ -41,10 +41,10 @@ namespace WebApp.Controllers
         private readonly IAzureResourceProvider _azureResourceProvider;
         private readonly IKeyVaultMsiClient _keyVaultMsiClient;
         private readonly IIdentityProvider _identityProvider;
-        private readonly IEnvironmentCoordinator _environmentCoordinator;
         private readonly IManagementClientProvider _managementClientProvider;
         private readonly IPoolUsageProvider _poolUsageProvider;
         private readonly StartTaskProvider _startTaskProvider;
+        private readonly ICostCoordinator _costCoordinator;
         private readonly ILogger _logger;
 
         public EnvironmentsController(
@@ -58,16 +58,18 @@ namespace WebApp.Controllers
             IPackageCoordinator packageCoordinator,
             IAssetRepoCoordinator assetRepoCoordinator,
             StartTaskProvider startTaskProvider,
-            ILogger<EnvironmentsController> logger) : base(environmentCoordinator, packageCoordinator, assetRepoCoordinator)
+            ICostCoordinator costCoordinator,
+            ILogger<EnvironmentsController> logger)
+            : base(environmentCoordinator, packageCoordinator, assetRepoCoordinator)
         {
             _configuration = configuration;
             _azureResourceProvider = azureResourceProvider;
             _keyVaultMsiClient = keyVaultMsiClient;
             _identityProvider = identityProvider;
-            _environmentCoordinator = environmentCoordinator;
             _managementClientProvider = managementClientProvider;
             _poolUsageProvider = poolUsageProvider;
             _startTaskProvider = startTaskProvider;
+            _costCoordinator = costCoordinator;
             _logger = logger;
         }
 
@@ -75,25 +77,10 @@ namespace WebApp.Controllers
         [Route("Environments")]
         public async Task<ActionResult> Index()
         {
-            var model = new EnvironmentOverviewModel();
-            var tasks = new List<Task<ViewEnvironmentModel>>();
-            var envs = await _environmentCoordinator.ListEnvironments();
-            foreach (var env in envs)
-            {
-                tasks.Add(GetEnvironmentModel(env));
-            }
+            var envs = await Task.WhenAll((await _environmentCoordinator.ListEnvironments()).Select(GetEnvironmentModel));
 
-            foreach (var task in tasks)
-            {
-                if (task != null)
-                {
-                    var result = await task;
-                    if (result != null)
-                    {
-                        model.Environments.Add(result);
-                    }
-                }
-            }
+            var model = new EnvironmentOverviewModel { Environments = envs.Where(e => e != null).ToList() };
+
             return View(model);
         }
 
@@ -330,13 +317,14 @@ namespace WebApp.Controllers
             }
 
             var client = await _managementClientProvider.CreateBatchManagementClient(environment.SubscriptionId);
-            var (account, usage) = await (
+            var (account, usage, cost) = await (
                 client.BatchAccount.GetAsync(
                     environment.BatchAccount.ResourceGroupName,
                     environment.BatchAccount.Name),
-                _poolUsageProvider.GetEnvironmentUsage(environment));
+                _poolUsageProvider.GetEnvironmentUsage(environment),
+                _costCoordinator.GetCost(environment, ReportingController.GetQueryPeriod(from: null, to: null)));
 
-            var model = new ViewEnvironmentModel(environment, account, usage);
+            var model = new ViewEnvironmentModel(environment, account, usage, cost);
 
             return View("View/Overview", model);
         }
