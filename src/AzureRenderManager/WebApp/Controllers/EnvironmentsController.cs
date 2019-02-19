@@ -44,7 +44,7 @@ namespace WebApp.Controllers
         private readonly IManagementClientProvider _managementClientProvider;
         private readonly IPoolUsageProvider _poolUsageProvider;
         private readonly StartTaskProvider _startTaskProvider;
-        private readonly ICostCoordinator _usageCoordinator;
+        private readonly ICostCoordinator _costCoordinator;
         private readonly ILogger _logger;
 
         public EnvironmentsController(
@@ -58,7 +58,7 @@ namespace WebApp.Controllers
             IPackageCoordinator packageCoordinator,
             IAssetRepoCoordinator assetRepoCoordinator,
             StartTaskProvider startTaskProvider,
-            ICostCoordinator usageCoordinator,
+            ICostCoordinator costCoordinator,
             ILogger<EnvironmentsController> logger)
             : base(environmentCoordinator, packageCoordinator, assetRepoCoordinator)
         {
@@ -69,7 +69,7 @@ namespace WebApp.Controllers
             _managementClientProvider = managementClientProvider;
             _poolUsageProvider = poolUsageProvider;
             _startTaskProvider = startTaskProvider;
-            _usageCoordinator = usageCoordinator;
+            _costCoordinator = costCoordinator;
             _logger = logger;
         }
 
@@ -322,7 +322,7 @@ namespace WebApp.Controllers
                     environment.BatchAccount.ResourceGroupName,
                     environment.BatchAccount.Name),
                 _poolUsageProvider.GetEnvironmentUsage(environment),
-                _usageCoordinator.GetCost(environment, ReportingController.GetQueryPeriod(from: null, to: null)));
+                _costCoordinator.GetCost(environment, ReportingController.GetQueryPeriod(from: null, to: null)));
 
             var model = new ViewEnvironmentModel(environment, account, usage, cost);
 

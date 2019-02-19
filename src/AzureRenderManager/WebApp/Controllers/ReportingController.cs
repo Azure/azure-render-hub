@@ -22,10 +22,10 @@ namespace WebApp.Controllers
             IEnvironmentCoordinator environmentCoordinator,
             IPackageCoordinator packageCoordinator,
             IAssetRepoCoordinator assetRepoCoordinator,
-            ICostCoordinator usageCoordinator)
+            ICostCoordinator costCoordinator)
             : base(environmentCoordinator, packageCoordinator, assetRepoCoordinator)
         {
-            _costCoordinator = usageCoordinator;
+            _costCoordinator = costCoordinator;
         }
 
         [HttpGet]
