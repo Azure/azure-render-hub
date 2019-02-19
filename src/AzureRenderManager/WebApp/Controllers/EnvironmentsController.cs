@@ -41,7 +41,6 @@ namespace WebApp.Controllers
         private readonly IAzureResourceProvider _azureResourceProvider;
         private readonly IKeyVaultMsiClient _keyVaultMsiClient;
         private readonly IIdentityProvider _identityProvider;
-        private readonly IEnvironmentCoordinator _environmentCoordinator;
         private readonly IManagementClientProvider _managementClientProvider;
         private readonly IPoolUsageProvider _poolUsageProvider;
         private readonly StartTaskProvider _startTaskProvider;
@@ -64,7 +63,6 @@ namespace WebApp.Controllers
             _azureResourceProvider = azureResourceProvider;
             _keyVaultMsiClient = keyVaultMsiClient;
             _identityProvider = identityProvider;
-            _environmentCoordinator = environmentCoordinator;
             _managementClientProvider = managementClientProvider;
             _poolUsageProvider = poolUsageProvider;
             _startTaskProvider = startTaskProvider;
@@ -75,25 +73,10 @@ namespace WebApp.Controllers
         [Route("Environments")]
         public async Task<ActionResult> Index()
         {
-            var model = new EnvironmentOverviewModel();
-            var tasks = new List<Task<ViewEnvironmentModel>>();
-            var envs = await _environmentCoordinator.ListEnvironments();
-            foreach (var env in envs)
-            {
-                tasks.Add(GetEnvironmentModel(env));
-            }
+            var envs = await Task.WhenAll((await _environmentCoordinator.ListEnvironments()).Select(GetEnvironmentModel));
 
-            foreach (var task in tasks)
-            {
-                if (task != null)
-                {
-                    var result = await task;
-                    if (result != null)
-                    {
-                        model.Environments.Add(result);
-                    }
-                }
-            }
+            var model = new EnvironmentOverviewModel { Environments = envs.Where(e => e != null).ToList() };
+
             return View(model);
         }
 
