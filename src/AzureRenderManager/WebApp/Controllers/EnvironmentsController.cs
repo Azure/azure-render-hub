@@ -29,7 +29,7 @@ using WebApp.Config.Resources;
 using WebApp.Identity;
 using WebApp.Models.Environments;
 using WebApp.Operations;
-
+using WebApp.CostManagement;
 
 namespace WebApp.Controllers
 {
@@ -44,6 +44,7 @@ namespace WebApp.Controllers
         private readonly IManagementClientProvider _managementClientProvider;
         private readonly IPoolUsageProvider _poolUsageProvider;
         private readonly StartTaskProvider _startTaskProvider;
+        private readonly ICostCoordinator _usageCoordinator;
         private readonly ILogger _logger;
 
         public EnvironmentsController(
@@ -57,6 +58,7 @@ namespace WebApp.Controllers
             IPackageCoordinator packageCoordinator,
             IAssetRepoCoordinator assetRepoCoordinator,
             StartTaskProvider startTaskProvider,
+            ICostCoordinator usageCoordinator,
             ILogger<EnvironmentsController> logger)
             : base(environmentCoordinator, packageCoordinator, assetRepoCoordinator)
         {
@@ -67,6 +69,7 @@ namespace WebApp.Controllers
             _managementClientProvider = managementClientProvider;
             _poolUsageProvider = poolUsageProvider;
             _startTaskProvider = startTaskProvider;
+            _usageCoordinator = usageCoordinator;
             _logger = logger;
         }
 
@@ -314,13 +317,14 @@ namespace WebApp.Controllers
             }
 
             var client = await _managementClientProvider.CreateBatchManagementClient(environment.SubscriptionId);
-            var (account, usage) = await (
+            var (account, usage, cost) = await (
                 client.BatchAccount.GetAsync(
                     environment.BatchAccount.ResourceGroupName,
                     environment.BatchAccount.Name),
-                _poolUsageProvider.GetEnvironmentUsage(environment));
+                _poolUsageProvider.GetEnvironmentUsage(environment),
+                _usageCoordinator.GetCost(environment, ReportingController.GetQueryPeriod(from: null, to: null)));
 
-            var model = new ViewEnvironmentModel(environment, account, usage);
+            var model = new ViewEnvironmentModel(environment, account, usage, cost);
 
             return View("View/Overview", model);
         }

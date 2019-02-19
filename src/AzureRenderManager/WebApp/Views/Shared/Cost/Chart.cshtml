@@ -1,0 +1,84 @@
+﻿@model WebApp.Models.Reporting.EnvironmentCost
+
+@if (Model.Cost == null)
+{
+    <h2>@Model.EnvironmentId</h2>
+    <p>Cost management is not supported for this environment.</p>
+    return;
+}
+
+@if (!Model.Cost.Categorized.Any())
+{
+    <h2>@Model.EnvironmentId</h2>
+    <p>No cost data is available for this period.</p>
+    return;
+}
+
+<h2>@Model.EnvironmentId (@Model.Cost.Total.ToString("F2") @Model.Cost.Currency)</h2>
+
+@{ 
+    var id = Guid.NewGuid().ToString();
+    var usage = Model.Cost;
+    var period = usage.Period;
+}
+
+<div class="chart-container" style="width: 100%">
+    <canvas id="graph-@id"></canvas>
+</div>
+
+<script type="text/javascript">
+var ctx = document.getElementById("graph-@id").getContext('2d');
+
+var datasets = [
+@foreach (var category in usage.Categorized)
+{
+    <text>{ label: '@category.Key', data: [@string.Join(", ", category.Value.Select(x => x.Value))] }, </text>
+} ];
+
+var cfg = {
+    type: 'bar',
+    data: {
+        labels: [
+            @for (var day = period.From; day <= period.To; day = day.AddDays(1))
+            {
+                <text>"@day.ToString("yyyyMMdd")",</text>
+            }
+        ],
+        datasets: datasets
+    },
+    options: {
+        legend: {
+            position: 'bottom'
+        },
+        scales: {
+            xAxes: [{
+                stacked: true,
+                type: 'time',
+                time: {
+                    unit: 'day',
+                    min: '@period.From.ToString("yyyyMMdd")',
+                    max: '@period.To.ToString("yyyyMMdd")'
+                }
+            }],
+            yAxes: [{
+                stacked: true,
+                scaleLabel: {
+                    display: true,
+                    labelString: 'Cost (@Model.Cost.Currency)'
+                },
+                ticks: {
+                    precision: 2,
+                    beginAtZero: true
+                }
+            }]
+        },
+        plugins: {
+            colorschemes: {
+                scheme: 'brewer.Paired12'
+            }
+        }
+    }
+};
+
+var chart = new Chart(ctx, cfg);
+</script>

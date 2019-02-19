@@ -12,49 +12,49 @@ using static System.FormattableString;
 
 namespace WebApp.CostManagement
 {
-    public interface IUsageCoordinator
+    public interface ICostCoordinator
     {
-        Task<EnvironmentUsage> GetUsage(RenderingEnvironment renderingEnvironment, QueryTimePeriod period);
+        Task<EnvironmentCost> GetCost(RenderingEnvironment renderingEnvironment, QueryTimePeriod period);
     }
 
-    public class CachingUsageCoordinator : IUsageCoordinator
+    public class CachingCostCoordinator : ICostCoordinator
     {
         private static readonly TimeSpan CacheResultsFor = TimeSpan.FromMinutes(10);
 
-        private readonly IUsageCoordinator _inner;
+        private readonly ICostCoordinator _inner;
         private readonly IMemoryCache _memoryCache;
 
-        public CachingUsageCoordinator(IUsageCoordinator inner, IMemoryCache memoryCache)
+        public CachingCostCoordinator(ICostCoordinator inner, IMemoryCache memoryCache)
         {
             _inner = inner;
             _memoryCache = memoryCache;
         }
 
-        public Task<EnvironmentUsage> GetUsage(RenderingEnvironment env, QueryTimePeriod timePeriod)
+        public Task<EnvironmentCost> GetCost(RenderingEnvironment env, QueryTimePeriod timePeriod)
         {
             var cacheKey = Invariant($"REPORTING:{env.Name}/{timePeriod.From}/{timePeriod.To}");
 
             return _memoryCache.GetOrCreateAsync(cacheKey, Fetch);
 
-            Task<EnvironmentUsage> Fetch(ICacheEntry ice)
+            Task<EnvironmentCost> Fetch(ICacheEntry ice)
             {
                 ice.AbsoluteExpirationRelativeToNow = CacheResultsFor;
 
-                return _inner.GetUsage(env, timePeriod);
+                return _inner.GetCost(env, timePeriod);
             }
         }
     }
 
-    public class UsageCoordinator : IUsageCoordinator
+    public class CostCoordinator : ICostCoordinator
     {
         private readonly CostManagementClientAccessor _clientAccessor;
 
-        public UsageCoordinator(CostManagementClientAccessor accessor)
+        public CostCoordinator(CostManagementClientAccessor accessor)
         {
             _clientAccessor = accessor;
         }
         
-        public async Task<EnvironmentUsage> GetUsage(RenderingEnvironment env, QueryTimePeriod period)
+        public async Task<EnvironmentCost> GetCost(RenderingEnvironment env, QueryTimePeriod period)
         {
             var usageRequest =
                 new UsageRequest(
@@ -78,11 +78,11 @@ namespace WebApp.CostManagement
 
             if (result.Properties == null)
             {
-                return new EnvironmentUsage(env.Name, null);
+                return new EnvironmentCost(env.Name, null);
             }
             else
             {
-                return new EnvironmentUsage(env.Name, new Usage(period, result));
+                return new EnvironmentCost(env.Name, new Cost(period, result));
             }
         }
     }

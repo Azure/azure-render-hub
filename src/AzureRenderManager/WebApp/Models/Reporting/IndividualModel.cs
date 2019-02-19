@@ -9,7 +9,7 @@ namespace WebApp.Models.Reporting
         public IndividualModel(
             DateTimeOffset from,
             DateTimeOffset to,
-            EnvironmentUsage usage,
+            EnvironmentCost usage,
             string nextMonth,
             string currentMonth,
             string prevMonth)
@@ -26,7 +26,7 @@ namespace WebApp.Models.Reporting
 
         public DateTimeOffset To { get; }
 
-        public EnvironmentUsage Usage { get; }
+        public EnvironmentCost Usage { get; }
 
         public string NextMonthLink { get; }
 

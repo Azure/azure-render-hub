@@ -11,14 +11,14 @@ namespace WebApp.Models.Reporting
         public IndexModel(
             DateTimeOffset from,
             DateTimeOffset to,
-            EnvironmentUsage[] usages,
+            EnvironmentCost[] usages,
             string nextMonth,
             string currentMonth,
             string prevMonth)
         {
             From = from;
             To = to;
-            SummaryUsage = usages.Select(x => x.Usage).Aggregate((x, y) => new Usage(x, y));
+            SummaryUsage = usages.Select(x => x.Cost).Aggregate((x, y) => new Cost(x, y));
             UsagePerEnvironment = usages.OrderBy(eu => eu.EnvironmentId).ToList();
             NextMonthLink = nextMonth;
             CurrentMonthLink = currentMonth;
@@ -29,9 +29,9 @@ namespace WebApp.Models.Reporting
 
         public DateTimeOffset To { get; }
 
-        public Usage SummaryUsage { get; }
+        public Cost SummaryUsage { get; }
 
-        public IReadOnlyList<EnvironmentUsage> UsagePerEnvironment { get; }
+        public IReadOnlyList<EnvironmentCost> UsagePerEnvironment { get; }
 
         public string NextMonthLink { get; }
 
