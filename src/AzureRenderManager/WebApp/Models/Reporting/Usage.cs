@@ -18,6 +18,16 @@ namespace WebApp.Models.Reporting
         /// </summary>
         public Cost(Cost left, Cost right)
         {
+            if (left == null)
+            {
+                throw new ArgumentNullException(nameof(left));
+            }
+
+            if (right == null)
+            {
+                throw new ArgumentNullException(nameof(right));
+            }
+
             if (left.Period != right.Period)
             {
                 throw new ArgumentException("Can't combine usages from two different periods");
