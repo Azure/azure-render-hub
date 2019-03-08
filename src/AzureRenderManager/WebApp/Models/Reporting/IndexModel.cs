@@ -18,7 +18,7 @@ namespace WebApp.Models.Reporting
         {
             From = from;
             To = to;
-            SummaryUsage = usages.Select(x => x.Cost).Aggregate((x, y) => new Cost(x, y));
+            SummaryUsage = usages.Select(x => x.Cost).Where(c => c != null).Aggregate((x, y) => new Cost(x, y));
             UsagePerEnvironment = usages.OrderBy(eu => eu.EnvironmentId).ToList();
             NextMonthLink = nextMonth;
             CurrentMonthLink = currentMonth;
