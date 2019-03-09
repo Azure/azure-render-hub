@@ -44,7 +44,12 @@
         }
     </p>
 
-    @foreach (var envUsage in new[] { new EnvironmentCost("Total Costs", Model.SummaryUsage) }.Concat(Model.UsagePerEnvironment))
+    @if(Model.SummaryUsage != null)
+    {
+        await Html.RenderPartialAsync("Cost/Chart", new EnvironmentCost("Total Costs", Model.SummaryUsage));
+    }
+
+    @foreach (var envUsage in Model.UsagePerEnvironment)
     {
         await Html.RenderPartialAsync("Cost/Chart", envUsage);
     }
