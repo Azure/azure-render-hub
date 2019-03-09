@@ -8,6 +8,7 @@ using System.Globalization;
 using System.Text;
 using WebApp.Controllers;
 using WebApp.CostManagement;
+using WebApp.Models.Reporting;
 using Xunit;
 
 namespace WebApp.Tests
@@ -200,6 +201,13 @@ namespace WebApp.Tests
             var actual = ReportingController.EndOfMonth(dto);
 
             Assert.Equal(expectedDTO, actual);
+        }
+
+        [Fact]
+        public void CanHaveNoCostDataInViewModel()
+        {
+            var model = new IndexModel(DateTimeOffset.Now, DateTimeOffset.Now, new EnvironmentCost[0], "", "", "");
+            Assert.Null(model.SummaryUsage);
         }
     }
 }
