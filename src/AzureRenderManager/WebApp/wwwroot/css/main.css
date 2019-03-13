@@ -214,6 +214,9 @@ select {
   color: #535353;
   padding: 0 1px; }
 
+select[multiple] {
+  height: 100px; }
+
 input[type="text"], input[type="number"], input[type="password"] {
   font: inherit;
   background-color: #fff;
