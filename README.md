@@ -103,10 +103,10 @@ Click the following link to start a deployment into your existing Azure subscrip
  - `hostingPlanName`: The name of the hosting plan service, you can leave the default.
  - `skuTier`*: The Hosting Plan tier that determines the performance and cost for the Web App.  Plans and prices are available [here](https://azure.microsoft.com/en-au/pricing/details/app-service/plans/).
  - `skuSize`*: The instance size in the hosting plan tier, choose F1 for the Free tier, SX for Shared, BX for Basic, PX for Premium.
- - `aadTenantId`: the AAD application tenant ID from the application you created above. This is called the "Directory ID" in the Azure Portal, and can be found on the Properties page for the directory.
+ - `aadTenantId` ("Directory ID"): the AAD application tenant ID from the application you created above. In the Azure Portal this can be found on the Properties page for the directory.
  - `aadDomain`: the AAD tenant domain, i.e. constos.microsoft.com. In the Azure Portal this is shown on the Overview pane for the directory.
- - `aadClientId`: the AAD application (or client) ID from above.
- - `aadClientSecret`: the AAD application/client secret from above.
+ - `aadClientId` ("Application ID"): the AAD application (or client) ID from above.
+ - `aadClientSecret` ("Password"): the AAD application/client secret from above.
 
 \* Note that auto scale functionality requires the web site to always be running which requires Basic/B1 SKU or higher.
  
