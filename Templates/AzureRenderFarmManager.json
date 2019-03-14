@@ -165,6 +165,19 @@
             },
             "resources": [
                 {
+                    "type": "sourcecontrols",
+                    "name": "web",
+                    "apiVersion": "[variables('webSitesApiVersion')]",
+                    "properties": {
+                        "repoUrl": "[variables('repoURL')]",
+                        "isManualIntegration": true,
+                        "branch": "master"
+                    },
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Web/Sites', parameters('webSiteName'))]"
+                    ]
+                },
+                {
                     "type": "config",
                     "name": "appsettings",
                     "apiVersion": "2015-08-01",
@@ -182,20 +195,8 @@
                         "APPINSIGHTS_INSTRUMENTATIONKEY": "[reference(concat('microsoft.insights/components/', variables('applicationInsightsName'))).InstrumentationKey]"
                     },
                     "dependsOn": [
-                        "[resourceId('Microsoft.Web/Sites', parameters('webSiteName'))]"
-                    ]
-                },
-                {
-                    "type": "sourcecontrols",
-                    "name": "web",
-                    "apiVersion": "[variables('webSitesApiVersion')]",
-                    "properties": {
-                        "repoUrl": "[variables('repoURL')]",
-                        "isManualIntegration": true,
-                        "branch": "master"
-                    },
-                    "dependsOn": [
-                        "[resourceId('Microsoft.Web/Sites', parameters('webSiteName'))]"
+                        "[resourceId('Microsoft.Web/Sites', parameters('webSiteName'))]",
+                        "[resourceId('Microsoft.Web/sites/sourcecontrols', parameters('webSiteName'), 'web')]"
                     ]
                 }
             ]
