@@ -167,7 +167,7 @@
                 {
                     "type": "config",
                     "name": "appsettings",
-                    "apiVersion": "[variables('webSitesApiVersion')]",
+                    "apiVersion": "2015-08-01",
                     "properties": {
                         "PortalManagedIdentity:ObjectId": "[reference(variables('identityResourceId'), '2015-08-31-PREVIEW').principalId]",
                         "PortalManagedIdentity:TenantId": "[reference(variables('identityResourceId'), '2015-08-31-PREVIEW').tenantId]",
@@ -194,15 +194,6 @@
                         "isManualIntegration": true,
                         "branch": "master"
                     },
-                    "dependsOn": [
-                        "[resourceId('Microsoft.Web/Sites', parameters('webSiteName'))]"
-                    ]
-                },
-                {
-                    "type": "siteextensions",
-                    "name": "Microsoft.AspNetCore.AzureAppServices.SiteExtension",
-                    "apiVersion": "2015-08-01",
-                    "properties": {},
                     "dependsOn": [
                         "[resourceId('Microsoft.Web/Sites', parameters('webSiteName'))]"
                     ]
