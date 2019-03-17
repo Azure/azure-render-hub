@@ -69,11 +69,11 @@ namespace WebApp.Config.Pools
                 3, // retries
                 true); // waitForSuccess
 
-            await AppendGpu(startTask, gpuPackage);
+            AppendGpu(startTask, gpuPackage);
 
             AppendDomainSetup(startTask, environment);
 
-            await AppendGeneralPackages(startTask, generalPackages);
+            AppendGeneralPackages(startTask, generalPackages);
 
             await AppendQubeSetupToStartTask(
                 environment,
@@ -116,11 +116,10 @@ namespace WebApp.Config.Pools
                 3, // retries
                 true); // waitForSuccess
 
-            await AppendGpu(startTask, gpuPackage);
+            AppendGpu(startTask, gpuPackage);
+            AppendGeneralPackages(startTask, generalPackages);
 
-            await AppendGeneralPackages(startTask, generalPackages);
-
-            await AppendDeadlineSetupToStartTask(
+            AppendDeadlineSetupToStartTask(
                 environment,
                 poolName,
                 startTask,
@@ -135,7 +134,7 @@ namespace WebApp.Config.Pools
             return startTask;
         }
 
-        private async Task AppendDeadlineSetupToStartTask(
+        private void AppendDeadlineSetupToStartTask(
             RenderingEnvironment environment,
             string poolName,
             StartTask startTask,
@@ -282,33 +281,32 @@ namespace WebApp.Config.Pools
             startTask.ResourceFiles = resourceFiles;
         }
 
-        private async Task AppendGpu(StartTask startTask, InstallationPackage gpuPackage)
+        private void AppendGpu(StartTask startTask, InstallationPackage gpuPackage)
         {
             if (gpuPackage != null)
             {
-                var resourceFiles = new List<ResourceFile>(startTask.ResourceFiles);
-                resourceFiles.Add(GetContainerResourceFile(gpuPackage.Container, gpuPackage.PackageName));
-                startTask.ResourceFiles = resourceFiles;
+                var resourceFile = GetContainerResourceFile(gpuPackage.Container, gpuPackage.PackageName);
+                startTask.ResourceFiles = new List<ResourceFile>(startTask.ResourceFiles) { resourceFile };
+
                 if (!string.IsNullOrWhiteSpace(gpuPackage.PackageInstallCommand))
                 {
-                    var cmd = gpuPackage.PackageInstallCommand.Replace("{filename}", resourceFiles.First().FilePath);
-                    startTask.CommandLine += $"cd {gpuPackage.PackageName}; {cmd}; cd..; ";
+                    startTask.CommandLine += $"pushd {gpuPackage.PackageName}; {gpuPackage.PackageInstallCommand}; popd; ";
                 }
             }
         }
 
-        private async Task AppendGeneralPackages(StartTask startTask, IEnumerable<InstallationPackage> generalPackages)
+        private void AppendGeneralPackages(StartTask startTask, IEnumerable<InstallationPackage> generalPackages)
         {
-            if (generalPackages != null && generalPackages.Any())
+            if (generalPackages != null)
             {
                 foreach (var package in generalPackages)
                 {
-                    var resourceFiles = new List<ResourceFile>(startTask.ResourceFiles);
-                    resourceFiles.Add(GetContainerResourceFile(package.Container, package.PackageName));
-                    startTask.ResourceFiles = resourceFiles;
+                    var resourceFile = GetContainerResourceFile(package.Container, package.PackageName);
+                    startTask.ResourceFiles = new List<ResourceFile>(startTask.ResourceFiles) { resourceFile };
+
                     if (!string.IsNullOrWhiteSpace(package.PackageInstallCommand))
                     {
-                        startTask.CommandLine += $"cd {package.PackageName}; {package.PackageInstallCommand}; cd ..; ";
+                        startTask.CommandLine += $"pushd {package.PackageName}; {package.PackageInstallCommand}; popd; ";
                     }
                 }
             }
@@ -369,6 +367,7 @@ namespace WebApp.Config.Pools
                 SharedAccessExpiryTime = DateTime.UtcNow.AddYears(1),
                 Permissions = SharedAccessBlobPermissions.Read | SharedAccessBlobPermissions.List,
             };
+
             var containerSas = container.GetSharedAccessSignature(policy);
             return new ResourceFile(storageContainerUrl: container.Uri + containerSas, filePath: filePath);
         }
