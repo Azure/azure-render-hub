@@ -202,7 +202,7 @@
                     </div>
                     <div class="form-element">
                         <label asp-for="GeneralPackage.InstallCommandLine">Installation Command (Optional)</label>
-                        <input asp-for="GeneralPackage.InstallCommandLine" placeholder="powershell.exe -Command Expand-Archive -Path {filename} -DestinationPath .; .\setup.exe -s -noreboot" value="powershell.exe -Command Expand-Archive -Path {filename} -DestinationPath .; .\setup.exe -s -noreboot" />
+                        <input asp-for="GeneralPackage.InstallCommandLine" placeholder="powershell.exe -Command Expand-Archive -Path *.zip -DestinationPath .; .\setup.exe -s -noreboot" value="powershell.exe -Command Expand-Archive -Path *.zip -DestinationPath .; .\setup.exe -s -noreboot" />
                         <span asp-validation-for="GeneralPackage.InstallCommandLine" class=""></span>
                         <small>The command line to install the GPU drivers.  The default is sufficient if the standard NVIDIA drivers are used.</small>
                     </div>
