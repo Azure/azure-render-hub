@@ -160,23 +160,10 @@
                 "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('hostingPlanName'))]",
                 "siteConfig": {
                     "alwaysOn": "[not(or(equals(parameters('skuSize'), 'F1'), equals(parameters('skuSize'), 'D1')))]",
-                    "appSettings": []
+                    "appSettings": [ ]
                 }
             },
             "resources": [
-                {
-                    "type": "sourcecontrols",
-                    "name": "web",
-                    "apiVersion": "[variables('webSitesApiVersion')]",
-                    "properties": {
-                        "repoUrl": "[variables('repoURL')]",
-                        "isManualIntegration": true,
-                        "branch": "master"
-                    },
-                    "dependsOn": [
-                        "[resourceId('Microsoft.Web/Sites', parameters('webSiteName'))]"
-                    ]
-                },
                 {
                     "type": "config",
                     "name": "appsettings",
@@ -195,8 +182,21 @@
                         "APPINSIGHTS_INSTRUMENTATIONKEY": "[reference(concat('microsoft.insights/components/', variables('applicationInsightsName'))).InstrumentationKey]"
                     },
                     "dependsOn": [
+                        "[resourceId('Microsoft.Web/Sites', parameters('webSiteName'))]"
+                    ]
+                },
+                {
+                    "type": "sourcecontrols",
+                    "name": "web",
+                    "apiVersion": "[variables('webSitesApiVersion')]",
+                    "properties": {
+                        "repoUrl": "[variables('repoURL')]",
+                        "isManualIntegration": true,
+                        "branch": "master"
+                    },
+                    "dependsOn": [
                         "[resourceId('Microsoft.Web/Sites', parameters('webSiteName'))]",
-                        "[resourceId('Microsoft.Web/sites/sourcecontrols', parameters('webSiteName'), 'web')]"
+                        "[resourceId('Microsoft.Web/sites/config', parameters('webSiteName'), 'appsettings')]"
                     ]
                 }
             ]
