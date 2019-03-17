@@ -9,5 +9,13 @@ namespace WebApp.Models
         public string RequestId { get; set; }
 
         public bool ShowRequestId => !string.IsNullOrEmpty(RequestId);
+
+        public string Path { get; set; }
+
+        public string Error { get; set; }
+
+        public string Message { get; set; }
+
+        public string Details { get; set; }
     }
 }
