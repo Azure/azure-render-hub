@@ -51,6 +51,9 @@
     <Content Update="Views\Environments\Delete.cshtml">
       <Pack>$(IncludeRazorContentInPack)</Pack>
     </Content>
+    <Content Update="Views\Environments\Error.cshtml">
+      <Pack>$(IncludeRazorContentInPack)</Pack>
+    </Content>
     <Content Update="Views\Environments\View\Config.cshtml">
       <Pack>$(IncludeRazorContentInPack)</Pack>
     </Content>
