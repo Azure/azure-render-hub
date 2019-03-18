@@ -1,0 +1,17 @@
+﻿@model ErrorViewModel
+@{
+    ViewBag.Title = "Environments";
+}
+
+@section Breadcrumb
+{
+    <a asp-controller="Environments" asp-action="Index">Environments</a>
+}
+
+<div class="page-header">
+    <h1 class="text-danger">@Model.Error</h1>
+    <h2>@Model.Message</h2>
+    <p></p>
+    <p>Path: @Model.Path</p>
+    <p>Details: @Model.Details</p>
+</div>
