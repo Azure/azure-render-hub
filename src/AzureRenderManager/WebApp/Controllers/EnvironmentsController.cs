@@ -30,6 +30,9 @@ using WebApp.Identity;
 using WebApp.Models.Environments;
 using WebApp.Operations;
 using WebApp.CostManagement;
+using Microsoft.AspNetCore.Diagnostics;
+using WebApp.Models;
+using System.Diagnostics;
 
 namespace WebApp.Controllers
 {
@@ -82,6 +85,37 @@ namespace WebApp.Controllers
             var model = new EnvironmentOverviewModel { Environments = envs.Where(e => e != null).ToList() };
 
             return View(model);
+        }
+
+        [HttpGet]
+        [Route("Environments/Error")]
+        public async Task<ActionResult> Error()
+        {
+            var exceptionHandlerPathFeature = HttpContext.Features.Get<IExceptionHandlerPathFeature>();
+            var path = exceptionHandlerPathFeature?.Path;
+            var error = exceptionHandlerPathFeature?.Error;
+            var ce = error as CloudException;
+            if (ce != null)
+            {
+                if (ce.Body.Code == "AuthorizationFailed")
+                {
+                    return View(new ErrorViewModel
+                    {
+                        Path = path,
+                        Error = "You're not authorized to view this page",
+                        Message = "You'll need to contact the Render Farm Manager administrator and request access to the environment.",
+                        Details = ce.Message,
+                    });
+                }
+            }
+
+            return View(new ErrorViewModel
+            {
+                Path = path,
+                Error = "An unknown error has occurred",
+                Message = error.Message,
+                Details = error.ToString()
+            });
         }
 
         private async Task<ViewEnvironmentModel> GetEnvironmentModel(string environmentName)
