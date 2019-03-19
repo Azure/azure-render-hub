@@ -14,4 +14,7 @@
     <span class="@(step == "config" ? "current" : "")">
         <a asp-controller="Environments" asp-action="Config" asp-route-envId="@Model.EnvironmentName">Configuration</a>
     </span>
+    <span class="@(step == "useraccess" ? "current" : "")">
+        <a asp-controller="Environments" asp-action="UserAccess" asp-route-envId="@Model.EnvironmentName">User Access</a>
+    </span>
 </div>
