@@ -8,6 +8,7 @@ using Microsoft.Azure.Management.KeyVault.Models;
 using Microsoft.Azure.Management.ResourceManager.Models;
 
 using WebApp.Config;
+using WebApp.Models.Environments;
 
 namespace WebApp.Arm
 {
@@ -116,5 +117,7 @@ namespace WebApp.Arm
         Task DeleteVNetAsync(Guid subscriptionId, string resourceGroupName, string vnetName);
 
         Task AssignManagementIdentityAsync(Guid subscriptionId, string resourceId, string role, Identity.Identity identity);
+
+        Task<List<UserPermission>> GetUserPermissions(Guid subscriptionId, string scope);
     }
 }

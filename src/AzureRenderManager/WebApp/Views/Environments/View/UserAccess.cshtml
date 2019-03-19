@@ -1,0 +1,55 @@
+﻿@model WebApp.Models.Environments.EnvironmentUserPermissionsModel
+@{
+    ViewBag.Title = Model.EnvironmentName;
+}
+
+@section Breadcrumb
+    {
+    <a asp-controller="Environments" asp-action="Index">Environments</a> &gt;
+    <a asp-controller="Environments" asp-action="Details" asp-route-envId="@Model.EnvironmentName">@Model.EnvironmentName</a> &gt;
+    <span>User Access</span>
+}
+
+<h2>@Model.EnvironmentName - user access</h2>
+<p>View the users that have permissions to access this environment.</p>
+
+@await Html.PartialAsync("Menu/EnvironmentMainMenu", Model, new ViewDataDictionary(ViewData) {{ "Step", "useraccess" }})
+
+<div class="pool-details">
+    <table>
+        <thead>
+            <tr>
+                <th>User</th>
+                <th>Object Id</th>
+                <th>Permissions</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var userPermission in Model.UserPermissions)
+        {
+            <tr>
+                <td>@userPermission.Name</td>
+                <td>@userPermission.ObjectId</td>
+                <td>@userPermission.Role</td>
+                <td></td>
+            </tr>
+        }
+        </tbody>
+    </table>
+    @if (Model.UserPermissions.Count == 0)
+    {
+    <p>&nbsp;</p>
+    <text><h4>There are no users with permissions to this environment.</h4></text>
+    }
+    <div class="form-footer">
+        <div class="button-bar">
+            <a class="button" asp-action="New" asp-route-envId="@Model.EnvironmentName">Add New User <i class="fa fa-plus"></i></a>
+        </div>
+    </div>
+</div>
+
+<div class="form-footer">
+
+</div>
+<p>&nbsp;</p>

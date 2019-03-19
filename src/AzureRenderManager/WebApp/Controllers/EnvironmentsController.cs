@@ -513,6 +513,26 @@ namespace WebApp.Controllers
         }
 
         [HttpGet]
+        [Route("Environments/{envId}/UserAccess")]
+        public async Task<IActionResult> UserAccess(string envId)
+        {
+            var environment = await _environmentCoordinator.GetEnvironment(envId);
+            if (environment == null)
+            {
+                return RedirectToAction("Step1", new { envId });
+            }
+
+            var perms = await _azureResourceProvider.GetUserPermissions(environment.SubscriptionId, environment.BatchAccount.ResourceId);
+
+            var model = new EnvironmentUserPermissionsModel(environment)
+            {
+                UserPermissions = perms,
+            };
+
+            return View("View/UserAccess", model);
+        }
+
+        [HttpGet]
         [Route("Environments/{envId}/Manager")]
         public async Task<IActionResult> Manager(string envId)
         {
