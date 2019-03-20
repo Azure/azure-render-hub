@@ -94,7 +94,7 @@ namespace WebApp.Arm
             var upns = user.Identities.Select(i => i.Claims.GetUpn());
             foreach (var adminEmail in GetClassicAdministratorEmails(classicAdmins))
             {
-                if (names.Contains(adminEmail) || upns.Contains(adminEmail) || emails.Contains(adminEmail))
+                if (names.Any(name => name.Contains(adminEmail)) || upns.Contains(adminEmail) || emails.Contains(adminEmail))
                 {
                     return true;
                 }
