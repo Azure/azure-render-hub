@@ -13,6 +13,11 @@ namespace WebApp.Code.Extensions
             return claims.FirstOrDefault(c => c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name")?.Value;
         }
 
+        public static string GetEmailAddress(this IEnumerable<Claim> claims)
+        {
+            return claims.FirstOrDefault(c => c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress")?.Value;
+        }
+
         public static string GetUpn(this IEnumerable<Claim> claims)
         {
             return claims.FirstOrDefault(c => c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/upn")?.Value;
