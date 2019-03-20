@@ -90,10 +90,11 @@ namespace WebApp.Arm
             var classicAdmins = result.ToList();
             var user = GetUser();
             var names = user.Identities.Select(i => i.Claims.GetName());
+            var emails = user.Identities.Select(i => i.Claims.GetEmailAddress());
             var upns = user.Identities.Select(i => i.Claims.GetUpn());
             foreach (var adminEmail in GetClassicAdministratorEmails(classicAdmins))
             {
-                if (names.Contains(adminEmail) || upns.Contains(adminEmail))
+                if (names.Contains(adminEmail) || upns.Contains(adminEmail) || emails.Contains(adminEmail))
                 {
                     return true;
                 }

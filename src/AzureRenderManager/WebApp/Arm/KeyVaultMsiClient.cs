@@ -108,7 +108,7 @@ namespace WebApp.Arm
             }
             catch (KeyVaultErrorException ex)
             {
-                if (ex.Body.Error.Code != "SecretNotFound")
+                if (ex.Body?.Error?.Code != "SecretNotFound")
                 {
                     throw new Exception($"Failed to set secret with principal: {azureServiceTokenProvider.PrincipalUsed}", ex);
                 }
