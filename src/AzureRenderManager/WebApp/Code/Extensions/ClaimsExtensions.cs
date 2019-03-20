@@ -15,12 +15,22 @@ namespace WebApp.Code.Extensions
 
         public static string GetEmailAddress(this IEnumerable<Claim> claims)
         {
-            return claims.FirstOrDefault(c => c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress")?.Value;
+            var email = claims.FirstOrDefault(c => c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress")?.Value;
+            if (email == null)
+            {
+                email = claims.FirstOrDefault(c => c.Type == "http://schemas.xmlsoap.org/claims/EmailAddress")?.Value;
+            }
+            return email;
         }
 
         public static string GetUpn(this IEnumerable<Claim> claims)
         {
-            return claims.FirstOrDefault(c => c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/upn")?.Value;
+            var upn = claims.FirstOrDefault(c => c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/upn")?.Value;
+            if (upn == null)
+            {
+                upn = claims.FirstOrDefault(c => c.Type == "http://schemas.xmlsoap.org/claims/UPN")?.Value;
+            }
+            return upn;
         }
 
         public static string GetObjectId(this IEnumerable<Claim> claims)
