@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
+using WebApp.Code.Extensions;
 
 namespace WebApp.Identity
 {
@@ -30,10 +31,8 @@ namespace WebApp.Identity
         public Identity GetCurrentUserIdentity(HttpContext context)
         {
             // We need to give the owner (the current portal user) access
-            var ownerTenantId = Guid.Parse(context.User.Claims
-                .FirstOrDefault(c => c.Type == "http://schemas.microsoft.com/identity/claims/tenantid")?.Value);
-            var ownerObjectId = Guid.Parse(context.User.Claims
-                .FirstOrDefault(c => c.Type == "http://schemas.microsoft.com/identity/claims/objectidentifier")?.Value);
+            var ownerTenantId = Guid.Parse(context.User.Claims.GetTenantId());
+            var ownerObjectId = Guid.Parse(context.User.Claims.GetObjectId());
 
             return new Identity
             {
