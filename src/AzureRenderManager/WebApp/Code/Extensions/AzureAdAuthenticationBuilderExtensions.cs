@@ -47,35 +47,6 @@ namespace WebApp.Code.Extensions
 
                 // trying to get refresh to work
                 options.Scope.Add("offline_access"); // allow refreshing
-
-                //options.Events.OnAuthorizationCodeReceived += async context =>
-                //{
-                //    var userId = context.Principal.FindFirst("http://schemas.microsoft.com/identity/claims/objectidentifier").Value;
-
-                //    var authContext = new AuthenticationContext(context.Options.Authority);
-                //    var clientCred = new ClientCredential(context.Options.ClientId, context.Options.ClientSecret);
-
-                //    AuthenticationResult authResult;
-                //    try
-                //    {
-                //        authResult =
-                //            await authContext.AcquireTokenSilentAsync(
-                //                context.Options.Resource,
-                //                clientCred,
-                //                new UserIdentifier(userId, UserIdentifierType.UniqueId));
-                //    }
-                //    catch (AdalSilentTokenAcquisitionException)
-                //    {
-                //        authResult =
-                //            await authContext.AcquireTokenByAuthorizationCodeAsync(
-                //                context.TokenEndpointRequest.Code,
-                //                new Uri(context.TokenEndpointRequest.RedirectUri, UriKind.RelativeOrAbsolute),
-                //                clientCred,
-                //                context.Options.Resource);
-                //    }
-
-                //    context.HandleCodeRedemption(authResult.AccessToken, context.ProtocolMessage.IdToken);
-                //};
             }
 
             public void Configure(OpenIdConnectOptions options)
