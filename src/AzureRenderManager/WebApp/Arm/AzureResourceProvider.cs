@@ -30,6 +30,8 @@ using Microsoft.WindowsAzure.Storage.Auth;
 using Microsoft.WindowsAzure.Storage.File;
 using WebApp.Config;
 using WebApp.Operations;
+using WebApp.Code.Extensions;
+using System.Security.Claims;
 
 namespace WebApp.Arm
 {
@@ -70,14 +72,38 @@ namespace WebApp.Arm
             var token = new TokenCredentials(accessToken);
             var authClient = new AuthorizationManagementClient(token) { SubscriptionId = subscriptionId.ToString() };
 
+            var isClassicAdminTask = IsCurrentUserClassicAdministrator(authClient);
             var result = await GetRoleDefinitions(authClient, $"/subscriptions/{subscriptionId}");
             var roleDefs = result.Where(rd =>
                 rd.Permissions.Any(p =>
                     p.Actions.Any(a => ActionsThatCanCreate.Contains(a.ToLower(CultureInfo.InvariantCulture))))).ToList();
 
             var subscriptionRoles = await GetRoleAssignmentsForCurrentUser(authClient, subscriptionScope, roleDefs);
+            var isClassicAdmin = await isClassicAdminTask;
 
-            return subscriptionRoles.Any(ra => roleDefs.Any(rd => rd.Id == ra.RoleDefinitionId));
+            return isClassicAdmin || subscriptionRoles.Any(ra => roleDefs.Any(rd => rd.Id == ra.RoleDefinitionId));
+        }
+
+        private async Task<bool> IsCurrentUserClassicAdministrator(AuthorizationManagementClient authClient)
+        {
+            var result = await authClient.ClassicAdministrators.ListAsync();
+            var classicAdmins = result.ToList();
+            var user = GetUser();
+            var names = user.Identities.Select(i => i.Claims.GetName());
+            var upns = user.Identities.Select(i => i.Claims.GetUpn());
+            foreach (var adminEmail in GetClassicAdministratorEmails(classicAdmins))
+            {
+                if (names.Contains(adminEmail) || upns.Contains(adminEmail))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private IEnumerable<string> GetClassicAdministratorEmails(List<ClassicAdministrator> admins)
+        {
+            return admins.Where(a => a.Role.Contains("ServiceAdministrator") || a.Role.Contains("CoAdministrator")).Select(a => a.EmailAddress);
         }
 
         public async Task<bool> CanCreateRoleAssignments(
@@ -91,6 +117,7 @@ namespace WebApp.Arm
             var token = new TokenCredentials(accessToken);
             var authClient = new AuthorizationManagementClient(token) { SubscriptionId = subscriptionId.ToString() };
 
+            var isClassicAdminTask = IsCurrentUserClassicAdministrator(authClient);
             var result = await GetRoleDefinitions(authClient, $"/subscriptions/{subscriptionId}");
             var roleDefs = result.Where(rd =>
                 rd.Permissions.Any(p =>
@@ -100,9 +127,11 @@ namespace WebApp.Arm
             var subscriptionRolesTask = GetRoleAssignmentsForCurrentUser(authClient, subscriptionScope, roleDefs);
             var resourceGroupRoles = await GetRoleAssignmentsForCurrentUser(authClient, resourceGroupScope, roleDefs);
             var subscriptionRoles = await subscriptionRolesTask;
+            var isClassicAdmin = await isClassicAdminTask;
 
-            return subscriptionRoles.Any(ra => roleDefs.Any(rd => rd.Id == ra.RoleDefinitionId)) ||
-                   resourceGroupRoles.Any(ra => roleDefs.Any(rd => rd.Id == ra.RoleDefinitionId));
+            return isClassicAdmin || 
+                subscriptionRoles.Any(ra => roleDefs.Any(rd => rd.Id == ra.RoleDefinitionId)) ||
+                resourceGroupRoles.Any(ra => roleDefs.Any(rd => rd.Id == ra.RoleDefinitionId));
         }
 
         public async Task<ResourceGroup> CreateResourceGroupAsync(
@@ -661,7 +690,7 @@ namespace WebApp.Arm
             List<RoleDefinition> roleDefinitions)
         {
             var user = GetUser();
-            var ownerObjectId = user.Claims.FirstOrDefault(c => c.Type == "http://schemas.microsoft.com/identity/claims/objectidentifier")?.Value;
+            var ownerObjectId = user.Claims.GetObjectId();
             var filter = new ODataQuery<RoleAssignmentFilter>(f => f.PrincipalId == ownerObjectId);
             var result = await authClient.RoleAssignments.ListForScopeAsync(scope, filter);
             var roleAssignments = result.ToList();
