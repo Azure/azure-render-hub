@@ -89,12 +89,12 @@ namespace WebApp.Arm
             var result = await authClient.ClassicAdministrators.ListAsync();
             var classicAdmins = result.ToList();
             var user = GetUser();
-            var names = user.Identities.Select(i => i.Claims.GetName());
-            var emails = user.Identities.Select(i => i.Claims.GetEmailAddress());
-            var upns = user.Identities.Select(i => i.Claims.GetUpn());
+            var names = user.Identities.Select(i => i.Claims.GetName()).ToList();
+            var emails = user.Identities.Select(i => i.Claims.GetEmailAddress()).ToList();
+            var upns = user.Identities.Select(i => i.Claims.GetUpn()).ToList();
             foreach (var adminEmail in GetClassicAdministratorEmails(classicAdmins))
             {
-                if (names.Any(name => name.Contains(adminEmail)) || upns.Contains(adminEmail) || emails.Contains(adminEmail))
+                if (names.Contains(adminEmail) || upns.Contains(adminEmail) || emails.Contains(adminEmail))
                 {
                     return true;
                 }
