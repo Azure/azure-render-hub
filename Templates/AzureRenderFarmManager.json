@@ -16,38 +16,24 @@
                 "description": "The name of the App Service plan to use for hosting the web app, default should be fine"
             }
         },
-        "skuTier": {
-            "defaultValue": "Basic",
+        "sku": {
+            "defaultValue": "Basic:B1",
             "allowedValues": [
-                "Free",
-                "Shared",
-                "Basic",
-                "Standard",
-                "Premium"
+                "Free:F1",
+                "Shared:D1",
+                "Basic:B1",
+                "Basic:B2",
+                "Basic:B3",
+                "Standard:S1",
+                "Standard:S2",
+                "Standard:S3",
+                "Premium:P1",
+                "Premium:P2",
+                "Premium:P3"
             ],
             "type": "String",
             "metadata": {
                 "description": "The pricing tier for the hosting plan."
-            }
-        },
-        "skuSize": {
-            "defaultValue": "B1",
-            "allowedValues": [
-                "F1",
-                "D1",
-                "B1",
-                "B2",
-                "B3",
-                "S1",
-                "S2",
-                "S3",
-                "P1",
-                "P2",
-                "P3"
-            ],
-            "type": "String",
-            "metadata": {
-                "description": "The instance size of the hosting plan (small, medium, or large)."
             }
         },
         "aadTenantId": {
@@ -95,6 +81,8 @@
     },
     "variables": {
         "repoURL": "https://github.com/Azure/azure-render-farm-manager.git",
+        "skuTier": "[split(parameters('sku'), ':')[0]]",
+        "skuSize": "[split(parameters('sku'), ':')[1]]",
         "webSitesApiVersion": "2016-08-01",
         "storageApiVersion": "2018-07-01",
         "storageAccountName": "[concat(uniqueString(resourceGroup().id), 'sa')]",
@@ -134,9 +122,9 @@
             "apiVersion": "2016-09-01",
             "location": "[resourceGroup().location]",
             "sku": {
-                "name": "[parameters('skuSize')]",
-                "tier": "[parameters('skuTier')]",
-                "size": "[parameters('skuSize')]"
+                "name": "[variables('skuSize')]",
+                "tier": "[variables('skuTier')]",
+                "size": "[variables('skuSize')]"
             },
             "properties": {
                 "name": "[parameters('hostingPlanName')]",
@@ -159,7 +147,7 @@
             "properties": {
                 "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('hostingPlanName'))]",
                 "siteConfig": {
-                    "alwaysOn": "[not(or(equals(parameters('skuSize'), 'F1'), equals(parameters('skuSize'), 'D1')))]",
+                    "alwaysOn": "[not(or(equals(variables('skuSize'), 'F1'), equals(variables('skuSize'), 'D1')))]",
                     "appSettings": [ ]
                 }
             },
