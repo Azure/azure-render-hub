@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -15,6 +16,7 @@ namespace WebApp.Code.Extensions
         private const string EmailAddressAdFsClaim = "http://schemas.xmlsoap.org/claims/EmailAddress";
         private const string UpnClaim = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/upn";
         private const string UpnAdFsClaim = "http://schemas.xmlsoap.org/claims/UPN";
+        private const string IssuerValue = "iss";
 
         public static string GetName(this IEnumerable<Claim> claims)
         {
@@ -56,6 +58,23 @@ namespace WebApp.Code.Extensions
         public static string GetTenantId(this IEnumerable<Claim> claims)
         {
             return claims.FirstOrDefault(c => c.Type == TenantIdClaim)?.Value;
+        }
+
+        public static string FindFirstValueOrThrow(this ClaimsPrincipal principal, string claimType)
+        {
+            var value = principal.FindFirst(claimType)?.Value;
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                throw new InvalidOperationException(
+                    string.Format(CultureInfo.InvariantCulture, 
+                    "The supplied principal does not contain a claim of type {0}", claimType));
+            }
+            return value;
+        }
+
+        public static string GetIssuerValue(this ClaimsPrincipal principal)
+        {
+            return principal.FindFirstValue(IssuerValue);
         }
     }
 }

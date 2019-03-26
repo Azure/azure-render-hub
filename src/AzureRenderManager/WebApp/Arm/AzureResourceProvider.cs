@@ -39,6 +39,7 @@ using WebApp.Models.Environments;
 using WebApp.Operations;
 using WebApp.Code.Extensions;
 using System.Security.Claims;
+using WebApp.Code.Graph;
 
 namespace WebApp.Arm
 {
@@ -67,12 +68,15 @@ namespace WebApp.Arm
             });
 
         private readonly IConfiguration _configuration;
+        private readonly IGraphAuthProvider _graphProvider;
 
         public AzureResourceProvider(
             IHttpContextAccessor contextAccessor,
-            IConfiguration configuration) : base(contextAccessor)
+            IConfiguration configuration,
+            IGraphAuthProvider graphProvider) : base(contextAccessor)
         {
             _configuration = configuration;
+            _graphProvider = graphProvider;
         }
 
         public async Task<bool> CanCreateResources(
@@ -637,18 +641,6 @@ namespace WebApp.Arm
             }
         }
 
-        private async Task<string> GetGraphAccessToken()
-        {
-            var cca = new ConfidentialClientApplication(
-                _configuration["AzureAd:ClientId"],
-                "https://localhost:44392/",
-                new ClientCredential(_configuration["AzureAd:ClientSecret"]),
-                null,
-                null);
-            var result = await cca.AcquireTokenForClientAsync(new[] { "https://graph.microsoft.com/.default" });
-            return result.AccessToken;
-        }
-
         public async Task<List<UserPermission>> GetUserPermissions(Guid subscriptionId, string scope)
         {
             //var subscriptionScope = $"/subscriptions/{subscriptionId}";
@@ -657,13 +649,7 @@ namespace WebApp.Arm
             var token = new TokenCredentials(accessToken);
             var authClient = new AuthorizationManagementClient(token) { SubscriptionId = subscriptionId.ToString() };
 
-            var graphServiceClient = new GraphServiceClient(new DelegateAuthenticationProvider(async requestMessage =>
-            {
-                var graphAccessToken = await GetGraphAccessToken();
-                requestMessage
-                    .Headers
-                    .Authorization = new AuthenticationHeaderValue("Bearer", graphAccessToken);
-            }));
+
 
 
             var roleDefinitions = await GetRoleDefinitions(authClient, scope);
@@ -673,27 +659,45 @@ namespace WebApp.Arm
             var roleAssignments = await GetRoleAssignments(authClient, scope, roleDefs);
             roleAssignments = roleAssignments.Where(ra => ra.PrincipalType == "User").ToList();
 
+            var userIds = roleAssignments.Select(ra => ra.PrincipalId).ToHashSet();
+            var dirUsers = await GetGraphUsersAsync(userIds);
             
-            //var user = activeDirectoryClient.Users.Query
-            //var permissions = roleAssignments.Select(ra => ra. roleDefs.FirstOrDefault(rd => rd.Id == ra.RoleDefinitionId)).Where(ra => ra != null);
-
-            var u = GetUser();
-            var ownerObjectId = u.Claims.FirstOrDefault(c => c.Type == "http://schemas.microsoft.com/identity/claims/objectidentifier")?.Value;
-
-            var perms = await authClient.Permissions.ListForResourceGroupAsync("Deadline");
-            var permList = perms.ToList();
-
-            //IReadOnlyQueryableSet<User> userQuery = activeDirectoryClient.DirectoryObjects.OfType<User>()
-            //    .Where(user => user.ObjectId == "09a78045-22ea-455c-96b0-35f8422a188e");
-            //IBatchElementResult[] batchResult = await activeDirectoryClient.Context.ExecuteBatchAsync(userQuery);
-            var usr = await graphServiceClient.Users["09a78045-22ea-455c-96b0-35f8422a188e"].Request().GetAsync();
-
             return roleAssignments.Select(ra => new UserPermission
             {
-                Name = "blah",
+                Name = dirUsers.ContainsKey(ra.PrincipalId) ? dirUsers[ra.PrincipalId].DisplayName : "Unknown",
                 ObjectId = ra.PrincipalId,
                 Role = roleDefs.FirstOrDefault(rd => rd.Id == ra.RoleDefinitionId)?.RoleName,
             }).ToList();
+        }
+
+        private async Task<Dictionary<string, User>> GetGraphUsersAsync(HashSet<string> userIds)
+        {
+            var user = GetUser();
+
+            var graphServiceClient = new GraphServiceClient(new DelegateAuthenticationProvider(async requestMessage =>
+            {
+                var graphAccessToken = await _graphProvider.GetUserAccessTokenAsync(user);
+                requestMessage
+                    .Headers
+                    .Authorization = new AuthenticationHeaderValue("Bearer", graphAccessToken);
+            }));
+
+            var userDict = new Dictionary<string, User>();
+            var types = new[] { "user" };
+
+            const int batchSize = 1000;
+            for (int i = 0; i < userIds.Count; i = i + batchSize)
+            {
+                var items = userIds.Skip(i).Take(batchSize);
+                var dirObjects = await graphServiceClient.DirectoryObjects.GetByIds(userIds, types).Request().PostAsync();
+                var dirUsers = dirObjects.Cast<User>().ToDictionary(k => k.Id);
+                foreach (var userObject in dirObjects.Cast<User>())
+                {
+                    userDict[userObject.Id] = userObject;
+                }
+            }
+
+            return userDict;
         }
 
         public async Task AssignManagementIdentityAsync(
