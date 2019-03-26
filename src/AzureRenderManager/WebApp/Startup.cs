@@ -28,6 +28,7 @@ using WebApp.BackgroundHosts.LeaseMaintainer;
 using WebApp.BackgroundHosts.ScaleUpProcessor;
 using WebApp.Code.Contract;
 using WebApp.Code.Extensions;
+using WebApp.Code.Graph;
 using WebApp.Config;
 using WebApp.Config.Coordinators;
 using WebApp.Config.Pools;
@@ -82,12 +83,15 @@ namespace WebApp
                 });
 
             // Session state cache
-            services.AddDistributedMemoryCache();
+            //services.AddDistributedMemoryCache();
+            services.AddMemoryCache();
             services.AddSession(options =>
             {
                 options.Cookie.Name = "RenderFarmManager.Session";
                 options.IdleTimeout = TimeSpan.FromMinutes(10);
             });
+
+            services.AddSingleton<IGraphAuthProvider, GraphAuthProvider>();
 
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
             services.Configure<FormOptions>(x =>
