@@ -84,8 +84,6 @@ namespace WebApp
                     options.SessionStore = new MemoryCacheTicketStore();
                 });
 
-            // Session state cache
-            //services.AddDistributedMemoryCache();
             services.AddMemoryCache();
             services.AddSession(options =>
             {
