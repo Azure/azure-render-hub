@@ -29,6 +29,7 @@ using WebApp.BackgroundHosts.ScaleUpProcessor;
 using WebApp.Code.Contract;
 using WebApp.Code.Extensions;
 using WebApp.Code.Graph;
+using WebApp.Code.Session;
 using WebApp.Config;
 using WebApp.Config.Coordinators;
 using WebApp.Config.Pools;
@@ -80,6 +81,7 @@ namespace WebApp
 
                             return Task.CompletedTask;
                         };
+                    options.SessionStore = new MemoryCacheTicketStore();
                 });
 
             // Session state cache
