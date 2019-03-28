@@ -32,9 +32,9 @@ namespace WebApp.Code.Session
             var expiresUtc = ticket.Properties.ExpiresUtc;
             if (expiresUtc.HasValue)
             {
-                options.SetAbsoluteExpiration(expiresUtc.Value);
+                options.SetAbsoluteExpiration(expiresUtc.Value.AddMinutes(-1));
             }
-            options.SetSlidingExpiration(TimeSpan.FromHours(1)); // TODO: configurable.
+            options.SetSlidingExpiration(TimeSpan.FromHours(1));
 
             _cache.Set(key, ticket, options);
 
