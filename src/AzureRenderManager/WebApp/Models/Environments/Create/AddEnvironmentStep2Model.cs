@@ -21,6 +21,8 @@ namespace WebApp.Models.Environments.Create
             KeyVaultName = $"{Regex.Replace(environment.Name, "/[&\\/\\\\_-]/g", "")}-kv";
             RenderManager = environment.RenderManager;
 
+            NewResourceGroupName = environment.ResourceGroupName;
+
             if (environment.KeyVault != null)
             {
                 KeyVaultName = environment.KeyVault.Name;
@@ -59,6 +61,13 @@ namespace WebApp.Models.Environments.Create
 
         [Required]
         public string LocationName { get; set; }
+
+        [Required(ErrorMessage = "Resource group name is a required field")]
+        [RegularExpression(Validation.RegularExpressions.ResourceGroup, ErrorMessage = Validation.Errors.Regex.ResourceGroup)]
+        [StringLength(64)]
+        public string NewResourceGroupName { get; set; }
+
+        public string ExistingResourceGroupName { get; set; }
 
         [Required]
         [RegularExpression(Validation.RegularExpressions.KeyVault, ErrorMessage = "The Key Vault name must begin with a letter, end with a letter or digit, and not contain consecutive hyphens.")]
