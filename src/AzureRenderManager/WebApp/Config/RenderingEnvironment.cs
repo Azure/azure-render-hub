@@ -11,8 +11,6 @@ namespace WebApp.Config
 {
     public class RenderingEnvironment : ISubMenuItem
     {
-        private string _envName = "";
-
         public RenderingEnvironment()
         {
             AutoScaleConfiguration = new AutoScaleConfiguration();
@@ -24,19 +22,12 @@ namespace WebApp.Config
 
         public string DisplayName => Name;
 
-        public string Name {
-            get => _envName;
-            set
-            {
-                _envName = value;
-                ResourceGroupName = Name + "-rg";
-            }
-        }
+        public string Name { get; set; }
 
         public EnvironmentState State { get; set; }
 
         public string ResourceGroupName { get; set; }
-        
+
         public string ResourceGroupResourceId => $"/subscriptions/{SubscriptionId}/resourceGroups/{ResourceGroupName}";
 
         // The full name, like "West US"
