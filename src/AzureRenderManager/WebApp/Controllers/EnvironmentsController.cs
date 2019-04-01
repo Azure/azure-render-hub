@@ -876,6 +876,11 @@ namespace WebApp.Controllers
         public async Task<ActionResult> Step2(string envId, AddEnvironmentStep2Model model)
         {
             // TODO: Move this into a step 2 validator ... maybe
+            if (!NewOrExistingFieldValid(model.ExistingResourceGroupNameAndLocation, model.NewResourceGroupName))
+            {
+                ModelState.AddModelError(nameof(AddEnvironmentStep2Model.ExistingResourceGroupNameAndLocation), "Either an existing or new resource group name should be supplied");
+            }
+
             if (!NewOrExistingFieldValid(model.BatchAccountResourceIdLocationUrl, model.NewBatchAccountName))
             {
                 ModelState.AddModelError(nameof(AddEnvironmentStep2Model.BatchAccountResourceIdLocationUrl), "Either an existing or new Batch account should be supplied");
@@ -903,6 +908,16 @@ namespace WebApp.Controllers
             }
 
             // UI should stop this now, but we shouldn't trust the UI.
+            if (NewOrExistingFieldValid(model.ExistingResourceGroupNameAndLocation))
+            {
+                // check the batch account and environment are in the same location
+                var rgLocation = model.ExistingResourceGroupNameAndLocation.Split(";")[1];
+                if (false == rgLocation.Equals(environment.LocationName, StringComparison.OrdinalIgnoreCase))
+                {
+                    ModelState.AddModelError(nameof(AddEnvironmentStep2Model.ExistingResourceGroupNameAndLocation), $"Environment and resource group must be configured to the same location: ({environment.LocationName})");
+                }
+            }
+
             if (NewOrExistingFieldValid(model.BatchAccountResourceIdLocationUrl))
             {
                 // check the batch account and environment are in the same location
@@ -941,6 +956,7 @@ namespace WebApp.Controllers
             if (!ModelState.IsValid)
             {
                 // disabled select inputs will be null if disabled
+                model.ExistingResourceGroupVisible = string.IsNullOrEmpty(model.ExistingResourceGroupNameAndLocation);
                 model.NewBatchAccountVisible = string.IsNullOrEmpty(model.BatchAccountResourceIdLocationUrl);
                 model.NewStorageAccountVisible = string.IsNullOrEmpty(model.StorageAccountResourceIdAndLocation);
                 model.NewAppInsightsVisible = string.IsNullOrEmpty(model.ApplicationInsightsIdAndLocation);
@@ -953,7 +969,7 @@ namespace WebApp.Controllers
             {
                 await CreateOrUpdateResourceGroup(environment, model);
 
-                // We want to make sure all tasks complete if they can to ensure the creaetd resources get
+                // We want to make sure all tasks complete if they can to ensure the created resources get
                 // persisted in the environment
                 await Task.WhenAll(
                     CreateOrUpdateKeyVault(environment, model),
@@ -1337,11 +1353,17 @@ namespace WebApp.Controllers
         {
             try
             {
+                var resourceGroupName = string.IsNullOrEmpty(model.NewResourceGroupName)
+                    ? model.ExistingResourceGroupNameAndLocation.Split(";")[0]
+                    : model.NewResourceGroupName;
+
                 await _azureResourceProvider.CreateResourceGroupAsync(
                     environment.SubscriptionId,
                     environment.LocationName,
-                    environment.ResourceGroupName,
+                    resourceGroupName,
                     environment.Name);
+
+                environment.ResourceGroupName = resourceGroupName;
             }
             catch (CloudException cEx)
             {

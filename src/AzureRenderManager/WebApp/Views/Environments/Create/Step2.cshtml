@@ -25,10 +25,10 @@
 @Html.HiddenFor(model => model.LocationName)
 
 <!--
-TODO: set any pre-selections
-If we come back to this page, we need to default to showing what has already been selected in the
-currently saved environment. At the moment it just defaults to the first one, not the one that is
-set in the model.
+    TODO: set any pre-selections
+    If we come back to this page, we need to default to showing what has already been selected in the
+    currently saved environment. At the moment it just defaults to the first one, not the one that is
+    set in the model.
 -->
 
 <div asp-validation-summary="ModelOnly" class=""></div>
@@ -49,7 +49,7 @@ set in the model.
             <div class="form-element">
                 <label asp-for="NewResourceGroupName">Resource group name</label>
                 <div id="RGSpinner" class="async-select" style="display: none;">
-                    <select id="ResourceGroups" asp-for="ResourceGroupId">
+                    <select id="ResourceGroups" asp-for="ExistingResourceGroupNameAndLocation">
                         <option disabled selected> -- Loading Resource Groups -- </option>
                     </select>
                     <i class="fa fa-spinner fa-spin"></i>
@@ -58,16 +58,19 @@ set in the model.
                     <input asp-for="NewResourceGroupName" value="@Model.NewResourceGroupName" placeholder="New resource group name" />
                     <span asp-validation-for="NewResourceGroupName" class=""></span>
                 </div>
+                <span asp-validation-for="ExistingResourceGroupNameAndLocation" class=""></span>
                 <span id="ResourceGroups-none" class="field-validation-error"></span>
                 <small class="form-text text-muted">A resource group is a container that holds related resources for your environment.</small>
                 <a id="newResourceGroup" href="javascript:void(0);" onclick="showHideNew('resourceGroup', 'NewResourceGroupName', 'RGSpinner', this, 'resource group');">Select existing resource group</a>
             </div>
+            
             <div class="form-element">
                 <label asp-for="KeyVaultName">Azure Key Vault name</label>
                 <input asp-for="KeyVaultName"/>
                 <span asp-validation-for="KeyVaultName" class=""></span>
                 <small id="KeyVaultNameHelp" class="form-text text-muted">Key Vault is a secure Azure service to store passwords and certificates. Each environment has it's own Key Vault to store secrets like service passwords, domain credentials and user passwords.</small>
             </div>
+            
             <div class="form-element">
                 <label asp-for="BatchAccountResourceIdLocationUrl">Batch account</label>
                 <div id="BatchAccSpinner" class="async-select">
@@ -182,22 +185,22 @@ set in the model.
                 inputBox.prop("disabled", false);
                 $(el).text("Select existing " + entity);
                 if (inputBox.val() === null || inputBox.val().trim() === "") {
-                    var envName = "@Model.EnvironmentName".toLowerCase();
+                    var envName = "@Model.EnvironmentName";
                     switch (newItemDiv) {
                     case "resourceGroup":
                         inputBox.val(`${envName}-rg`);
                         break;
                     case "batchAcc":
-                        inputBox.val(`${envName.replace(/[&\/\\_-]/g, "").substring(0, 21)}ba`);
+                        inputBox.val(`${envName.toLowerCase().replace(/[&\/\\_-]/g, "").substring(0, 21)}ba`);
                         break;
                     case "storageAcc":
-                        inputBox.val(`${envName.replace(/[&\/\\_-]/g, "").substring(0, 21)}sa`);
+                        inputBox.val(`${envName.toLowerCase().replace(/[&\/\\_-]/g, "").substring(0, 21)}sa`);
                         break;
                     case "vNet":
-                        inputBox.val(`${envName}-vnet`);
+                        inputBox.val(`${envName.toLowerCase()}-vnet`);
                         break;
                     case "appInsights":
-                        inputBox.val(`${envName}-ai`);
+                        inputBox.val(`${envName.toLowerCase()}-ai`);
                         break;
                     }
                 }
@@ -206,11 +209,11 @@ set in the model.
             }
         }
 
-        function loadResourceGroups(subscriptionId, location, resourceGroupId) {
+        function loadResourceGroups(subscriptionId, location) {
             $("#RGSpinner").addClass("loading");
             $("#ResourceGroups-none").hide();
 
-            console.log('load resource groups: ' + subscriptionId + ' ' + location + ' ' + resourceGroupId);
+            console.log('load resource groups: ' + subscriptionId + ' ' + location);
 
             $.get(`/api/subscriptions/${subscriptionId}/resourcegroups`,
                 function (resourceGroups) {
@@ -225,67 +228,46 @@ set in the model.
                                 activeCount ++;
                             }
 
-                            var data = `data-storage-rg-name=${rg.name}`;
-                            return `<option ${disabled} ${data} value="${rg.id}">${rg.name} (${rg.location})</option>`;
-                        });
-
-                        if (activeCount <= 0) {
-                            $("#ResourceGroups-none")
-                                .text(`There are no available resource groups in '${location}'. You will need to create one.`)
-                                .show();
-                        } else {
-                            $("#ResourceGroups-none").hide();
+                            return `<option ${disabled} value="${rg.name};${rg.location}">${rg.name} (${rg.location})</option>`;
                         }
+                    );
 
-                        if (dropDownItems && dropDownItems.length > 0) {
-                            dropDownItems.splice(0,
-                                0,
-                                "<option value='#'>Select an existing resource group or create a new one ...</option>");
-                        } else {
-                            dropDownItems = [
-                                `<option disabled value='#'>No existing resource groups found in ${location}</option>`
-                            ];
-                        }
-
-                        $("#ResourceGroups").empty().append(dropDownItems);
-                        var valueFromModel = "@Model.ResourceGroupId";
-                        if (activeCount > 0) {
-                            var selectedValue = !valueFromModel || valueFromModel.length === 0
-                                ? (resourceGroupId ? `${resourceGroupId}` : $("#ResourceGroups option:first").val())
-                                : valueFromModel;
-
-                            // only try and pre-select it if it exists in the list
-                            var found = $("#ResourceGroups option[value='" + selectedValue + "']").val();
-                            if (found) {
-                                $("#ResourceGroups").val(selectedValue).change();
-                            }
-
-                        } else {
-                            $("#ResourceGroups").attr("selectedIndex", 1).change();
-                        }
-
-                        $("#RGSpinner").removeClass("loading");
-
-
-                    @*var valueFromModel = "@Model.BatchAccountResourceIdLocationUrl";
-                    if (dropDownItems && dropDownItems.length > 0) {
-                        dropDownItems.splice(0, 0, "<option value='#'>Select an existing Batch account, or create a new one ...</option>");
+                    if (activeCount <= 0) {
+                        $("#ResourceGroups-none")
+                            .text(`There are no available resource groups in '${location}'. You will need to create one.`)
+                            .show();
                     } else {
-                        dropDownItems = [`<option disabled value='#'>No existing Batch accounts found in ${location}</option>`];
+                        $("#ResourceGroups-none").hide();
                     }
 
-                    $("#BatchAccounts").empty().append(dropDownItems);
-                    var selectedValue = valueFromModel && valueFromModel.length > 0
-                        ? valueFromModel.replace("https://", "")
-                        : $("#BatchAccounts option:first").val();
-
-                    // only try and pre-select it if it exists in the list
-                    var found = $("#BatchAccounts option[value='" + selectedValue + "']").val();
-                    if (found) {
-                        $("#BatchAccounts").val(selectedValue).change();
+                    if (dropDownItems && dropDownItems.length > 0) {
+                        dropDownItems.splice(0,
+                            0,
+                            "<option value='#'>Select an existing resource group or create a new one ...</option>");
+                    } else {
+                        dropDownItems = [
+                            `<option disabled value='#'>No existing resource groups found in ${location}</option>`
+                        ];
                     }
 
-                    $("#BatchAccSpinner").removeClass("loading");*@
+                    $("#ResourceGroups").empty().append(dropDownItems);
+                    var valueFromModel = "@Model.ExistingResourceGroupNameAndLocation";
+                    if (activeCount > 0) {
+                        var selectedValue = valueFromModel && valueFromModel.length > 0
+                            ? valueFromModel
+                            : $("#ResourceGroups option:first").val();
+
+                        // only try and pre-select it if it exists in the list
+                        var found = $("#ResourceGroups option[value='" + selectedValue + "']").val();
+                        if (found) {
+                            $("#ResourceGroups").val(selectedValue).change();
+                        }
+
+                    } else {
+                        $("#ResourceGroups").attr("selectedIndex", 1).change();
+                    }
+
+                    $("#RGSpinner").removeClass("loading");
                 }
             );
         }
@@ -532,6 +514,10 @@ set in the model.
                 showHideNew("appInsights", "NewApplicationInsightsName", "ApplicationInsights", $("#newInsights"));
             }
 
+            if ("@Model.ExistingResourceGroupNameAndLocation" || "@Model.ExistingResourceGroupVisible".toLowerCase() === "true") {
+                showHideNew("resourceGroup", "NewResourceGroupName", "RGSpinner", $("#newResourceGroup"), "resource group");
+            }
+
             if ('@Model.Error' !== '') {
                 toastr.options.timeOut = 0;
                 toastr.options.extendedTimeOut = 0;
@@ -564,8 +550,7 @@ set in the model.
                     toastr.options.preventDuplicates = true;
 
                     var title = "Creating the Azure resources...";
-                    var msg =
-                        "<br />This step may take a little while to complete as we're creating or configuring the resources below.<br /><br /><i class=\"fa fa-spinner fa-spin\" title=\"In progress\"></i> Key Vault<br /><i class=\"fa fa-spinner fa-spin\" title=\"In progress\"></i> Azure Storage<br /><i class=\"fa fa-spinner fa-spin\" title=\"In progress\"></i> Azure Batch<br /><i class=\"fa fa-spinner fa-spin\" title=\"In progress\"></i> Virtual Networking<br /><i class=\"fa fa-spinner fa-spin\" title=\"In progress\"></i> Application Insights<br />";
+                    var msg = "<br />This step may take a little while to complete as we're creating or configuring the resources below.<br /><br /><i class=\"fa fa-spinner fa-spin\" title=\"In progress\"></i> Key Vault<br /><i class=\"fa fa-spinner fa-spin\" title=\"In progress\"></i> Azure Storage<br /><i class=\"fa fa-spinner fa-spin\" title=\"In progress\"></i> Azure Batch<br /><i class=\"fa fa-spinner fa-spin\" title=\"In progress\"></i> Virtual Networking<br /><i class=\"fa fa-spinner fa-spin\" title=\"In progress\"></i> Application Insights<br />";
                     toastr.info(msg, title).css("width", "600px");
                 }
             });
