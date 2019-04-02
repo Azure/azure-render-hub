@@ -197,7 +197,7 @@ namespace WebApp.Arm
                 }
                 catch (CloudException ce)
                 {
-                    if (ce.Body.Code != "NotFound")
+                    if (ce.Body.Code != "NotFound" && ce.Body.Code != "ResourceNotFound")
                     {
                         throw;
                     }

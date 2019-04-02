@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 using System;
 using System.ComponentModel.DataAnnotations;
-using System.Text.RegularExpressions;
 using WebApp.Code;
 using WebApp.Config;
 
@@ -18,7 +17,6 @@ namespace WebApp.Models.Environments.Create
             EnvironmentName = environment.Name;
             SubscriptionId = environment.SubscriptionId;
             LocationName = environment.LocationName;
-            KeyVaultName = $"{Regex.Replace(environment.Name, "/[&\\/\\\\_-]/g", "")}-kv";
             RenderManager = environment.RenderManager;
 
             if (!string.IsNullOrEmpty(environment.ResourceGroupName))
@@ -30,7 +28,9 @@ namespace WebApp.Models.Environments.Create
             
             if (environment.KeyVault != null)
             {
-                KeyVaultName = environment.KeyVault.Name;
+                NewKeyVaultName = null;
+                ExistingKeyVaultIdLocationAndUri 
+                    = $"{environment.KeyVault.ResourceId};{environment.KeyVault.Location};{environment.KeyVault.Uri}";
             }
 
             if (environment.BatchAccount != null)
@@ -75,10 +75,13 @@ namespace WebApp.Models.Environments.Create
 
         public bool ExistingResourceGroupVisible { get; set; }
 
-        [Required]
         [RegularExpression(Validation.RegularExpressions.KeyVault, ErrorMessage = "The Key Vault name must begin with a letter, end with a letter or digit, and not contain consecutive hyphens.")]
         [StringLength(24, MinimumLength = 3, ErrorMessage = "Key Vault name must be between 3 and 24 characters")]
-        public string KeyVaultName { get; set; }
+        public string NewKeyVaultName { get; set; }
+
+        public string ExistingKeyVaultIdLocationAndUri { get; set; }
+
+        public bool ExistingKeyVaultVisible { get; set; }
 
         public string BatchAccountResourceIdLocationUrl { get; set; }
 
