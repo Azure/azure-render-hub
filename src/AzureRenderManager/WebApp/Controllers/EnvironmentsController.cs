@@ -881,6 +881,11 @@ namespace WebApp.Controllers
                 ModelState.AddModelError(nameof(AddEnvironmentStep2Model.ExistingResourceGroupNameAndLocation), "Either an existing or new resource group name should be supplied");
             }
 
+            if (!NewOrExistingFieldValid(model.ExistingKeyVaultIdLocationAndUri, model.NewKeyVaultName))
+            {
+                ModelState.AddModelError(nameof(AddEnvironmentStep2Model.ExistingKeyVaultIdLocationAndUri), "Either an existing or new Key Vault name should be supplied");
+            }
+
             if (!NewOrExistingFieldValid(model.BatchAccountResourceIdLocationUrl, model.NewBatchAccountName))
             {
                 ModelState.AddModelError(nameof(AddEnvironmentStep2Model.BatchAccountResourceIdLocationUrl), "Either an existing or new Batch account should be supplied");
@@ -910,11 +915,21 @@ namespace WebApp.Controllers
             // UI should stop this now, but we shouldn't trust the UI.
             if (NewOrExistingFieldValid(model.ExistingResourceGroupNameAndLocation))
             {
-                // check the batch account and environment are in the same location
+                // check the resource group and environment are in the same location
                 var rgLocation = model.ExistingResourceGroupNameAndLocation.Split(";")[1];
                 if (false == rgLocation.Equals(environment.LocationName, StringComparison.OrdinalIgnoreCase))
                 {
                     ModelState.AddModelError(nameof(AddEnvironmentStep2Model.ExistingResourceGroupNameAndLocation), $"Environment and resource group must be configured to the same location: ({environment.LocationName})");
+                }
+            }
+
+            if (NewOrExistingFieldValid(model.ExistingKeyVaultIdLocationAndUri))
+            {
+                // check the key vault and environment are in the same location
+                var kvLocation = model.ExistingKeyVaultIdLocationAndUri.Split(";")[1];
+                if (false == kvLocation.Equals(environment.LocationName, StringComparison.OrdinalIgnoreCase))
+                {
+                    ModelState.AddModelError(nameof(AddEnvironmentStep2Model.ExistingKeyVaultIdLocationAndUri), $"Environment and Key Vault must be configured to the same location: ({environment.LocationName})");
                 }
             }
 
@@ -938,17 +953,17 @@ namespace WebApp.Controllers
                 }
             }
 
-            if (environment.KeyVault == null)
+            if (!string.IsNullOrEmpty(model.NewKeyVaultName))
             {
                 // Ensure it doesn't exist if it hasn't been created already
                 var nameAvailability = await _azureResourceProvider.ValidateKeyVaultName(
                     environment.SubscriptionId,
                     environment.ResourceGroupName,
-                    model.KeyVaultName);
+                    model.NewKeyVaultName);
 
                 if (!nameAvailability.NameAvailable.GetValueOrDefault(false))
                 {
-                    ModelState.AddModelError(nameof(AddEnvironmentStep2Model.KeyVaultName), $"The Key Vault name is not available. {nameAvailability.Message}");
+                    ModelState.AddModelError(nameof(AddEnvironmentStep2Model.ExistingKeyVaultIdLocationAndUri), $"The Key Vault name is not available. {nameAvailability.Message}");
                     return View("Create/Step2", model);
                 }
             }
@@ -956,6 +971,7 @@ namespace WebApp.Controllers
             if (!ModelState.IsValid)
             {
                 // disabled select inputs will be null if disabled
+                model.ExistingKeyVaultVisible = string.IsNullOrEmpty(model.ExistingKeyVaultIdLocationAndUri);
                 model.ExistingResourceGroupVisible = string.IsNullOrEmpty(model.ExistingResourceGroupNameAndLocation);
                 model.NewBatchAccountVisible = string.IsNullOrEmpty(model.BatchAccountResourceIdLocationUrl);
                 model.NewStorageAccountVisible = string.IsNullOrEmpty(model.StorageAccountResourceIdAndLocation);
@@ -1376,7 +1392,8 @@ namespace WebApp.Controllers
         {
             try
             {
-                if (environment.KeyVault == null)
+                // if existing then ignore the create and just assign it to the environment
+                if (!string.IsNullOrEmpty(model.NewKeyVaultName))
                 {
                     var keyVaultResponse = await _azureResourceProvider.CreateKeyVaultAsync(
                         _identityProvider.GetPortalManagedServiceIdentity(),
@@ -1384,14 +1401,31 @@ namespace WebApp.Controllers
                         environment.SubscriptionId,
                         environment.ResourceGroupName,
                         environment.LocationName,
-                        model.KeyVaultName,
+                        model.NewKeyVaultName,
                         environment.Name);
 
                     environment.KeyVault = new KeyVault
                     {
                         ResourceId = keyVaultResponse.Id,
+                        Location = keyVaultResponse.Location,
                         Uri = keyVaultResponse.Properties.VaultUri,
-                        ExistingResource = false,
+                        ExistingResource = false
+                    };
+                }
+                else
+                {
+                    var kvParts = model.ExistingKeyVaultIdLocationAndUri.Split(";");
+                    if (kvParts.Length < 3)
+                    {
+                        throw new Exception("Existing KeyVault resource Id must be in the form of (ResourceId;Location;VaultUri)");
+                    }
+
+                    environment.KeyVault = new KeyVault
+                    {
+                        ResourceId = kvParts[0],
+                        Location = kvParts[1],
+                        Uri = kvParts[2],
+                        ExistingResource = true,
                     };
                 }
             }
@@ -1400,7 +1434,7 @@ namespace WebApp.Controllers
                 ModelState.AddModelError("", $"Failed to create Azure Key Vault with error: {cEx.Message}");
                 if (cEx.Response?.StatusCode == HttpStatusCode.Conflict && cEx.Body?.Code == "VaultAlreadyExists")
                 {
-                    ModelState.AddModelError(nameof(AddEnvironmentStep2Model.KeyVaultName), "The Key Vault name already exists, please choose a different name. It may be that the KeyVault exists in another Subscription or Location.");
+                    ModelState.AddModelError(nameof(AddEnvironmentStep2Model.NewKeyVaultName), "The Key Vault name already exists, please choose a different name. It may be that the KeyVault exists in another Subscription or Location.");
                 }
 
                 throw;
