@@ -45,7 +45,7 @@ namespace WebApp.Controllers
         }
 
         [HttpDelete]
-        [Route("RenderManagerPackages/Delete/{pkgId}")]
+        [Route("RenderManagerPackages/{pkgId}/Delete")]
         public async Task<ActionResult> Delete(string pkgId)
         {
             var package = await _packageCoordinator.GetPackage(pkgId);
