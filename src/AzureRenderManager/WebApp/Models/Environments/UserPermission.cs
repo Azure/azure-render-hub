@@ -9,8 +9,14 @@ namespace WebApp.Models.Environments
     {
         public string Name { get; set; }
 
+        public string Email { get; set; }
+
         public string ObjectId { get; set; }
 
         public string Role { get; set; }
+
+        public string Scope { get; set; }
+
+        public List<string> Actions { get; set; }
     }
 }
