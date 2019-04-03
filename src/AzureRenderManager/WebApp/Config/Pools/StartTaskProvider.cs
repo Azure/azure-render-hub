@@ -163,7 +163,7 @@ namespace WebApp.Config.Pools
                 commandLine += $" -installerPath {deadlinePackage.PackageName}";
             }
 
-            if (environment.Domain.JoinDomain)
+            if (environment.Domain != null && environment.Domain.JoinDomain)
             {
                 commandLine += " -domainJoin";
                 commandLine += $" -domainName {environment.Domain.DomainName}";
