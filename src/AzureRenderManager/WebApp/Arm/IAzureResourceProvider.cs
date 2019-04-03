@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
+using Microsoft.Azure.Management.Authorization.Models;
 using Microsoft.Azure.Management.KeyVault.Models;
 using Microsoft.Azure.Management.ResourceManager.Models;
 
@@ -30,6 +31,11 @@ namespace WebApp.Arm
         Task<bool> CanCreateRoleAssignments(
             Guid subscriptionId,
             string resourceGroupName);
+
+        Task<List<ClassicAdministrator>> ListClassicAdministrators(Guid subscriptionId);
+
+        Task<bool> IsCurrentUserClassicAdministrator(
+            Guid subscriptionId);
 
         Task DeleteResourceGroupAsync(Guid subscriptionId, string resourceGroupName);
 

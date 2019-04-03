@@ -22,6 +22,7 @@ using WebApp.AppInsights;
 using WebApp.AppInsights.ActiveNodes;
 using WebApp.AppInsights.PoolUsage;
 using WebApp.Arm;
+using WebApp.Authorization;
 using WebApp.BackgroundHosts.AutoScale;
 using WebApp.BackgroundHosts.Deployment;
 using WebApp.BackgroundHosts.LeaseMaintainer;
@@ -134,6 +135,7 @@ namespace WebApp
 
             // These are scoped as they use the credentials of the user:
             services.AddScoped<IAzureResourceProvider, AzureResourceProvider>();
+            services.AddScoped<AuthorizationManager>();
             services.AddScoped<ICostCoordinator>(p =>
             {
                 var client = p.GetRequiredService<CostManagementClientAccessor>();

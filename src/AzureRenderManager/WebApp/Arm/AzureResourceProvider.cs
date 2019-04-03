@@ -38,7 +38,6 @@ using WebApp.Config;
 using WebApp.Models.Environments;
 using WebApp.Operations;
 using WebApp.Code.Extensions;
-using System.Security.Claims;
 using WebApp.Code.Graph;
 
 namespace WebApp.Arm
@@ -47,6 +46,7 @@ namespace WebApp.Arm
     {
         public const string ContributorRole = "Contributor";
         public const string VirtualMachineContributorRole = "Virtual Machine Contributor";
+        private static string[] DirectoryObjectTypes = new [] { "user" };
 
         private static List<string> ActionsThatCanCreate = new List<string>(
             new[]
@@ -98,6 +98,23 @@ namespace WebApp.Arm
             var isClassicAdmin = await isClassicAdminTask;
 
             return isClassicAdmin || subscriptionRoles.Any(ra => roleDefs.Any(rd => rd.Id == ra.RoleDefinitionId));
+        }
+
+        public async Task<bool> IsCurrentUserClassicAdministrator(Guid subscriptionId)
+        {
+            var accessToken = await GetAccessToken();
+            var token = new TokenCredentials(accessToken);
+            var authClient = new AuthorizationManagementClient(token) { SubscriptionId = subscriptionId.ToString() };
+            return await IsCurrentUserClassicAdministrator(authClient);
+        }
+
+        public async Task<List<ClassicAdministrator>> ListClassicAdministrators(Guid subscriptionId)
+        {
+            var accessToken = await GetAccessToken();
+            var token = new TokenCredentials(accessToken);
+            var authClient = new AuthorizationManagementClient(token) { SubscriptionId = subscriptionId.ToString() };
+            var result = await authClient.ClassicAdministrators.ListAsync();
+            return result.ToList();
         }
 
         private async Task<bool> IsCurrentUserClassicAdministrator(AuthorizationManagementClient authClient)
@@ -643,17 +660,11 @@ namespace WebApp.Arm
 
         public async Task<List<UserPermission>> GetUserPermissions(Guid subscriptionId, string scope)
         {
-            //var subscriptionScope = $"/subscriptions/{subscriptionId}";
-
             var accessToken = await GetAccessToken();
             var token = new TokenCredentials(accessToken);
             var authClient = new AuthorizationManagementClient(token) { SubscriptionId = subscriptionId.ToString() };
 
-
-
-
             var roleDefinitions = await GetRoleDefinitions(authClient, scope);
-
             var roleDefs = roleDefinitions.ToList();
 
             var roleAssignments = await GetRoleAssignments(authClient, scope, roleDefs);
@@ -665,39 +676,46 @@ namespace WebApp.Arm
             return roleAssignments.Select(ra => new UserPermission
             {
                 Name = dirUsers.ContainsKey(ra.PrincipalId) ? dirUsers[ra.PrincipalId].DisplayName : "Unknown",
+                Email = dirUsers.ContainsKey(ra.PrincipalId) ? dirUsers[ra.PrincipalId].UserPrincipalName : "Unknown",
                 ObjectId = ra.PrincipalId,
                 Role = roleDefs.FirstOrDefault(rd => rd.Id == ra.RoleDefinitionId)?.RoleName,
+                Scope = ra.Scope,
+                Actions = roleDefs.FirstOrDefault(rd => rd.Id == ra.RoleDefinitionId)?.Permissions.SelectMany(p => p.Actions).ToList(),
             }).ToList();
         }
 
         private async Task<Dictionary<string, User>> GetGraphUsersAsync(HashSet<string> userIds)
         {
-            var user = GetUser();
-
             var graphServiceClient = new GraphServiceClient(new DelegateAuthenticationProvider(async requestMessage =>
             {
-                var graphAccessToken = await _graphProvider.GetUserAccessTokenAsync(user);
+                var graphAccessToken = await _graphProvider.GetUserAccessTokenAsync(GetUser());
                 requestMessage
                     .Headers
                     .Authorization = new AuthenticationHeaderValue("Bearer", graphAccessToken);
             }));
 
-            var userDict = new Dictionary<string, User>();
-            var types = new[] { "user" };
-
+            // The max Graph objects you can fetch in a single request.
             const int batchSize = 1000;
+
+            var userDict = new Dictionary<string, User>();
+
             for (int i = 0; i < userIds.Count; i = i + batchSize)
             {
-                var items = userIds.Skip(i).Take(batchSize);
-                var dirObjects = await graphServiceClient.DirectoryObjects.GetByIds(userIds, types).Request().PostAsync();
-                var dirUsers = dirObjects.Cast<User>().ToDictionary(k => k.Id);
-                foreach (var userObject in dirObjects.Cast<User>())
-                {
-                    userDict[userObject.Id] = userObject;
-                }
+                await GetBatchOfUsers(graphServiceClient, userIds, i, batchSize, userDict);
             }
 
             return userDict;
+        }
+
+        private async Task GetBatchOfUsers(GraphServiceClient graphServiceClient, HashSet<string> userIds, int batch, int batchSize, Dictionary<string, User> targetUserDictionary)
+        {
+            var items = userIds.Skip(batch).Take(batchSize);
+            var dirObjects = await graphServiceClient.DirectoryObjects.GetByIds(userIds, DirectoryObjectTypes).Request().PostAsync();
+            var dirUsers = dirObjects.Cast<User>().ToDictionary(k => k.Id);
+            foreach (var userObject in dirObjects.Cast<User>())
+            {
+                targetUserDictionary[userObject.Id] = userObject;
+            }
         }
 
         public async Task AssignManagementIdentityAsync(

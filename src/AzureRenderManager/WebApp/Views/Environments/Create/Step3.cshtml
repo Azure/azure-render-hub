@@ -37,13 +37,11 @@
             <div class="section-content">
                 <div class="form-element wide">
                     <pre><code>
-az account set --subscription "@Model.SubscriptionId"<br />
-$sp = az ad sp create-for-rbac --name @(Model.EnvironmentName)KVSP --create-cert --cert @Model.KeyVaultServicePrincipalCertificateName --keyvault @Model.KeyVaultName --years 10<br />
-az role assignment create --assignee ($sp | ConvertFrom-Json).appId --role Reader 1> $nul<br />
-az role assignment delete --assignee ($sp | ConvertFrom-Json).appId --role Contributor 1> $nul<br />
-Write-Host ApplicationID: ($sp | ConvertFrom-Json).appId<br />
-Write-Host ObjectID: (az ad sp show --id ($sp | ConvertFrom-Json).appId --output json | ConvertFrom-Json).objectId<br />
-                    </code></pre>
+    az account set --subscription "@Model.SubscriptionId"<br />
+    $sp = az ad sp create-for-rbac --name @(Model.EnvironmentName)KVSP --create-cert --cert @Model.KeyVaultServicePrincipalCertificateName --keyvault @Model.KeyVaultName --skip-assignment --years 10<br />
+    Write-Host ApplicationID: ($sp | ConvertFrom-Json).appId<br />
+    Write-Host ObjectID: (az ad sp show --id ($sp | ConvertFrom-Json).appId --output json | ConvertFrom-Json).objectId<br />
+</code></pre>
                 </div>
                 <div class="form-element">
                     <label asp-for="KeyVaultServicePrincipalAppId">Application ID</label>

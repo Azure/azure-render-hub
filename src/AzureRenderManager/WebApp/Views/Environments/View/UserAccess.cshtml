@@ -13,43 +13,96 @@
 <h2>@Model.EnvironmentName - user access</h2>
 <p>View the users that have permissions to access this environment.</p>
 
-@await Html.PartialAsync("Menu/EnvironmentMainMenu", Model, new ViewDataDictionary(ViewData) {{ "Step", "useraccess" }})
+@await Html.PartialAsync("Menu/EnvironmentMainMenu", Model, new ViewDataDictionary(ViewData) { { "Step", "useraccess" } })
 
-<div class="pool-details">
+<div class="classic-admin-details">
     <table>
         <thead>
             <tr>
                 <th>User</th>
-                <th>Object Id</th>
+                <th>Permissions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var classicAdmin in Model.ClassicAdministrators)
+            {
+                <tr>
+                    <td>@classicAdmin.Name</td>
+                    <td>@classicAdmin.Role</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    @if (Model.ClassicAdministrators.Count == 0)
+    {
+        <p>&nbsp;</p>
+        <text><h4>There are no classic administrators.</h4></text>
+    }
+</div>
+
+<div class="user-details">
+    <table>
+        <thead>
+            <tr>
+                <th>User</th>
                 <th>Permissions</th>
                 <th></th>
             </tr>
         </thead>
         <tbody>
             @foreach (var userPermission in Model.UserPermissions)
-        {
-            <tr>
-                <td>@userPermission.Name</td>
-                <td>@userPermission.ObjectId</td>
-                <td>@userPermission.Role</td>
-                <td></td>
-            </tr>
-        }
+            {
+                <tr>
+                    <td>@userPermission.Email</td>
+                    <td>@userPermission.Role</td>
+                    <td></td>
+                </tr>
+            }
         </tbody>
     </table>
     @if (Model.UserPermissions.Count == 0)
     {
-    <p>&nbsp;</p>
-    <text><h4>There are no users with permissions to this environment.</h4></text>
+        <p>&nbsp;</p>
+        <text><h4>There are no users with permissions to this environment.</h4></text>
     }
+</div>
+
+<form method="post">
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(model => model.EnvironmentName)
+    <div asp-validation-summary="ModelOnly" class=""></div>
     <div class="form-footer">
         <div class="button-bar">
-            <a class="button" asp-action="New" asp-route-envId="@Model.EnvironmentName">Add New User <i class="fa fa-plus"></i></a>
+            <label asp-for="EmailAddress">Email</label>
+            <input asp-for="EmailAddress" class="disable-read-only" />
+            <select asp-for="UserRole" name="UserRole">
+                <option value="Reader" selected>Reader</option>
+                <option value="PoolManager">Pool Manager</option>
+                <option value="Owner">Owner</option>
+            </select>
+            <button id="next" type="submit" formaction="UserAccess">Add New User <i class="fa fa-plus"></i></button>
         </div>
     </div>
-</div>
-
-<div class="form-footer">
-
-</div>
+</form>
 <p>&nbsp;</p>
+
+@section scripts
+    {
+    <script>
+        $(document).ready(function () {
+            var error = '@Model.Error';
+            if (error !== '')
+            {
+                toastr.options.timeOut = 0;
+                toastr.options.extendedTimeOut = 0;
+                toastr.options.closeButton = true;
+                toastr.options.positionClass = "toast-top-center";
+
+                var msg = '@Model.ErrorMessage';
+                toastr.warning(msg, error).css("width", "600px");
+
+                $('#next').attr('disabled', true);
+            }
+        });
+    </script>
+}
