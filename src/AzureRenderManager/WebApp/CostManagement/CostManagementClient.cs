@@ -1,8 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -25,10 +23,14 @@ namespace WebApp.CostManagement
         private static Uri GetUri(string scope)
             => new Uri($"https://management.azure.com/{scope}/providers/Microsoft.CostManagement/query?api-version=2019-01-01");
 
-        public async Task<UsageResponse> GetUsageForSubscription(Guid subscriptionId, UsageRequest usageRequest)
-        {
-            var uri = GetUri($"subscriptions/{subscriptionId}");
+        public Task<UsageResponse> GetUsageForSubscription(Guid subscriptionId, UsageRequest usageRequest)
+            => PostUsageRequest(usageRequest, GetUri($"subscriptions/{subscriptionId}"));
 
+        public Task<UsageResponse> GetUsageForResourceGroup(Guid subscriptionId, string resourceGroupName, UsageRequest usageRequest)
+            => PostUsageRequest(usageRequest, GetUri($"subscriptions/{subscriptionId}/resourcegroups/{resourceGroupName}"));
+
+        private async Task<UsageResponse> PostUsageRequest(UsageRequest usageRequest, Uri uri)
+        {
             var request =
                 new HttpRequestMessage(HttpMethod.Post, uri)
                 {
