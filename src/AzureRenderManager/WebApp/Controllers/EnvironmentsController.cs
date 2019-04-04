@@ -388,7 +388,7 @@ namespace WebApp.Controllers
                 return RedirectToAction("Step1", new { envId });
             }
 
-            var endpoint = $"{Request.Scheme}://{Request.Host}/api/environments/{envId}/pools/{{poolId}}";
+            var endpoint = $"{Request.Scheme}://{Request.Host}/api/environments/{envId}";
 
             var model = new EnvironmentConfigurationModel(environment, _startTaskProvider, endpoint);
 
