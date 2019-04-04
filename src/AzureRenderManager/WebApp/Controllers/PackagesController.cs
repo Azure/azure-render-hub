@@ -45,7 +45,7 @@ namespace WebApp.Controllers
         }
 
         [HttpDelete]
-        [Route("RenderManagerPackages/Delete/{pkgId}")]
+        [Route("RenderManagerPackages/{pkgId}/Delete")]
         public async Task<ActionResult> Delete(string pkgId)
         {
             var package = await _packageCoordinator.GetPackage(pkgId);
@@ -55,16 +55,7 @@ namespace WebApp.Controllers
             }
 
             var container = _blobClient.GetContainerReference(package.Container);
-            if (container == null)
-            {
-                return NotFound("Storage container not found");
-            }
-
-            if (!await container.DeleteIfExistsAsync())
-            {
-                return StatusCode(500, "Container was unable to be deleted");
-            }
-
+            await container.DeleteIfExistsAsync();
             if (await _packageCoordinator.RemovePackage(package))
             {
                 return Ok();
