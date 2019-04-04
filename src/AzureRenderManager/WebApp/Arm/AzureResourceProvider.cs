@@ -676,12 +676,25 @@ namespace WebApp.Arm
             return roleAssignments.Select(ra => new UserPermission
             {
                 Name = dirUsers.ContainsKey(ra.PrincipalId) ? dirUsers[ra.PrincipalId].DisplayName : "Unknown",
-                Email = dirUsers.ContainsKey(ra.PrincipalId) ? dirUsers[ra.PrincipalId].UserPrincipalName : "Unknown",
+                Email = dirUsers.ContainsKey(ra.PrincipalId) ? SanitizeUserPrincipalName(dirUsers[ra.PrincipalId].UserPrincipalName) : "Unknown",
                 ObjectId = ra.PrincipalId,
                 Role = roleDefs.FirstOrDefault(rd => rd.Id == ra.RoleDefinitionId)?.RoleName,
                 Scope = ra.Scope,
                 Actions = roleDefs.FirstOrDefault(rd => rd.Id == ra.RoleDefinitionId)?.Permissions.SelectMany(p => p.Actions).ToList(),
             }).ToList();
+        }
+
+        private string SanitizeUserPrincipalName(string userPrincipalName)
+        {
+            if (userPrincipalName != null && userPrincipalName.Contains("#EXT#@"))
+            {
+                // Guest accounts have an encoded User Principal Name in the format:
+                // john.doe_contoso.com#EXT#@contoso.onmicrosoft.com
+                // where '@' in the email is replaced with '_'.
+                var encodedEmail = userPrincipalName.Split("#EXT#@")[0];
+                return encodedEmail.Replace("_", "@");
+            }
+            return userPrincipalName;
         }
 
         private async Task<Dictionary<string, User>> GetGraphUsersAsync(HashSet<string> userIds)
@@ -749,7 +762,11 @@ namespace WebApp.Arm
                 throw new Exception($"No {role} role definition found for resource group");
             }
 
-            var roleAssignments = await GetRoleAssignmentsForCurrentUser(authClient, scope, roleDefs);
+            var roleAssignments = await GetRoleAssignmentsForUser(
+                authClient, 
+                scope, 
+                identity.ObjectId.ToString(), 
+                roleDefs);
 
             if (roleAssignments.All(ra => ra.RoleDefinitionId != roleDef.Id))
             {
@@ -785,7 +802,16 @@ namespace WebApp.Arm
         {
             var user = GetUser();
             var ownerObjectId = user.Claims.GetObjectId();
-            var filter = new ODataQuery<RoleAssignmentFilter>(f => f.PrincipalId == ownerObjectId);
+            return await GetRoleAssignmentsForUser(authClient, scope, ownerObjectId, roleDefinitions);
+        }
+
+        private async Task<List<Microsoft.Azure.Management.Authorization.Models.RoleAssignment>> GetRoleAssignmentsForUser(
+            AuthorizationManagementClient authClient,
+            string scope,
+            string objectId,
+            List<Microsoft.Azure.Management.Authorization.Models.RoleDefinition> roleDefinitions)
+        {
+            var filter = new ODataQuery<RoleAssignmentFilter>(f => f.PrincipalId == objectId);
             return await GetRoleAssignments(authClient, scope, roleDefinitions, filter);
         }
 

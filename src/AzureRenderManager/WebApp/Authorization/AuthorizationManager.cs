@@ -44,6 +44,7 @@ namespace WebApp.Authorization
                 {
                     Name = admin.EmailAddress, // The 'Name' property doesn't actually contain a name
                     Email = admin.EmailAddress,
+                    ObjectId = admin.Id,
                     Role = admin.Role,
                 });
             }

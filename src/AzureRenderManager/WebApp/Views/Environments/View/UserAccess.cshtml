@@ -15,21 +15,23 @@
 
 @await Html.PartialAsync("Menu/EnvironmentMainMenu", Model, new ViewDataDictionary(ViewData) { { "Step", "useraccess" } })
 
-<div class="classic-admin-details">
+<div class="pool-details">
     <table>
         <thead>
             <tr>
                 <th>User</th>
+                <th>Id</th>
                 <th>Permissions</th>
             </tr>
         </thead>
         <tbody>
             @foreach (var classicAdmin in Model.ClassicAdministrators)
             {
-                <tr>
-                    <td>@classicAdmin.Name</td>
-                    <td>@classicAdmin.Role</td>
-                </tr>
+            <tr>
+                <td>@classicAdmin.Name</td>
+                <td>@classicAdmin.ObjectId</td>
+                <td>@classicAdmin.Role</td>
+            </tr>
             }
         </tbody>
     </table>
@@ -40,23 +42,23 @@
     }
 </div>
 
-<div class="user-details">
+<div class="pool-details">
     <table>
         <thead>
             <tr>
                 <th>User</th>
+                <th>ObjectId</th>
                 <th>Permissions</th>
-                <th></th>
             </tr>
         </thead>
         <tbody>
             @foreach (var userPermission in Model.UserPermissions)
             {
-                <tr>
-                    <td>@userPermission.Email</td>
-                    <td>@userPermission.Role</td>
-                    <td></td>
-                </tr>
+            <tr>
+                <td>@userPermission.Email</td>
+                <td>@userPermission.ObjectId</td>
+                <td>@userPermission.Role</td>
+            </tr>
             }
         </tbody>
     </table>
@@ -71,15 +73,38 @@
     @Html.AntiForgeryToken()
     @Html.HiddenFor(model => model.EnvironmentName)
     <div asp-validation-summary="ModelOnly" class=""></div>
+
+
+
+    <div class="form-section">
+        <div class="section-title">
+            <span class="step-index">1</span>
+            <div class="step-header">
+                <h3>Add User</h3>
+                <p>Assign permissions to a user for this environment.</p>
+            </div>
+        </div>
+        <div class="section-wrapper">
+            <div class="section-bar"></div>
+            <div class="section-content">
+                <div class="form-element">
+                    <label asp-for="EmailAddress">Email</label>
+                    <input asp-for="EmailAddress" />
+                    <span asp-validation-for="EmailAddress" class=""></span>
+                </div>
+                <div class="form-element">
+                    <label asp-for="UserRole">Role</label>
+                    <select asp-for="UserRole" name="UserRole">
+                        <option value="Reader" selected>Reader</option>
+                        <option value="PoolManager">Pool Manager</option>
+                        <option value="Owner">Owner</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="form-footer">
         <div class="button-bar">
-            <label asp-for="EmailAddress">Email</label>
-            <input asp-for="EmailAddress" class="disable-read-only" />
-            <select asp-for="UserRole" name="UserRole">
-                <option value="Reader" selected>Reader</option>
-                <option value="PoolManager">Pool Manager</option>
-                <option value="Owner">Owner</option>
-            </select>
             <button id="next" type="submit" formaction="UserAccess">Add New User <i class="fa fa-plus"></i></button>
         </div>
     </div>
