@@ -1,6 +1,6 @@
 [![Build Status](https://dev.azure.com/azure/azure-render-farm-manager/_apis/build/status/Azure.azure-render-farm-manager?branchName=master)](https://dev.azure.com/azure/azure-render-farm-manager/_build/latest?definitionId=19&branchName=master)
 
-# Azure Render Farm Manager
+# Azure Render Farm Manager (Preview)
 
 The Azure Render Farm Manager is an Azure Web App to create and manage your cloud or hybrid render farm with native support for PipelineFx Qube! and Thinkbox Deadline 10.
 The portal Web App can be easily deployed into your existing Azure subscription.
@@ -30,7 +30,9 @@ Login to the Azure portal and navigate to the Azure Active Directory application
 
  1. Click Settings on the application
  2. Click Required permissions
- 3. Click Add -> Select an API -> select the Microsoft Graph API and 'Sign in and read user profile' under Delegated Permissions (near the bottom)
+ 3. Click Add -> Select an API -> select the Microsoft Graph API and select the following permissions under Delegated Permissions (near the bottom)
+	a. User.Read - 'Sign in and read user profile'
+	b. Directory.AccessAsUser.All - 'Access the directory as the signed-in user'
  4. Click Done to save
  5. Click Add -> Select an API -> select the Windows Azure Service Management API and 'Access Azure Service Management as organization users (preview)' under Delegated Permissions (near the bottom)
  6. Click Done to save
