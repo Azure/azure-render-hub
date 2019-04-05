@@ -93,5 +93,4 @@ namespace WebApp.Config
             yield return env.Subnet.ResourceGroupName;
         }
     }
-
 }
