@@ -155,7 +155,9 @@ namespace WebApp.Authorization
 
             return new EnvironmentPermissions
             {
-                EnvironmentResourceGroup = resourceGroupPermissions,
+                // The RG query will return allrelative resources too so we need to filter those out
+                EnvironmentResourceGroup = resourceGroupPermissions.Where(
+                    p => p.Scope == $"/subscriptions/{environment.SubscriptionId}" || p.Scope == environment.ResourceGroupResourceId).ToList(),
                 Batch = batchPermissions,
                 Storage = storagePermissions,
                 KeyVault = keyVaultPermissions,
