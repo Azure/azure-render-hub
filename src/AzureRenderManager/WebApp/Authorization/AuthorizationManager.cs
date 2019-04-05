@@ -17,6 +17,45 @@ namespace WebApp.Authorization
 {
     public class AuthorizationManager: NeedsAccessToken
     {
+        private const string OwnerRole = "Owner";
+        private const string ContributorRole = "Contributor";
+        private const string VirtualMachineContributorRole = "Virtual Machine Contributor";
+        private const string ReaderRole = "Reader";
+
+        private static string[] AdminRoles = new[] { OwnerRole, ContributorRole };
+        private static string[] PoolManagerRoles = new[] { OwnerRole, ContributorRole, VirtualMachineContributorRole };
+        private static string[] ReaderRoles = new[] { OwnerRole, ContributorRole, ReaderRole };
+
+        private static EnvironmentRoleAssignments EnvironmentReaderRoles = new EnvironmentRoleAssignments
+        {
+            EnvironmentResourceGroupRole = ReaderRole,
+            BatchRole = ReaderRole,
+            StorageRole = ReaderRole,
+            KeyVaultRole = ReaderRole,
+            ApplicationInsightsRole = ReaderRole,
+            VNetRole = ReaderRole,
+        };
+
+        private static EnvironmentRoleAssignments EnvironmentPoolManagerRoles = new EnvironmentRoleAssignments
+        {
+            EnvironmentResourceGroupRole = ReaderRole,
+            BatchRole = ContributorRole,
+            StorageRole = ReaderRole,
+            KeyVaultRole = ReaderRole,
+            ApplicationInsightsRole = ReaderRole,
+            VNetRole = VirtualMachineContributorRole,
+        };
+
+        private static EnvironmentRoleAssignments EnvironmentOwnerRoles = new EnvironmentRoleAssignments
+        {
+            EnvironmentResourceGroupRole = OwnerRole,
+            BatchRole = OwnerRole,
+            StorageRole = OwnerRole,
+            KeyVaultRole = OwnerRole,
+            ApplicationInsightsRole = OwnerRole,
+            VNetRole = OwnerRole,
+        };
+
         private readonly IAzureResourceProvider _azureResourceProvider;
         private readonly IGraphAuthProvider _graphProvider;
         private readonly IConfiguration _configuration;
@@ -52,12 +91,59 @@ namespace WebApp.Authorization
             return permissions;
         }
 
+        // Gets all the user role assignemtns for the environment and collapses them to "Portal" roles
+        // that we can display for each user.
         public async Task<List<UserPermission>> ListUserPermissions(RenderingEnvironment environment)
         {
-            var (resourceGroupPermissions, 
-                batchPermissions, 
-                storagePermissions, 
-                keyVaultPermissions, 
+            var environmentPermissions = await GetResourcePermissions(environment);
+            var userObjectIds = environmentPermissions.GetUserObjectIds();
+            var finalPermissions = new List<UserPermission>();
+            foreach (var objectId in userObjectIds)
+            {
+                var userEnvironmentPermissions = environmentPermissions.ToUserEnvironmentPermissions(objectId);
+                var userPermission = userEnvironmentPermissions.GetUserPermission();
+
+                if (userEnvironmentPermissions.IsOwner())
+                {
+                    finalPermissions.Add(new UserPermission
+                    {
+                        ObjectId = objectId,
+                        Email = userPermission.Email,
+                        Name = userPermission.Name,
+                        Role = PortalRole.Owner.ToString(),
+                    });
+                }
+                else if (userEnvironmentPermissions.IsPoolManager())
+                {
+                    finalPermissions.Add(new UserPermission
+                    {
+                        ObjectId = objectId,
+                        Email = userPermission.Email,
+                        Name = userPermission.Name,
+                        Role = PortalRole.PoolManager.ToString(),
+                    });
+                }
+                else if (userEnvironmentPermissions.IsReader())
+                {
+                    finalPermissions.Add(new UserPermission
+                    {
+                        ObjectId = objectId,
+                        Email = userPermission.Email,
+                        Name = userPermission.Name,
+                        Role = PortalRole.Reader.ToString(),
+                    });
+                }
+            }
+
+            return finalPermissions;
+        }
+
+        private async Task<EnvironmentPermissions> GetResourcePermissions(RenderingEnvironment environment)
+        {
+            var (resourceGroupPermissions,
+                batchPermissions,
+                storagePermissions,
+                keyVaultPermissions,
                 appInsightsPermissions,
                 vnetPermissions) = await (
                 _azureResourceProvider.GetUserPermissions(environment.SubscriptionId, environment.ResourceGroupResourceId),
@@ -67,131 +153,27 @@ namespace WebApp.Authorization
                 _azureResourceProvider.GetUserPermissions(environment.SubscriptionId, environment.ApplicationInsightsAccount.ResourceId),
                 _azureResourceProvider.GetUserPermissions(environment.SubscriptionId, environment.Subnet.VnetResourceId));
 
-            var permissions = new List<UserPermission>();
-            permissions.AddRange(resourceGroupPermissions);
-            permissions.AddRange(batchPermissions);
-            permissions.AddRange(storagePermissions);
-            permissions.AddRange(keyVaultPermissions);
-            permissions.AddRange(appInsightsPermissions);
-            permissions.AddRange(vnetPermissions);
-
-            var ownerRoles = new[] { "Owner" };
-            var poolManagerRoles = new[] { "Owner", "Contributor", "Reader" };
-            var readerRoles = new[] { "Owner", "Contributor", "Reader" };
-
-            var finalPermissions = new List<UserPermission>();
-            var uniqueUsers = permissions.Select(p => p.ObjectId).ToHashSet();
-            foreach (var objectId in uniqueUsers)
+            return new EnvironmentPermissions
             {
-
-                var userResourceGroupPermissions = resourceGroupPermissions.Where(p => p.ObjectId == objectId).ToList();
-                var userBatchPermissions = batchPermissions.Where(p => p.ObjectId == objectId).ToList();
-                var userStoragePermissions = storagePermissions.Where(p => p.ObjectId == objectId).ToList();
-                var userKeyVaultPermissions = keyVaultPermissions.Where(p => p.ObjectId == objectId).ToList();
-                var userAppInsightsPermissions = appInsightsPermissions.Where(p => p.ObjectId == objectId).ToList();
-                var userVnetPermissions = vnetPermissions.Where(p => p.ObjectId == objectId).ToList();
-
-                // Owner
-                if (userResourceGroupPermissions.Any(p => p.Role == "Owner") &&
-                    userBatchPermissions.Any(p => p.Role == "Owner") &&
-                    userStoragePermissions.Any(p => p.Role == "Owner") &&
-                    userKeyVaultPermissions.Any(p => p.Role == "Owner") &&
-                    userAppInsightsPermissions.Any(p => p.Role == "Owner") &&
-                    userVnetPermissions.Any(p => p.Role == "Owner"))
-                {
-                    finalPermissions.Add(new UserPermission
-                    {
-                        ObjectId = objectId,
-                        Email = permissions.First(p => p.ObjectId == objectId).Email,
-                        Name = permissions.First(p => p.ObjectId == objectId).Name,
-                        Role = PortalRole.Owner.ToString(),
-                    });
-                }
-                // Pool Manager
-                else if (userResourceGroupPermissions.Any(p => poolManagerRoles.Contains(p.Role)) &&
-                    userBatchPermissions.Any(p => p.Role == "Owner" || p.Role == "Contributor") &&
-                    userStoragePermissions.Any(p => poolManagerRoles.Contains(p.Role)) &&
-                    userKeyVaultPermissions.Any(p => poolManagerRoles.Contains(p.Role)) &&
-                    userAppInsightsPermissions.Any(p => poolManagerRoles.Contains(p.Role)) &&
-                    userVnetPermissions.Any(p => poolManagerRoles.Contains(p.Role) || p.Role == "Virtual Machine Contributor"))
-                {
-                    finalPermissions.Add(new UserPermission
-                    {
-                        ObjectId = objectId,
-                        Email = permissions.First(p => p.ObjectId == objectId).Email,
-                        Name = permissions.First(p => p.ObjectId == objectId).Name,
-                        Role = PortalRole.PoolManager.ToString(),
-                    });
-                }
-                // Reader
-                else if (userResourceGroupPermissions.Any(p => readerRoles.Contains(p.Role)) &&
-                    userBatchPermissions.Any(p => readerRoles.Contains(p.Role)) &&
-                    userStoragePermissions.Any(p => readerRoles.Contains(p.Role)) &&
-                    userKeyVaultPermissions.Any(p => readerRoles.Contains(p.Role)) &&
-                    userAppInsightsPermissions.Any(p => readerRoles.Contains(p.Role)) &&
-                    userVnetPermissions.Any(p => readerRoles.Contains(p.Role)))
-                {
-
-                    finalPermissions.Add(new UserPermission
-                    {
-                        ObjectId = objectId,
-                        Email = permissions.First(p => p.ObjectId == objectId).Email,
-                        Name = permissions.First(p => p.ObjectId == objectId).Name,
-                        Role = PortalRole.Reader.ToString(),
-                    });
-                }
-            }
-
-            return finalPermissions;
+                EnvironmentResourceGroup = resourceGroupPermissions,
+                Batch = batchPermissions,
+                Storage = storagePermissions,
+                KeyVault = keyVaultPermissions,
+                ApplicationInsights = appInsightsPermissions,
+                VNet = vnetPermissions,
+            };
         }
 
-        private static EnvironmentRoleAssignments ReaderRoles = new EnvironmentRoleAssignments
-        {
-            EnvironmentResourceGroupRole = "Reader",
-            BatchRole = "Reader",
-            StorageRole = "Reader",
-            KeyVaultRole = "Reader",
-            ApplicationInsightsRole = "Reader",
-            VNetRole = "Reader",
-        };
-
-        private static EnvironmentRoleAssignments PoolManagerRoles = new EnvironmentRoleAssignments
-        {
-            EnvironmentResourceGroupRole = "Reader",
-            BatchRole = "Contributor",
-            StorageRole = "Reader",
-            KeyVaultRole = "Reader",
-            ApplicationInsightsRole = "Reader",
-            VNetRole = "Virtual Machine Contributor",
-        };
-
-        private static EnvironmentRoleAssignments OwnerRoles = new EnvironmentRoleAssignments
-        {
-            EnvironmentResourceGroupRole = "Owner",
-            BatchRole = "Owner",
-            StorageRole = "Owner",
-            KeyVaultRole = "Owner",
-            ApplicationInsightsRole = "Owner",
-            VNetRole = "Owner",
-        };
-
-        public async Task AssignRoleToUser(RenderingEnvironment environment, string userEmailAddress, PortalRole userRole)
+        private async Task<User> GetGraphUser(string userEmailAddress)
         {
             var graphServiceClient = new GraphServiceClient(new DelegateAuthenticationProvider(async requestMessage =>
             {
-               var graphAccessToken = await _graphProvider.GetUserAccessTokenAsync(GetUser());
-               requestMessage
-                   .Headers
-                   .Authorization = new AuthenticationHeaderValue("Bearer", graphAccessToken);
+                var graphAccessToken = await _graphProvider.GetUserAccessTokenAsync(GetUser());
+                requestMessage
+                    .Headers
+                    .Authorization = new AuthenticationHeaderValue("Bearer", graphAccessToken);
             }));
 
-            List<QueryOption> options = new List<QueryOption>
-            {
-                    new QueryOption("$search", "lunch")
-            };
-
-            var signInNamesFilter = $"signInNames/any(c:c/value eq '{userEmailAddress}')";
-            var otherMailsFilter = $"otherMails/any(x:x/value eq '{userEmailAddress}')";
             var externalEmail = $"{userEmailAddress.Replace('@', '_')}#EXT#@{_configuration["AzureAd:Domain"]}";
             var user = await graphServiceClient.Users.Request().Filter(
                 $"mail eq '{userEmailAddress}' or " +
@@ -208,19 +190,22 @@ namespace WebApp.Authorization
                 throw new Exception($"Multiple users found for email {userEmailAddress}");
             }
 
-            var objectId = user.First().Id;
+            return user.First();
+        }
 
+        public async Task AssignRoleToUser(RenderingEnvironment environment, string userEmailAddress, PortalRole userRole)
+        {
             EnvironmentRoleAssignments roleAssignments = null;
             switch (userRole)
             {
                 case PortalRole.Reader:
-                    roleAssignments = ReaderRoles;
+                    roleAssignments = EnvironmentReaderRoles;
                     break;
                 case PortalRole.PoolManager:
-                    roleAssignments = PoolManagerRoles;
+                    roleAssignments = EnvironmentPoolManagerRoles;
                     break;
                 case PortalRole.Owner:
-                    roleAssignments = OwnerRoles;
+                    roleAssignments = EnvironmentOwnerRoles;
                     break;
             }
 
@@ -229,72 +214,138 @@ namespace WebApp.Authorization
                 throw new Exception($"No role assignments configured for role {userRole}");
             }
 
-            await AssignRolesToUser(objectId, environment, roleAssignments);
+            var graphUser = await GetGraphUser(userEmailAddress);
+
+            await AssignRolesToUser(graphUser.Id, environment, roleAssignments);
         }
 
         private async Task AssignRolesToUser(string objectId, RenderingEnvironment environment, EnvironmentRoleAssignments roleAssignments)
         {
             var identity = new Identity.Identity { ObjectId = Guid.Parse(objectId) };
 
-            await (_azureResourceProvider.AssignManagementIdentityAsync(
-                environment.SubscriptionId,
-                environment.ResourceGroupResourceId,
-                roleAssignments.EnvironmentResourceGroupRole,
-                identity),
+            // Assign RG permissions
+            // We want to give the correct permissions to the environment RG, 
+            // but we also need to give Reader permissions to the other RGs so
+            // we can query cost information.
 
-                _azureResourceProvider.AssignManagementIdentityAsync(
-                environment.SubscriptionId,
-                environment.BatchAccount.ResourceId,
-                roleAssignments.BatchRole,
-                identity),
+            // ResourceId => RoleName
+            var resourceIdsToRoles = environment.ExtractResourceGroupNames().ToDictionary(
+                    rgName => $"/subscriptions/{environment.SubscriptionId}/resourceGroups/{rgName}",
+                    rgName => rgName == environment.ResourceGroupName ? roleAssignments.EnvironmentResourceGroupRole : "Reader");
 
-                _azureResourceProvider.AssignManagementIdentityAsync(
-                environment.SubscriptionId,
-                environment.StorageAccount.ResourceId,
-                roleAssignments.StorageRole,
-                identity),
+            // Add the explicit resource roles
+            resourceIdsToRoles[environment.BatchAccount.ResourceId] = roleAssignments.BatchRole;
+            resourceIdsToRoles[environment.StorageAccount.ResourceId] = roleAssignments.StorageRole;
+            resourceIdsToRoles[environment.KeyVault.ResourceId] = roleAssignments.KeyVaultRole;
+            resourceIdsToRoles[environment.ApplicationInsightsAccount.ResourceId] = roleAssignments.ApplicationInsightsRole;
+            resourceIdsToRoles[environment.Subnet.VnetResourceId] = roleAssignments.VNetRole;
 
-                _azureResourceProvider.AssignManagementIdentityAsync(
-                environment.SubscriptionId,
-                environment.KeyVault.ResourceId,
-                roleAssignments.KeyVaultRole,
-                identity),
-
-                _azureResourceProvider.AssignManagementIdentityAsync(
-                environment.SubscriptionId,
-                environment.ApplicationInsightsAccount.ResourceId,
-                roleAssignments.ApplicationInsightsRole,
-                identity),
-
-                _azureResourceProvider.AssignManagementIdentityAsync(
-                environment.SubscriptionId,
-                environment.Subnet.VnetResourceId,
-                roleAssignments.VNetRole,
-                identity)
-                );
-        }
-
-        private List<UserPermission> MapUserPermissionsToPortalRoles(List<UserPermission> userPermissions)
-        {
-            var mappedPermissions = new List<UserPermission>();
-            var userToPermissionsDict = userPermissions
-                             .GroupBy(x => x.ObjectId)
-                             .ToDictionary(gdc => gdc.Key, gdc => gdc.ToHashSet());
-            //foreach (var userPermission in userToPermissionsDict)
-           // {
-
-            //}
-            return mappedPermissions;
+            await Task.WhenAll(resourceIdsToRoles.Select(
+                kvp => _azureResourceProvider.AssignManagementIdentityAsync(
+                    environment.SubscriptionId,
+                    kvp.Key, // ResourceId
+                    kvp.Value, // Role
+                    identity)));
         }
 
         class EnvironmentRoleAssignments
         {
             public string EnvironmentResourceGroupRole { get; set; }
+
             public string BatchRole { get; set; }
+
             public string StorageRole { get; set; }
+
             public string KeyVaultRole { get; set; }
+
             public string ApplicationInsightsRole { get; set; }
+
             public string VNetRole { get; set; }
+        }
+
+        class EnvironmentPermissions
+        {
+            public List<UserPermission> EnvironmentResourceGroup { get; set; } = new List<UserPermission>();
+
+            public List<UserPermission> Batch { get; set; } = new List<UserPermission>();
+
+            public List<UserPermission> Storage { get; set; } = new List<UserPermission>();
+
+            public List<UserPermission> KeyVault { get; set; } = new List<UserPermission>();
+
+            public List<UserPermission> ApplicationInsights { get; set; } = new List<UserPermission>();
+
+            public List<UserPermission> VNet { get; set; } = new List<UserPermission>();
+
+            public IEnumerable<string> GetUserObjectIds()
+            {
+                return EnvironmentResourceGroup
+                    .Concat(Batch)
+                    .Concat(Storage)
+                    .Concat(KeyVault)
+                    .Concat(ApplicationInsights)
+                    .Concat(VNet)
+                    .Select(p => p.ObjectId)
+                    .ToHashSet();
+            }
+
+            // Returns the environment permissions for a given user
+            public UserEnvironmentPermissions ToUserEnvironmentPermissions(string objectId)
+            {
+                return new UserEnvironmentPermissions
+                {
+                    EnvironmentResourceGroup = EnvironmentResourceGroup.Where(p => p.ObjectId == objectId).ToList(),
+                    Batch = Batch.Where(p => p.ObjectId == objectId).ToList(),
+                    Storage = Storage.Where(p => p.ObjectId == objectId).ToList(),
+                    KeyVault = KeyVault.Where(p => p.ObjectId == objectId).ToList(),
+                    ApplicationInsights = ApplicationInsights.Where(p => p.ObjectId == objectId).ToList(),
+                    VNet = VNet.Where(p => p.ObjectId == objectId).ToList(),
+                };
+            }
+        }
+
+        class UserEnvironmentPermissions : EnvironmentPermissions
+        {
+            public UserPermission GetUserPermission()
+            {
+                return EnvironmentResourceGroup
+                    .Concat(Batch)
+                    .Concat(Storage)
+                    .Concat(KeyVault)
+                    .Concat(ApplicationInsights)
+                    .Concat(VNet)
+                    .FirstOrDefault();
+            }
+
+            public bool IsOwner()
+            {
+                return EnvironmentResourceGroup.Any(p => p.Role == OwnerRole) &&
+                    Batch.Any(p => p.Role == OwnerRole) &&
+                    Storage.Any(p => p.Role == OwnerRole) &&
+                    KeyVault.Any(p => p.Role == OwnerRole) &&
+                    ApplicationInsights.Any(p => p.Role == OwnerRole) &&
+                    VNet.Any(p => p.Role == OwnerRole);
+            }
+
+            public bool IsPoolManager()
+            {
+                return EnvironmentResourceGroup.Any(p => ReaderRoles.Contains(p.Role)) &&
+                    Batch.Any(p => AdminRoles.Contains(p.Role)) &&
+                    Storage.Any(p => ReaderRoles.Contains(p.Role)) &&
+                    KeyVault.Any(p => ReaderRoles.Contains(p.Role)) &&
+                    ApplicationInsights.Any(p => ReaderRoles.Contains(p.Role)) &&
+                    VNet.Any(p => PoolManagerRoles.Contains(p.Role));
+            }
+
+            public bool IsReader()
+            {
+                return EnvironmentResourceGroup.Any(p => ReaderRoles.Contains(p.Role)) &&
+                    Batch.Any(p => ReaderRoles.Contains(p.Role)) &&
+                    Storage.Any(p => ReaderRoles.Contains(p.Role)) &&
+                    KeyVault.Any(p => ReaderRoles.Contains(p.Role)) &&
+                    ApplicationInsights.Any(p => ReaderRoles.Contains(p.Role)) &&
+                    VNet.Any(p => ReaderRoles.Contains(p.Role));
+            }
         }
     }
 }
