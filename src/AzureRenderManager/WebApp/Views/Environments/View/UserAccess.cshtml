@@ -15,73 +15,100 @@
 
 @await Html.PartialAsync("Menu/EnvironmentMainMenu", Model, new ViewDataDictionary(ViewData) { { "Step", "useraccess" } })
 
-<div class="pool-details">
-    <table>
-        <thead>
-            <tr>
-                <th>User</th>
-                <th>Id</th>
-                <th>Permissions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var classicAdmin in Model.ClassicAdministrators)
-            {
-            <tr>
-                <td>@classicAdmin.Name</td>
-                <td>@classicAdmin.ObjectId</td>
-                <td>@classicAdmin.Role</td>
-            </tr>
-            }
-        </tbody>
-    </table>
-    @if (Model.ClassicAdministrators.Count == 0)
-    {
-        <p>&nbsp;</p>
-        <text><h4>There are no classic administrators.</h4></text>
-    }
+<div class="form-section">
+    <div class="section-title">
+        <span class="step-index">1</span>
+        <div class="step-header">
+            <h3>Classic Administrators</h3>
+            <p>Classic administrators have full access to the environment.</p>
+        </div>
+    </div>
+    <div class="section-wrapper">
+        <div class="section-bar"></div>
+        <div class="section-content">
+            <div class="pool-details">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Id</th>
+                            <th>Permissions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var classicAdmin in Model.ClassicAdministrators)
+                        {
+                            <tr>
+                                <td>@classicAdmin.Name</td>
+                                <td>@classicAdmin.ObjectId</td>
+                                <td>@classicAdmin.Role</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                @if (Model.ClassicAdministrators.Count == 0)
+                {
+                    <p>&nbsp;</p>
+                    <text><h4>There are no classic administrators.</h4></text>
+                }
+            </div>
+
+        </div>
+    </div>
 </div>
 
-<div class="pool-details">
-    <table>
-        <thead>
-            <tr>
-                <th>User</th>
-                <th>ObjectId</th>
-                <th>Permissions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var userPermission in Model.UserPermissions)
-            {
-            <tr>
-                <td>@userPermission.Email</td>
-                <td>@userPermission.ObjectId</td>
-                <td>@userPermission.Role</td>
-            </tr>
-            }
-        </tbody>
-    </table>
-    @if (Model.UserPermissions.Count == 0)
-    {
-        <p>&nbsp;</p>
-        <text><h4>There are no users with permissions to this environment.</h4></text>
-    }
+<div class="form-section">
+    <div class="section-title">
+        <span class="step-index">2</span>
+        <div class="step-header">
+            <h3>Role Assignments</h3>
+            <p>The following users have access to the environment defined by their role.  See below for details on roles.</p>
+        </div>
+    </div>
+    <div class="section-wrapper">
+        <div class="section-bar"></div>
+        <div class="section-content">
+            <div class="pool-details">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>ObjectId</th>
+                            <th>Permissions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var userPermission in Model.UserPermissions)
+                        {
+                            <tr>
+                                <td>@userPermission.Email</td>
+                                <td>@userPermission.ObjectId</td>
+                                <td>@userPermission.Role</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                @if (Model.UserPermissions.Count == 0)
+                {
+                    <p>&nbsp;</p>
+                    <text><h4>There are no users with permissions to this environment.</h4></text>
+                }
+            </div>
+
+        </div>
+    </div>
 </div>
 
 <form method="post">
     @Html.AntiForgeryToken()
     @Html.HiddenFor(model => model.EnvironmentName)
     <div asp-validation-summary="ModelOnly" class=""></div>
-
-
-
     <div class="form-section">
         <div class="section-title">
-            <span class="step-index">1</span>
+            <span class="step-index">3</span>
             <div class="step-header">
                 <h3>Add User</h3>
-                <p>Assign permissions to a user for this environment.</p>
+                <p>Assign a user permissions to this environment.</p>
             </div>
         </div>
         <div class="section-wrapper">
@@ -110,24 +137,123 @@
     </div>
 </form>
 <p>&nbsp;</p>
+<div class="delete-environment">
+    <div class="section">
+        <div class="header">
+            <h2>Render Farm Manager Roles Overview</h2>
+            <p>The Render Farm Manager roles below are virtual roles that map to the Azure roles for each resource below.  The roles are the minimum required.  All roles require 'Reader' permissions to the underlying resource groups.</p>
+        </div>
+        <div class="resources">
+            <h4>Owner Role</h4>
+            <p>The owner role has admin access to the environment and can deleted resources, manage pools and assign user permissions.</p>
+            <p>The role maps to the following Azure Built-In roles for each resource.</p>
+        </div>
+    </div>
+    <div class="section">
+        <div class="resources">
+            <div class="image-container block">
+                <div class="icon"><img src="~/images/batch.svg" width="18" height="18" alt="Azure" /></div>
+                <span>Batch Account: <i>Owner</i></span>
+            </div>
+            <div class="image-container block">
+                <div class="icon"><img src="~/images/storage.svg" width="18" height="18" alt="Azure" /></div>
+                <span>Storage Account: <i>Owner</i></span>
+            </div>
+            <div class="image-container block">
+                <div class="icon"><img src="~/images/insights.svg" width="18" height="18" alt="Azure" /></div>
+                <span>Application Insights: <i>Owner</i></span>
+            </div>
+            <div class="image-container block">
+                <div class="icon"><img src="~/images/key.svg" width="18" height="18" alt="Azure" /></div>
+                <span>Key Vault: <i>Owner</i></span>
+            </div>
+            <div class="image-container block">
+                <div class="icon"><img src="~/images/vnet.svg" width="18" height="18" alt="Azure" /></div>
+                <span>VNet: <i>Owner</i></span>
+            </div>
+        </div>
+    </div>
+    <br />
+    <div class="section">
+        <div class="resources">
+            <h4>Pool Manager Role</h4>
+            <p>The Pool Manager role has read-only access to the environment and can manage pools.</p>
+            <p>The role maps to the following Azure Built-In roles for each resource.</p>
+        </div>
+    </div>
+    <div class="section">
+        <div class="resources">
+            <div class="image-container block">
+                <div class="icon"><img src="~/images/batch.svg" width="18" height="18" alt="Azure" /></div>
+                <span>Batch Account: <i>Contributor</i></span>
+            </div>
+            <div class="image-container block">
+                <div class="icon"><img src="~/images/storage.svg" width="18" height="18" alt="Azure" /></div>
+                <span>Storage Account: <i>Reader</i></span>
+            </div>
+            <div class="image-container block">
+                <div class="icon"><img src="~/images/insights.svg" width="18" height="18" alt="Azure" /></div>
+                <span>Application Insights: <i>Reader</i></span>
+            </div>
+            <div class="image-container block">
+                <div class="icon"><img src="~/images/key.svg" width="18" height="18" alt="Azure" /></div>
+                <span>Key Vault: <i>Reader</i></span>
+            </div>
+            <div class="image-container block">
+                <div class="icon"><img src="~/images/vnet.svg" width="18" height="18" alt="Azure" /></div>
+                <span>VNet: <i>Virtual Machine Contributor</i></span>
+            </div>
+        </div>
+    </div>
+    <br />
+    <div class="section">
+        <div class="resources">
+            <h4>Reader Role</h4>
+            <p>The Reader role has read-only access to the environment.</p>
+            <p>The role maps to the following Azure Built-In roles for each resource.</p>
+        </div>
+    </div>
+    <div class="section">
+        <div class="resources">
+            <div class="image-container block">
+                <div class="icon"><img src="~/images/batch.svg" width="18" height="18" alt="Azure" /></div>
+                <span>Batch Account: <i>Reader</i></span>
+            </div>
+            <div class="image-container block">
+                <div class="icon"><img src="~/images/storage.svg" width="18" height="18" alt="Azure" /></div>
+                <span>Storage Account: <i>Reader</i></span>
+            </div>
+            <div class="image-container block">
+                <div class="icon"><img src="~/images/insights.svg" width="18" height="18" alt="Azure" /></div>
+                <span>Application Insights: <i>Reader</i></span>
+            </div>
+            <div class="image-container block">
+                <div class="icon"><img src="~/images/key.svg" width="18" height="18" alt="Azure" /></div>
+                <span>Key Vault: <i>Reader</i></span>
+            </div>
+            <div class="image-container block">
+                <div class="icon"><img src="~/images/vnet.svg" width="18" height="18" alt="Azure" /></div>
+                <span>VNet: <i>Reader</i></span>
+            </div>
+        </div>
+    </div>
+</div>
 
 @section scripts
-    {
-    <script>
-        $(document).ready(function () {
-            var error = '@Model.Error';
-            if (error !== '')
-            {
-                toastr.options.timeOut = 0;
-                toastr.options.extendedTimeOut = 0;
-                toastr.options.closeButton = true;
-                toastr.options.positionClass = "toast-top-center";
-
-                var msg = '@Model.ErrorMessage';
-                toastr.warning(msg, error).css("width", "600px");
-
-                $('#next').attr('disabled', true);
-            }
-        });
-    </script>
+{
+<script>
+    $(document).ready(function () {
+        var error = '@Model.Error';
+        if (error !== '')
+        {
+            toastr.options.timeOut = 0;
+            toastr.options.extendedTimeOut = 0;
+            toastr.options.closeButton = true;
+            toastr.options.positionClass = "toast-top-center";
+            var msg = '@Model.ErrorMessage';
+            toastr.warning(msg, error).css("width", "600px");
+            $('#next').attr('disabled', true);
+        }
+    });
+</script>
 }
