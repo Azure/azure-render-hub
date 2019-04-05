@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Caching.Memory;
 using WebApp.Config;
@@ -53,8 +54,39 @@ namespace WebApp.CostManagement
         {
             _clientAccessor = accessor;
         }
-        
+
         public async Task<EnvironmentCost> GetCost(RenderingEnvironment env, QueryTimePeriod period)
+        {
+            var client = await _clientAccessor.GetClient();
+            var usageRequest = CreateUsageRequest(env, period);
+
+            IReadOnlyList<Cost> costs =
+                await Task.WhenAll(env.ExtractResourceGroupNames().Select(
+                    async rgName =>
+                    {
+                        var result = await client.GetUsageForResourceGroup(env.SubscriptionId, rgName, usageRequest);
+
+                        if (result.Properties == null)
+                        {
+                            return null;
+                        }
+                        else
+                        {
+                            return new Cost(usageRequest.TimePeriod, result);
+                        }
+                    }));
+
+            costs = costs.Where(x => x != null).ToList();
+
+            if (!costs.Any())
+            {
+                return new EnvironmentCost(env.Name, null);
+            }
+
+            return new EnvironmentCost(env.Name, costs.Aggregate((x, y) => new Cost(x, y)));
+        }
+
+        private static UsageRequest CreateUsageRequest(RenderingEnvironment env, QueryTimePeriod period)
         {
             var usageRequest =
                 new UsageRequest(
@@ -73,17 +105,7 @@ namespace WebApp.CostManagement
 
             usageRequest.TimePeriod = period;
 
-            var client = await _clientAccessor.GetClient();
-            var result = await client.GetUsageForSubscription(env.SubscriptionId, usageRequest);
-
-            if (result.Properties == null)
-            {
-                return new EnvironmentCost(env.Name, null);
-            }
-            else
-            {
-                return new EnvironmentCost(env.Name, new Cost(period, result));
-            }
+            return usageRequest;
         }
     }
 }
