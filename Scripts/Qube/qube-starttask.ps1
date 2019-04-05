@@ -97,10 +97,10 @@ if (!$skipInstall)
 }
 
 # Update the Supervisor IP in qb.conf if specified.
-if ('' -ne $qubeSupervisorIp -and (Test-Path -Path "C:\ProgramData\Pfx\Qube\qb.conf"))
+if ('' -ne $qubeSupervisorIp -and (Test-Path -Path "$qbConf"))
 {
     Write-Host "Setting the Qube! supervisor to $qubeSupervisorIp"
-    (Get-Content 'C:\ProgramData\Pfx\Qube\qb.conf') -replace '^.*qb_supervisor.*',"qb_supervisor = $qubeSupervisorIp" | Set-Content qb.conf
+    (Get-Content "$qbConf") -replace '^.*qb_supervisor.*',"qb_supervisor = $qubeSupervisorIp" | Set-Content "$qbConf"
 }
 
 if ('' -ne $workerHostGroups -and (Test-Path -Path $qbConf))
