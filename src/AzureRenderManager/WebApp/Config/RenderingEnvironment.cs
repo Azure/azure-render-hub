@@ -2,6 +2,8 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using WebApp.Config.RenderManager;
@@ -74,4 +76,22 @@ namespace WebApp.Config
         Deleting,
         DeleteFailed
     }
+
+    public static class RenderingEnvironmentExtensions
+    {
+        public static IEnumerable<string> ExtractResourceGroupNames(this RenderingEnvironment env)
+            // note that resource group names are case-insensitive!
+            => AllResourceGroupNames(env).Distinct(StringComparer.OrdinalIgnoreCase);
+
+        private static IEnumerable<string> AllResourceGroupNames(RenderingEnvironment env)
+        {
+            yield return env.ApplicationInsightsAccount.ResourceGroupName;
+            yield return env.BatchAccount.ResourceGroupName;
+            yield return env.KeyVault.ResourceGroupName;
+            yield return env.ResourceGroupName;
+            yield return env.StorageAccount.ResourceGroupName;
+            yield return env.Subnet.ResourceGroupName;
+        }
+    }
+
 }
