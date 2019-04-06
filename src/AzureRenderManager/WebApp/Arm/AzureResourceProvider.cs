@@ -681,6 +681,7 @@ namespace WebApp.Arm
                 Role = roleDefs.FirstOrDefault(rd => rd.Id == ra.RoleDefinitionId)?.RoleName,
                 Scope = ra.Scope,
                 Actions = roleDefs.FirstOrDefault(rd => rd.Id == ra.RoleDefinitionId)?.Permissions.SelectMany(p => p.Actions).ToList(),
+                GraphResolutionFailure = !dirUsers.ContainsKey(ra.PrincipalId), // No Graph User
             }).ToList();
         }
 
@@ -712,9 +713,16 @@ namespace WebApp.Arm
 
             var userDict = new Dictionary<string, User>();
 
-            for (int i = 0; i < userIds.Count; i = i + batchSize)
+            try
             {
-                await GetBatchOfUsers(graphServiceClient, userIds, i, batchSize, userDict);
+                for (int i = 0; i < userIds.Count; i = i + batchSize)
+                {
+                    await GetBatchOfUsers(graphServiceClient, userIds, i, batchSize, userDict);
+                }
+            }
+            catch (ServiceException se) when (se.Error?.Code == "Authorization_RequestDenied")
+            {
+                // No Graph API Permissions, let's ignore this for tenants that don't support this.
             }
 
             return userDict;
