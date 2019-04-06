@@ -198,7 +198,13 @@ namespace WebApp.Authorization
             return user.First();
         }
 
-        public async Task AssignRoleToUser(RenderingEnvironment environment, string userEmailAddress, string objectId, PortalRole userRole)
+        public async Task AssignRoleToUser(RenderingEnvironment environment, string userEmailAddress, PortalRole userRole)
+        {
+            var graphUser = await GetGraphUser(userEmailAddress);
+            await AssignRoleToUser(environment, Guid.Parse(graphUser.Id), userRole);
+        }
+
+        public async Task AssignRoleToUser(RenderingEnvironment environment, Guid objectId, PortalRole userRole)
         {
             EnvironmentRoleAssignments roleAssignments = null;
             switch (userRole)
@@ -219,18 +225,12 @@ namespace WebApp.Authorization
                 throw new Exception($"No role assignments configured for role {userRole}");
             }
 
-            if (string.IsNullOrWhiteSpace(objectId))
-            {
-                var graphUser = await GetGraphUser(userEmailAddress);
-                objectId = graphUser.Id;
-            }
-
             await AssignRolesToUser(objectId, environment, roleAssignments);
         }
 
-        private async Task AssignRolesToUser(string objectId, RenderingEnvironment environment, EnvironmentRoleAssignments roleAssignments)
+        private async Task AssignRolesToUser(Guid objectId, RenderingEnvironment environment, EnvironmentRoleAssignments roleAssignments)
         {
-            var identity = new Identity.Identity { ObjectId = Guid.Parse(objectId) };
+            var identity = new Identity.Identity { ObjectId = objectId };
 
             // Assign RG permissions
             // We want to give the correct permissions to the environment RG, 

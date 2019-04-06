@@ -573,11 +573,20 @@ namespace WebApp.Controllers
                 return View("View/UserAccess", model);
             }
 
-            await _authorizationManager.AssignRoleToUser(
-                environment, 
-                model.NoGraphAccess ? null : model.EmailAddress, 
-                model.NoGraphAccess ? model.ObjectId.ToString() : null,
-                model.UserRole);
+            if (model.NoGraphAccess)
+            {
+                await _authorizationManager.AssignRoleToUser(
+                    environment,
+                    model.ObjectId.Value,
+                    model.UserRole);
+            }
+            else
+            {
+                await _authorizationManager.AssignRoleToUser(
+                    environment,
+                    model.EmailAddress,
+                    model.UserRole);
+            }
 
             return RedirectToAction("UserAccess", new { envId });
         }

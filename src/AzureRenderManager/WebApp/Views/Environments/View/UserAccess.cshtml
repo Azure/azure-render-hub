@@ -31,7 +31,6 @@
                     <thead>
                         <tr>
                             <th>User</th>
-                            <th>Id</th>
                             <th>Permissions</th>
                         </tr>
                     </thead>
@@ -40,7 +39,6 @@
                         {
                             <tr>
                                 <td>@classicAdmin.Name</td>
-                                <td>@classicAdmin.ObjectId</td>
                                 <td>@classicAdmin.Role</td>
                             </tr>
                         }
@@ -52,7 +50,6 @@
                     <text><h4>There are no classic administrators.</h4></text>
                 }
             </div>
-
         </div>
     </div>
 </div>
@@ -72,7 +69,10 @@
                 <table>
                     <thead>
                         <tr>
-                            <th>User</th>
+                            @if (!Model.NoGraphAccess)
+                            {
+                                <th>User</th>
+                            }
                             <th>ObjectId</th>
                             <th>Permissions</th>
                         </tr>
@@ -80,11 +80,14 @@
                     <tbody>
                         @foreach (var userPermission in Model.UserPermissions)
                         {
-                            <tr>
-                                <td>@userPermission.Email</td>
-                                <td>@userPermission.ObjectId</td>
-                                <td>@userPermission.Role</td>
-                            </tr>
+                        <tr>
+                            @if (!Model.NoGraphAccess)
+                            {
+                                <th>@userPermission.Email</th>
+                            }
+                            <td>@userPermission.ObjectId</td>
+                            <td>@userPermission.Role</td>
+                        </tr>
                         }
                     </tbody>
                 </table>
@@ -94,7 +97,6 @@
                     <text><h4>There are no users with permissions to this environment.</h4></text>
                 }
             </div>
-
         </div>
     </div>
 </div>
