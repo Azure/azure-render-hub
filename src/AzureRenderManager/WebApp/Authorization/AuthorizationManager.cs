@@ -111,6 +111,7 @@ namespace WebApp.Authorization
                         Email = userPermission.Email,
                         Name = userPermission.Name,
                         Role = PortalRole.Owner.ToString(),
+                        GraphResolutionFailure = userPermission.GraphResolutionFailure,
                     });
                 }
                 else if (userEnvironmentPermissions.IsPoolManager())
@@ -121,6 +122,7 @@ namespace WebApp.Authorization
                         Email = userPermission.Email,
                         Name = userPermission.Name,
                         Role = PortalRole.PoolManager.ToString(),
+                        GraphResolutionFailure = userPermission.GraphResolutionFailure,
                     });
                 }
                 else if (userEnvironmentPermissions.IsReader())
@@ -131,6 +133,7 @@ namespace WebApp.Authorization
                         Email = userPermission.Email,
                         Name = userPermission.Name,
                         Role = PortalRole.Reader.ToString(),
+                        GraphResolutionFailure = userPermission.GraphResolutionFailure,
                     });
                 }
             }
@@ -195,7 +198,7 @@ namespace WebApp.Authorization
             return user.First();
         }
 
-        public async Task AssignRoleToUser(RenderingEnvironment environment, string userEmailAddress, PortalRole userRole)
+        public async Task AssignRoleToUser(RenderingEnvironment environment, string userEmailAddress, string objectId, PortalRole userRole)
         {
             EnvironmentRoleAssignments roleAssignments = null;
             switch (userRole)
@@ -216,9 +219,13 @@ namespace WebApp.Authorization
                 throw new Exception($"No role assignments configured for role {userRole}");
             }
 
-            var graphUser = await GetGraphUser(userEmailAddress);
+            if (string.IsNullOrWhiteSpace(objectId))
+            {
+                var graphUser = await GetGraphUser(userEmailAddress);
+                objectId = graphUser.Id;
+            }
 
-            await AssignRolesToUser(graphUser.Id, environment, roleAssignments);
+            await AssignRolesToUser(objectId, environment, roleAssignments);
         }
 
         private async Task AssignRolesToUser(string objectId, RenderingEnvironment environment, EnvironmentRoleAssignments roleAssignments)

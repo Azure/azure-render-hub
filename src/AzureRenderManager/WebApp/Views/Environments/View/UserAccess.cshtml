@@ -102,6 +102,7 @@
 <form method="post">
     @Html.AntiForgeryToken()
     @Html.HiddenFor(model => model.EnvironmentName)
+    @Html.HiddenFor(model => model.NoGraphAccess)
     <div asp-validation-summary="ModelOnly" class=""></div>
     <div class="form-section">
         <div class="section-title">
@@ -115,9 +116,18 @@
             <div class="section-bar"></div>
             <div class="section-content">
                 <div class="form-element">
-                    <label asp-for="EmailAddress">Email</label>
-                    <input asp-for="EmailAddress" />
-                    <span asp-validation-for="EmailAddress" class=""></span>
+                    @if (Model.NoGraphAccess)
+                    {
+                        <label asp-for="ObjectId">Object Id</label>
+                        <input asp-for="ObjectId" />
+                        <span asp-validation-for="ObjectId" class=""></span>
+                    }
+                    else
+                    {
+                        <label asp-for="EmailAddress">Email</label>
+                        <input asp-for="EmailAddress" />
+                        <span asp-validation-for="EmailAddress" class=""></span>
+                    }
                 </div>
                 <div class="form-element">
                     <label asp-for="UserRole">Role</label>

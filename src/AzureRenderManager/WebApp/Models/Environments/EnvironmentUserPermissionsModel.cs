@@ -26,9 +26,13 @@ namespace WebApp.Models.Environments
 
         public string ErrorMessage { get; set; }
 
+        public bool NoGraphAccess { get; set; }
+
         [EmailAddress]
         public string EmailAddress { get; set; }
-        
+
+        public Guid? ObjectId { get; set; }
+
         [Required]
         [EnumDataType(typeof(PortalRole))]
         public PortalRole UserRole { get; set; }

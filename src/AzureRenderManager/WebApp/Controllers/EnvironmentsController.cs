@@ -534,6 +534,7 @@ namespace WebApp.Controllers
             {
                 ClassicAdministrators = classicAdmins,
                 UserPermissions = permissions,
+                NoGraphAccess = permissions.Any(p => p.GraphResolutionFailure),
             };
 
             var canAssign = await canAssignTask;
@@ -557,7 +558,26 @@ namespace WebApp.Controllers
                 return RedirectToAction("Step1", new { envId });
             }
 
-            await _authorizationManager.AssignRoleToUser(environment, model.EmailAddress, model.UserRole);
+            if (model.NoGraphAccess && model.ObjectId == null)
+            {
+                ModelState.AddModelError(nameof(EnvironmentUserPermissionsModel.ObjectId), "A valid Object Id must be specified.");
+            }
+
+            if (!model.NoGraphAccess && string.IsNullOrWhiteSpace(model.EmailAddress))
+            {
+                ModelState.AddModelError(nameof(EnvironmentUserPermissionsModel.EmailAddress), "A valid email address must be specified.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return View("View/UserAccess", model);
+            }
+
+            await _authorizationManager.AssignRoleToUser(
+                environment, 
+                model.NoGraphAccess ? null : model.EmailAddress, 
+                model.NoGraphAccess ? model.ObjectId.ToString() : null,
+                model.UserRole);
 
             return RedirectToAction("UserAccess", new { envId });
         }

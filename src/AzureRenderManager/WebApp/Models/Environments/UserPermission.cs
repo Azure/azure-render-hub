@@ -18,5 +18,9 @@ namespace WebApp.Models.Environments
         public string Scope { get; set; }
 
         public List<string> Actions { get; set; }
+
+        // True if we were unable to find the User in Graph,
+        // i.e. no permissions to query the API.
+        public bool GraphResolutionFailure { get; set; }
     }
 }
