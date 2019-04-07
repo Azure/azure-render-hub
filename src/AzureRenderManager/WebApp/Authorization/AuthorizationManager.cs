@@ -250,9 +250,9 @@ namespace WebApp.Authorization
             resourceIdsToRoles[environment.Subnet.VnetResourceId] = roleAssignments.VNetRole;
 
             await Task.WhenAll(resourceIdsToRoles.Select(
-                kvp => _azureResourceProvider.AssignManagementIdentityAsync(
+                kvp => _azureResourceProvider.AssignRoleToIdentityAsync(
                     environment.SubscriptionId,
-                    kvp.Key, // ResourceId
+                    kvp.Key, // ResourceId/scope
                     kvp.Value, // Role
                     identity)));
         }
