@@ -40,6 +40,7 @@ using WebApp.Models.Environments;
 using WebApp.Operations;
 using WebApp.Code.Extensions;
 using WebApp.Code.Graph;
+using WebApp.Authorization;
 
 namespace WebApp.Arm
 {
@@ -47,7 +48,6 @@ namespace WebApp.Arm
     {
         public const string ContributorRole = "Contributor";
         public const string VirtualMachineContributorRole = "Virtual Machine Contributor";
-        private static string[] DirectoryObjectTypes = new [] { "user" };
 
         private static List<string> ActionsThatCanCreate = new List<string>(
             new[]
@@ -69,14 +69,14 @@ namespace WebApp.Arm
             });
         
         private readonly IConfiguration _configuration;
-        private readonly IGraphAuthProvider _graphProvider;
+        private readonly IGraphProvider _graphProvider;
         private readonly IHttpClientFactory _httpClientFactory;
 
         public AzureResourceProvider(
             IHttpContextAccessor contextAccessor,
             IHttpClientFactory httpClientFactory,
             IConfiguration configuration,
-            IGraphAuthProvider graphProvider) : base(contextAccessor)
+            IGraphProvider graphProvider) : base(contextAccessor)
         {
             _httpClientFactory = httpClientFactory;
             _configuration = configuration;
@@ -621,7 +621,6 @@ namespace WebApp.Arm
             {
                 AddressPrefix = subnetAddressRange,
                 Location = location,
-                VnetResourceId = vnet.Id,
                 ResourceId = vnet.Subnets.First().Id,
                 ExistingResource = false,
             };
@@ -637,7 +636,6 @@ namespace WebApp.Arm
             {
                 AddressPrefix = vnet.Subnets.First(s => s.Name == subnetName).AddressPrefix,
                 Location = location,
-                VnetResourceId = vnet.Id,
                 ResourceId = vnet.Subnets.First(s => s.Name == subnetName).Id,
                 ExistingResource = true,
             };
@@ -674,72 +672,32 @@ namespace WebApp.Arm
             var roleAssignments = await GetRoleAssignments(authClient, scope, roleDefs);
             roleAssignments = roleAssignments.Where(ra => ra.PrincipalType == "User").ToList();
 
-            var userIds = roleAssignments.Select(ra => ra.PrincipalId).ToHashSet();
-            var dirUsers = await GetGraphUsersAsync(userIds);
-            
-            return roleAssignments.Select(ra => new UserPermission
+            var userPermissions = roleAssignments.Select(ra => new UserPermission
             {
-                Name = dirUsers.ContainsKey(ra.PrincipalId) ? dirUsers[ra.PrincipalId].DisplayName : "Unknown",
-                Email = dirUsers.ContainsKey(ra.PrincipalId) ? SanitizeUserPrincipalName(dirUsers[ra.PrincipalId].UserPrincipalName) : "Unknown",
                 ObjectId = ra.PrincipalId,
                 Role = roleDefs.FirstOrDefault(rd => rd.Id == ra.RoleDefinitionId)?.RoleName,
                 Scope = ra.Scope,
                 Actions = roleDefs.FirstOrDefault(rd => rd.Id == ra.RoleDefinitionId)?.Permissions.SelectMany(p => p.Actions).ToList(),
-                GraphResolutionFailure = !dirUsers.ContainsKey(ra.PrincipalId), // No Graph User
+                GraphResolutionFailure = true,
             }).ToList();
+
+            await ResolveUsersWithGraph(userPermissions);
+
+            return userPermissions;
         }
 
-        private string SanitizeUserPrincipalName(string userPrincipalName)
+        private async Task ResolveUsersWithGraph(List<UserPermission> users)
         {
-            if (userPrincipalName != null && userPrincipalName.Contains("#EXT#@"))
+            var userObjectIds = users.Select(up => up.ObjectId).ToHashSet().ToList();
+            var graphUsers = await _graphProvider.LookupObjectIdsAsync(GetUser(), userObjectIds);
+            foreach (var user in users)
             {
-                // Guest accounts have an encoded User Principal Name in the format:
-                // john.doe_contoso.com#EXT#@contoso.onmicrosoft.com
-                // where '@' in the email is replaced with '_'.
-                var encodedEmail = userPrincipalName.Split("#EXT#@")[0];
-                return encodedEmail.Replace("_", "@");
-            }
-            return userPrincipalName;
-        }
-
-        private async Task<Dictionary<string, User>> GetGraphUsersAsync(HashSet<string> userIds)
-        {
-            var graphServiceClient = new GraphServiceClient(new DelegateAuthenticationProvider(async requestMessage =>
-            {
-                var graphAccessToken = await _graphProvider.GetUserAccessTokenAsync(GetUser());
-                requestMessage
-                    .Headers
-                    .Authorization = new AuthenticationHeaderValue("Bearer", graphAccessToken);
-            }));
-
-            // The max Graph objects you can fetch in a single request.
-            const int batchSize = 1000;
-
-            var userDict = new Dictionary<string, User>();
-
-            try
-            {
-                for (int i = 0; i < userIds.Count; i = i + batchSize)
+                if (graphUsers.ContainsKey(user.ObjectId))
                 {
-                    await GetBatchOfUsers(graphServiceClient, userIds, i, batchSize, userDict);
+                    user.Name = graphUsers[user.ObjectId].DisplayName;
+                    user.Email = graphUsers[user.ObjectId].UserPrincipalName;
+                    user.GraphResolutionFailure = false;
                 }
-            }
-            catch (ServiceException se) when (se.Error?.Code == "Authorization_RequestDenied")
-            {
-                // No Graph API Permissions, let's ignore this for tenants that don't support this.
-            }
-
-            return userDict;
-        }
-
-        private async Task GetBatchOfUsers(GraphServiceClient graphServiceClient, HashSet<string> userIds, int batch, int batchSize, Dictionary<string, User> targetUserDictionary)
-        {
-            var items = userIds.Skip(batch).Take(batchSize);
-            var dirObjects = await graphServiceClient.DirectoryObjects.GetByIds(userIds, DirectoryObjectTypes).Request().PostAsync();
-            var dirUsers = dirObjects.Cast<User>().ToDictionary(k => k.Id);
-            foreach (var userObject in dirObjects.Cast<User>())
-            {
-                targetUserDictionary[userObject.Id] = userObject;
             }
         }
 

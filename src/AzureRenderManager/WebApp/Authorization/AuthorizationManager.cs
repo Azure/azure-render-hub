@@ -57,14 +57,14 @@ namespace WebApp.Authorization
         };
 
         private readonly IAzureResourceProvider _azureResourceProvider;
-        private readonly IGraphAuthProvider _graphProvider;
+        private readonly IGraphProvider _graphProvider;
         private readonly IConfiguration _configuration;
 
         public AuthorizationManager(
             IHttpContextAccessor contextAccessor,
             IConfiguration configuration,
             IAzureResourceProvider azureResourceProvider,
-            IGraphAuthProvider graphProvider) : base(contextAccessor)
+            IGraphProvider graphProvider) : base(contextAccessor)
         {
             _azureResourceProvider = azureResourceProvider;
             _configuration = configuration;
@@ -101,7 +101,7 @@ namespace WebApp.Authorization
             foreach (var objectId in userObjectIds)
             {
                 var userEnvironmentPermissions = environmentPermissions.ToUserEnvironmentPermissions(objectId);
-                var userPermission = userEnvironmentPermissions.GetUserPermission();
+                var userPermission = userEnvironmentPermissions.GetFirstUserPermission();
 
                 if (userEnvironmentPermissions.IsOwner())
                 {
@@ -158,9 +158,10 @@ namespace WebApp.Authorization
 
             return new EnvironmentPermissions
             {
-                // The RG query will return allrelative resources too so we need to filter those out
+                // The RG query will return all relative resources too so we need to filter those out
                 EnvironmentResourceGroup = resourceGroupPermissions.Where(
-                    p => p.Scope == $"/subscriptions/{environment.SubscriptionId}" || p.Scope == environment.ResourceGroupResourceId).ToList(),
+                    p => p.Scope == $"/subscriptions/{environment.SubscriptionId}" || 
+                    p.Scope == environment.ResourceGroupResourceId).ToList(),
                 Batch = batchPermissions,
                 Storage = storagePermissions,
                 KeyVault = keyVaultPermissions,
@@ -169,38 +170,13 @@ namespace WebApp.Authorization
             };
         }
 
-        private async Task<User> GetGraphUser(string userEmailAddress)
-        {
-            var graphServiceClient = new GraphServiceClient(new DelegateAuthenticationProvider(async requestMessage =>
-            {
-                var graphAccessToken = await _graphProvider.GetUserAccessTokenAsync(GetUser());
-                requestMessage
-                    .Headers
-                    .Authorization = new AuthenticationHeaderValue("Bearer", graphAccessToken);
-            }));
-
-            var externalEmail = $"{userEmailAddress.Replace('@', '_')}#EXT#@{_configuration["AzureAd:Domain"]}";
-            var user = await graphServiceClient.Users.Request().Filter(
-                $"mail eq '{userEmailAddress}' or " +
-                $"userPrincipalName eq '{userEmailAddress}' or " +
-                $"userPrincipalName eq '{externalEmail}'").GetAsync();
-
-            if (user == null || user.Count == 0)
-            {
-                throw new Exception($"User {userEmailAddress} not found");
-            }
-
-            if (user.Count > 1)
-            {
-                throw new Exception($"Multiple users found for email {userEmailAddress}");
-            }
-
-            return user.First();
-        }
-
         public async Task AssignRoleToUser(RenderingEnvironment environment, string userEmailAddress, PortalRole userRole)
         {
-            var graphUser = await GetGraphUser(userEmailAddress);
+            var graphUser = await _graphProvider.GetUser(GetUser(), userEmailAddress);
+            if (graphUser == null)
+            {
+                throw new Exception($"No user with email address {userEmailAddress} found in Graph.");
+            }
             await AssignRoleToUser(environment, Guid.Parse(graphUser.Id), userRole);
         }
 
@@ -315,7 +291,7 @@ namespace WebApp.Authorization
 
         class UserEnvironmentPermissions : EnvironmentPermissions
         {
-            public UserPermission GetUserPermission()
+            public UserPermission GetFirstUserPermission()
             {
                 return EnvironmentResourceGroup
                     .Concat(Batch)
