@@ -93,6 +93,7 @@ namespace WebApp
             });
 
             services.AddSingleton<IGraphAuthProvider, GraphAuthProvider>();
+            services.AddSingleton<IGraphProvider, GraphProvider>();
 
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
             services.Configure<FormOptions>(x =>
