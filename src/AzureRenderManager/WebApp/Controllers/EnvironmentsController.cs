@@ -1514,31 +1514,31 @@ namespace WebApp.Controllers
         private async Task AssignManagementIdentityToResources(RenderingEnvironment environment)
         {
             await (
-            _azureResourceProvider.AssignManagementIdentityAsync(
+            _azureResourceProvider.AssignRoleToIdentityAsync(
                 environment.SubscriptionId,
                 environment.ResourceGroupResourceId,
                 AzureResourceProvider.ContributorRole,
                 _identityProvider.GetPortalManagedServiceIdentity()),
 
-            _azureResourceProvider.AssignManagementIdentityAsync(
+            _azureResourceProvider.AssignRoleToIdentityAsync(
                 environment.SubscriptionId,
                 environment.ApplicationInsightsAccount.ResourceId,
                 AzureResourceProvider.ContributorRole,
                 _identityProvider.GetPortalManagedServiceIdentity()),
 
-            _azureResourceProvider.AssignManagementIdentityAsync(
+            _azureResourceProvider.AssignRoleToIdentityAsync(
                 environment.SubscriptionId,
                 environment.Subnet.VnetResourceId,
                 AzureResourceProvider.VirtualMachineContributorRole,
                 _identityProvider.GetPortalManagedServiceIdentity()),
 
-            _azureResourceProvider.AssignManagementIdentityAsync(
+            _azureResourceProvider.AssignRoleToIdentityAsync(
                 environment.SubscriptionId,
                 environment.BatchAccount.ResourceId,
                 AzureResourceProvider.ContributorRole,
                 _identityProvider.GetPortalManagedServiceIdentity()),
 
-            _azureResourceProvider.AssignManagementIdentityAsync(
+            _azureResourceProvider.AssignRoleToIdentityAsync(
                 environment.SubscriptionId,
                 environment.StorageAccount.ResourceId,
                 AzureResourceProvider.ContributorRole,

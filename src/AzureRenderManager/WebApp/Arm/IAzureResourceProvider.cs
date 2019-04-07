@@ -122,8 +122,8 @@ namespace WebApp.Arm
 
         Task DeleteVNetAsync(Guid subscriptionId, string resourceGroupName, string vnetName);
 
-        Task AssignManagementIdentityAsync(Guid subscriptionId, string resourceId, string role, Identity.Identity identity);
-
         Task<List<UserPermission>> GetUserPermissions(Guid subscriptionId, string scope);
+
+        Task AssignRoleToIdentityAsync(Guid subscriptionId, string resourceId, string role, Identity.Identity identity);
     }
 }
