@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
@@ -66,15 +67,18 @@ namespace WebApp.Arm
                 "microsoft.authorization/roleassignments/*",
                 "microsoft.authorization/roleassignments/write",
             });
-
+        
         private readonly IConfiguration _configuration;
         private readonly IGraphAuthProvider _graphProvider;
+        private readonly IHttpClientFactory _httpClientFactory;
 
         public AzureResourceProvider(
             IHttpContextAccessor contextAccessor,
+            IHttpClientFactory httpClientFactory,
             IConfiguration configuration,
             IGraphAuthProvider graphProvider) : base(contextAccessor)
         {
+            _httpClientFactory = httpClientFactory;
             _configuration = configuration;
             _graphProvider = graphProvider;
         }
@@ -86,7 +90,7 @@ namespace WebApp.Arm
 
             var accessToken = await GetAccessToken();
             var token = new TokenCredentials(accessToken);
-            var authClient = new AuthorizationManagementClient(token) { SubscriptionId = subscriptionId.ToString() };
+            var authClient = new AuthorizationManagementClient(token, _httpClientFactory.CreateClient(), false) { SubscriptionId = subscriptionId.ToString() };
 
             var isClassicAdminTask = IsCurrentUserClassicAdministrator(authClient);
             var result = await GetRoleDefinitions(authClient, $"/subscriptions/{subscriptionId}");
@@ -149,7 +153,7 @@ namespace WebApp.Arm
 
             var accessToken = await GetAccessToken();
             var token = new TokenCredentials(accessToken);
-            var authClient = new AuthorizationManagementClient(token) { SubscriptionId = subscriptionId.ToString() };
+            var authClient = new AuthorizationManagementClient(token, _httpClientFactory.CreateClient(), false) { SubscriptionId = subscriptionId.ToString() };
 
             var isClassicAdminTask = IsCurrentUserClassicAdministrator(authClient);
             var result = await GetRoleDefinitions(authClient, $"/subscriptions/{subscriptionId}");
@@ -176,7 +180,7 @@ namespace WebApp.Arm
         {
             var accessToken = await GetAccessToken();
             var token = new TokenCredentials(accessToken);
-            var resourceClient = new ResourceManagementClient(token) { SubscriptionId = subscriptionId.ToString() };
+            var resourceClient = new ResourceManagementClient(token, _httpClientFactory.CreateClient(), false) { SubscriptionId = subscriptionId.ToString() };
             return await resourceClient.ResourceGroups.CreateOrUpdateAsync(
                 resourceGroupName,
                 new ResourceGroup(location, tags: GetEnvironmentTags(environmentName)));
@@ -186,7 +190,7 @@ namespace WebApp.Arm
         {
             var accessToken = await GetAccessToken();
             var token = new TokenCredentials(accessToken);
-            var resourceClient = new ResourceManagementClient(token) { SubscriptionId = subscriptionId };
+            var resourceClient = new ResourceManagementClient(token, _httpClientFactory.CreateClient(), false) { SubscriptionId = subscriptionId };
             var resources = await resourceClient.Resources.ListByResourceGroupAsync(rgName);
 
             return resources.ToList();
@@ -196,7 +200,7 @@ namespace WebApp.Arm
         {
             var accessToken = await GetAccessToken();
             var token = new TokenCredentials(accessToken);
-            var resourceClient = new ResourceManagementClient(token) { SubscriptionId = subscriptionId.ToString() };
+            var resourceClient = new ResourceManagementClient(token, _httpClientFactory.CreateClient(), false) { SubscriptionId = subscriptionId.ToString() };
 
             try
             {
@@ -498,7 +502,7 @@ namespace WebApp.Arm
         {
             var accessToken = await GetAccessToken();
             var token = new TokenCredentials(accessToken);
-            var batchClient = new BatchManagementClient(token) { SubscriptionId = subscriptionId.ToString() };
+            var batchClient = new BatchManagementClient(token, _httpClientFactory.CreateClient(), false) { SubscriptionId = subscriptionId.ToString() };
 
             // Check if the cert has already been uploaded.
             var existingCerts = await batchClient.Certificate.ListByBatchAccountAsync(batchAccount.ResourceGroupName, batchAccount.Name);
@@ -657,7 +661,7 @@ namespace WebApp.Arm
                 }
             }
         }
-
+        
         public async Task<List<UserPermission>> GetUserPermissions(Guid subscriptionId, string scope)
         {
             var accessToken = await GetAccessToken();
@@ -739,20 +743,7 @@ namespace WebApp.Arm
             }
         }
 
-        public async Task AssignManagementIdentityAsync(
-            Guid subscriptionId,
-            string resourceId,
-            string role,
-            Identity.Identity managementIdentity)
-        {
-            await AssignRoleToResource(
-                subscriptionId,
-                resourceId,
-                role,
-                managementIdentity);
-        }
-
-        private async Task AssignRoleToResource(
+        public async Task AssignRoleToIdentityAsync(
             Guid subscriptionId,
             string scope,
             string role,
@@ -760,7 +751,7 @@ namespace WebApp.Arm
         {
             var accessToken = await GetAccessToken();
             var token = new TokenCredentials(accessToken);
-            var authClient = new AuthorizationManagementClient(token) { SubscriptionId = subscriptionId.ToString() };
+            var authClient = new AuthorizationManagementClient(token, _httpClientFactory.CreateClient(), false) { SubscriptionId = subscriptionId.ToString() };
 
             var result = await GetRoleDefinitions(authClient, scope);
             var roleDefs = result.Where(rd => rd.RoleName == role).ToList();
@@ -785,12 +776,9 @@ namespace WebApp.Arm
                         Guid.NewGuid().ToString(),
                         new RoleAssignmentCreateParameters(roleDef.Id, identity.ObjectId.ToString()));
                 }
-                catch (CloudException ce)
+                catch (CloudException ce) when (ce.Body?.Code == "RoleAssignmentExists")
                 {
-                    if (ce.Body.Code != "RoleAssignmentExists")
-                    {
-                        throw;
-                    }
+                    // Ignore
                 }
             }
         }
@@ -847,7 +835,7 @@ namespace WebApp.Arm
         {
             var accessToken = await GetAccessToken();
             var token = new TokenCredentials(accessToken);
-            var rmClient = new ResourceManagementClient(token) { SubscriptionId = subscriptionId.ToString() };
+            var rmClient = new ResourceManagementClient(token, _httpClientFactory.CreateClient(), false) { SubscriptionId = subscriptionId.ToString() };
             await rmClient.Providers.RegisterAsync(resourceProviderNamespace);
         }
     }
