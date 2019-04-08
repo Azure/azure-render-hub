@@ -11,6 +11,9 @@ namespace WebApp.Config.RenderManager
 {
     public class Certificate
     {
+        public string FileName { get; set; }
+
+        [JsonIgnore]
         public byte[] CertificateData { get; set; }
 
         [Credential("DeadlineDbClientCertificatePassword")]

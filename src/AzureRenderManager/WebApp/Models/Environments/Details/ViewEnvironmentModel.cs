@@ -110,6 +110,11 @@ namespace WebApp.Models.Environments.Details
                             LicenseServer = environment.RenderManagerConfig.Deadline.LicenseServer,
                             DeadlineRegion = environment.RenderManagerConfig.Deadline.DeadlineRegion,
                             DeadlineDatabaseCertificatePassword = environment.RenderManagerConfig.Deadline.DeadlineDatabaseCertificate?.Password,
+                            RunAsService = environment.RenderManagerConfig.Deadline.RunAsService,
+                            ServiceUser = environment.RenderManagerConfig.Deadline.ServiceUser,
+                            ServicePassword = environment.RenderManagerConfig.Deadline.ServicePassword,
+                            UseDeadlineDatabaseCertificate = environment.RenderManagerConfig.Deadline.DeadlineDatabaseCertificate?.FileName != null,
+                            DeadlineDatabaseCertificateFileName = environment.RenderManagerConfig.Deadline.DeadlineDatabaseCertificate?.FileName,
                         };
                     }
 

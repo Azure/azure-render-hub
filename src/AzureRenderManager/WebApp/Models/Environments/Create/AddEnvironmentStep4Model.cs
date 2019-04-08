@@ -26,7 +26,16 @@ namespace WebApp.Models.Environments.Create
                 case RenderManagerType.Deadline:
                     DeadlineEnvironment = new DeadlineEnvironment
                     {
-                        WindowsDeadlineRepositoryShare = environment.RenderManagerConfig?.Deadline?.WindowsRepositoryPath
+                        WindowsDeadlineRepositoryShare = environment.RenderManagerConfig?.Deadline?.WindowsRepositoryPath,
+                        RepositoryUser = environment.RenderManagerConfig?.Deadline?.RepositoryUser,
+                        RepositoryPassword = environment.RenderManagerConfig?.Deadline?.RepositoryPassword,
+                        DeadlineRegion = environment.RenderManagerConfig?.Deadline?.DeadlineRegion,
+                        ExcludeFromLimitGroups = environment.RenderManagerConfig?.Deadline?.ExcludeFromLimitGroups,
+                        LicenseMode = environment.RenderManagerConfig?.Deadline?.LicenseMode.ToString(),
+                        LicenseServer = environment.RenderManagerConfig?.Deadline?.LicenseServer,
+                        RunAsService = environment.RenderManagerConfig?.Deadline?.RunAsService ?? false,
+                        ServiceUser = environment.RenderManagerConfig?.Deadline?.ServiceUser,
+                        ServicePassword = environment.RenderManagerConfig?.Deadline?.ServicePassword,
                     };
                     break;
 

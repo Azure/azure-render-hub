@@ -42,8 +42,12 @@ namespace WebApp.Models.Environments.Create
 
         public string ServicePassword { get; set; }
 
+        public bool UseDeadlineDatabaseCertificate { get; set; }
+
         public IFormFile DeadlineDatabaseCertificate { get; set; }
 
         public string DeadlineDatabaseCertificatePassword { get; set; }
+
+        public string DeadlineDatabaseCertificateFileName { get; set; }
     }
 }
