@@ -521,7 +521,7 @@ namespace WebApp.Controllers
             var environment = await _environmentCoordinator.GetEnvironment(envId);
             if (environment == null)
             {
-                return RedirectToAction("Step1", new { envId });
+                return RedirectToAction("Index");
             }
 
             var canAssignTask = _azureResourceProvider.CanCreateRoleAssignments(environment.SubscriptionId, environment.ResourceGroupName);
@@ -541,7 +541,7 @@ namespace WebApp.Controllers
             if (!canAssign)
             {
                 model.Error = "You don't have the required permissions to assign roles to users";
-                model.ErrorMessage = "In order to complete this step which involves creating role assignments, you must have the Owner or User Access Administrator role for the specified Subscription. " +
+                model.ErrorMessage = "In order to complete this step, which involves creating role assignments, you must have the Owner or User Access Administrator role for the specified Subscription. " +
                                      "Either request someone with this role to complete the step, or ask your admin to make you an Owner or User Access Administrator for the Subscription.";
             }
 
@@ -555,7 +555,7 @@ namespace WebApp.Controllers
             var environment = await _environmentCoordinator.GetEnvironment(envId);
             if (environment == null)
             {
-                return RedirectToAction("Step1", new { envId });
+                return RedirectToAction("Index");
             }
 
             if (model.NoGraphAccess && model.ObjectId == null)
