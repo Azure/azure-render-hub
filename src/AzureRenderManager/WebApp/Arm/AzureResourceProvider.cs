@@ -202,7 +202,8 @@ namespace WebApp.Arm
                         throw;
                     }
                 }
-                return new Microsoft.Azure.Management.KeyVault.Models.CheckNameAvailabilityResult(available);
+
+                return new Microsoft.Azure.Management.KeyVault.Models.CheckNameAvailabilityResult(available, result.Reason, result.Message);
             }
 
             return result;
