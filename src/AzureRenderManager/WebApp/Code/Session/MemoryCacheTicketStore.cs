@@ -38,7 +38,7 @@ namespace WebApp.Code.Session
 
             _cache.Set(key, ticket, options);
 
-            return Task.FromResult(0);
+            return Task.CompletedTask;
         }
 
         public Task<AuthenticationTicket> RetrieveAsync(string key)
@@ -51,7 +51,7 @@ namespace WebApp.Code.Session
         public Task RemoveAsync(string key)
         {
             _cache.Remove(key);
-            return Task.FromResult(0);
+            return Task.CompletedTask;
         }
     }
 }

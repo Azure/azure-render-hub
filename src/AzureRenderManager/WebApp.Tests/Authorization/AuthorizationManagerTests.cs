@@ -28,8 +28,8 @@ namespace WebApp.Tests.Authorization
 
             var perms = await graphProvider.ListUserPermissions(env);
 
-            Assert.Single(perms);
-            Assert.Equal(PortalRole.Owner.ToString(), perms.FirstOrDefault().Role);
+            var perm = Assert.Single(perms);
+            Assert.Equal(PortalRole.Owner.ToString(), perm.Role);
         }
 
         [Fact]
@@ -48,8 +48,8 @@ namespace WebApp.Tests.Authorization
 
             var perms = await graphProvider.ListUserPermissions(env);
 
-            Assert.Single(perms);
-            Assert.Equal(PortalRole.Reader.ToString(), perms.FirstOrDefault().Role);
+            var perm = Assert.Single(perms);
+            Assert.Equal(PortalRole.Reader.ToString(), perm.Role);
         }
 
         [Fact]
@@ -68,8 +68,8 @@ namespace WebApp.Tests.Authorization
 
             var perms = await graphProvider.ListUserPermissions(env);
 
-            Assert.Single(perms);
-            Assert.Equal(PortalRole.PoolManager.ToString(), perms.FirstOrDefault().Role);
+            var perm = Assert.Single(perms);
+            Assert.Equal(PortalRole.PoolManager.ToString(), perm.Role);
         }
 
         [Fact]
@@ -89,8 +89,8 @@ namespace WebApp.Tests.Authorization
 
             var perms = await graphProvider.ListUserPermissions(env);
 
-            Assert.Single(perms);
-            Assert.Equal(PortalRole.Owner.ToString(), perms.FirstOrDefault().Role);
+            var perm = Assert.Single(perms);
+            Assert.Equal(PortalRole.Owner.ToString(), perm.Role);
         }
 
         [Fact]

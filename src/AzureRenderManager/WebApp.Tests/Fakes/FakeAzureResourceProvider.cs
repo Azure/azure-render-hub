@@ -113,11 +113,10 @@ namespace WebApp.Tests.Fakes
 
         public List<UserPermission> UserPermissions { get; set; } = new List<UserPermission>();
 
-        public async Task<List<UserPermission>> GetUserPermissions(Guid subscriptionId, string scope)
+        public Task<List<UserPermission>> GetUserPermissions(Guid subscriptionId, string scope)
         {
-            await Task.CompletedTask;
             // Return explicit and inherited scoped permissions
-            return UserPermissions.Where(p => p.Scope == scope || scope.Contains(p.Scope)).ToList();
+            return Task.FromResult(UserPermissions.Where(p => p.Scope == scope || scope.Contains(p.Scope)).ToList());
         }
 
         public Task<Subnet> GetVnetAsync(Guid subscriptionId, string location, string resourceGroupName, string vnetName, string subnetName)
@@ -132,10 +131,9 @@ namespace WebApp.Tests.Fakes
 
         public List<ClassicAdministrator> ClassicAdministrators { get; set; } = new List<ClassicAdministrator>();
 
-        public async Task<List<ClassicAdministrator>> ListClassicAdministrators(Guid subscriptionId)
+        public Task<List<ClassicAdministrator>> ListClassicAdministrators(Guid subscriptionId)
         {
-            await Task.CompletedTask;
-            return ClassicAdministrators;
+            return Task.FromResult(ClassicAdministrators);
         }
 
         public Task<List<GenericResource>> ListResourceGroupResources(string subscriptionId, string rgName)
