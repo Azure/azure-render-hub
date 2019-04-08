@@ -10,12 +10,12 @@
 }
 
 @await Html.PartialAsync("Environments/Create/CreateFormHeaderPartial")
-
-<form id="myForm" method="post">
+@using (Html.BeginForm("Step1", "Environments", null, FormMethod.Post, true, new {id = "myForm"}))
+{
     @await Html.PartialAsync("Menu/EnvironmentSubMenu", Model, new ViewDataDictionary(ViewData)
     {
-        { "Step", 2 },
-        { "Wizard", "true" }
+        {"Step", 2},
+        {"Wizard", "true"}
     })
 
     @Html.AntiForgeryToken()
@@ -36,7 +36,7 @@
             <div class="section-content">
                 <div class="form-element">
                     <label asp-for="EnvironmentName">Render farm name</label>
-                    <input asp-for="EnvironmentName" class="disable-read-only" />
+                    <input asp-for="EnvironmentName" class="disable-read-only"/>
                     <span asp-validation-for="EnvironmentName" class=""></span>
                 </div>
                 <div class="form-element">
@@ -45,7 +45,7 @@
                         <option value="Qube70" selected>Qube 7.0</option>
                         <option value="Qube610">Qube 6.10</option>
                         <option value="Deadline">Deadline 10</option>
-@*                        <option value="Tractor">Tractor</option>*@
+                        @*                        <option value="Tractor">Tractor</option>*@
                     </select>
                     <span asp-validation-for="RenderManager" class=""></span>
                 </div>
@@ -77,10 +77,10 @@
     <div class="form-footer">
         <div class="summary"></div>
         <div class="button-bar">
-            <button id="next" type="submit" formaction="Step1">Next : Resources <i id="nextSpinner" class="fa fa-spinner fa-spin" style="display: none;"></i></button>
+            <button id="next" type="submit">Next : Resources <i id="nextSpinner" class="fa fa-spinner fa-spin" style="display: none;"></i></button>
         </div>
     </div>
-</form>
+}
 
 @section Scripts
 {

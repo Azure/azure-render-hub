@@ -955,6 +955,14 @@ namespace WebApp.Controllers
 
             if (!string.IsNullOrEmpty(model.NewKeyVaultName))
             {
+                if (environment.KeyVault != null)
+                {
+                    // in case we are updating from a previously selected one, remove it.
+                    environment.KeyVault = null;
+                    await _environmentCoordinator.UpdateEnvironment(environment);
+                    model.ExistingKeyVaultIdLocationAndUri = null;
+                }
+
                 // Ensure it doesn't exist if it hasn't been created already
                 var nameAvailability = await _azureResourceProvider.ValidateKeyVaultName(
                     environment.SubscriptionId,
@@ -963,16 +971,16 @@ namespace WebApp.Controllers
 
                 if (!nameAvailability.NameAvailable.GetValueOrDefault(false))
                 {
-                    ModelState.AddModelError(nameof(AddEnvironmentStep2Model.ExistingKeyVaultIdLocationAndUri), $"The Key Vault name is not available. {nameAvailability.Message}");
-                    return View("Create/Step2", model);
+                    // todo: remove existing when working
+                    ModelState.AddModelError(nameof(AddEnvironmentStep2Model.NewKeyVaultName), $"The Key Vault name is not available. {nameAvailability.Message}");
                 }
             }
 
             if (!ModelState.IsValid)
             {
                 // disabled select inputs will be null if disabled
-                model.ExistingKeyVaultVisible = string.IsNullOrEmpty(model.ExistingKeyVaultIdLocationAndUri);
-                model.ExistingResourceGroupVisible = string.IsNullOrEmpty(model.ExistingResourceGroupNameAndLocation);
+                model.ExistingKeyVaultVisible = !string.IsNullOrEmpty(model.ExistingKeyVaultIdLocationAndUri) && model.ExistingKeyVaultIdLocationAndUri != "#";
+                model.ExistingResourceGroupVisible = !string.IsNullOrEmpty(model.ExistingResourceGroupNameAndLocation);
                 model.NewBatchAccountVisible = string.IsNullOrEmpty(model.BatchAccountResourceIdLocationUrl);
                 model.NewStorageAccountVisible = string.IsNullOrEmpty(model.StorageAccountResourceIdAndLocation);
                 model.NewAppInsightsVisible = string.IsNullOrEmpty(model.ApplicationInsightsIdAndLocation);
@@ -1158,6 +1166,7 @@ namespace WebApp.Controllers
 
             environment.InProgress = false;
             await _environmentCoordinator.UpdateEnvironment(environment);
+
             // after saving, either go to overview details, or a success page.
             return RedirectToAction("Overview", new { envId = model.EnvironmentName });
         }

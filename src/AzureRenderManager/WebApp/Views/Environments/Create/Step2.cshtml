@@ -10,191 +10,191 @@
 }
 
 @await Html.PartialAsync("Environments/Create/CreateFormHeaderPartial")
-
 @using (Html.BeginForm("Step2", "Environments", new {envId = Model.EnvironmentName }, FormMethod.Post, true, new { id = "myForm" }))
 {
-@await Html.PartialAsync("Menu/EnvironmentSubMenu", Model, new ViewDataDictionary(ViewData)
-{
-    { "Step", 3 },
-    { "Wizard", "true" }
-})
+    @await Html.PartialAsync("Menu/EnvironmentSubMenu", Model, new ViewDataDictionary(ViewData)
+    {
+        { "Step", 3 },
+        { "Wizard", "true" }
+    })
 
-@Html.AntiForgeryToken()
-@Html.HiddenFor(model => model.EnvironmentName)
-@Html.HiddenFor(model => model.SubscriptionId)
-@Html.HiddenFor(model => model.LocationName)
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(model => model.EnvironmentName)
+    @Html.HiddenFor(model => model.SubscriptionId)
+    @Html.HiddenFor(model => model.LocationName)
 
-<!--
-    TODO: set any pre-selections
-    If we come back to this page, we need to default to showing what has already been selected in the
-    currently saved environment. At the moment it just defaults to the first one, not the one that is
-    set in the model.
--->
+    <!--
+        TODO: set any pre-selections
+        If we come back to this page, we need to default to showing what has already been selected in the
+        currently saved environment. At the moment it just defaults to the first one, not the one that is
+        set in the model.
+    -->
 
-<div asp-validation-summary="ModelOnly" class=""></div>
-<div class="form-section">
-    <div class="section-title">
-        <span class="step-index">2</span>
-        <div class="step-header">
-            <h3>Resources</h3>
-            <p>
-                Select the required Batch account, Storage account, VNet and Application Insights for the
-                environment. For any of these you can create new ones should you wish.
-            </p>
+    <div asp-validation-summary="ModelOnly" class=""></div>
+    <div class="form-section">
+        <div class="section-title">
+            <span class="step-index">2</span>
+            <div class="step-header">
+                <h3>Resources</h3>
+                <p>
+                    Select the required Batch account, Storage account, VNet and Application Insights for the
+                    environment. For any of these you can create new ones should you wish.
+                </p>
+            </div>
         </div>
-    </div>
-    <div class="section-wrapper">
-        <div class="section-bar"></div>
-        <div class="section-content">
-            <div class="form-element">
-                <label asp-for="NewResourceGroupName">Resource group name</label>
-                <div id="RGSpinner" class="async-select" style="display: none;">
-                    <select id="ResourceGroups" asp-for="ExistingResourceGroupNameAndLocation">
-                        <option disabled selected> -- Loading Resource Groups -- </option>
-                    </select>
-                    <i class="fa fa-spinner fa-spin"></i>
-                </div>
-                <div id="resourceGroup" class="newResource">
-                    <input asp-for="NewResourceGroupName" value="@Model.NewResourceGroupName" placeholder="New resource group name" />
-                    <span asp-validation-for="NewResourceGroupName" class=""></span>
-                </div>
-                <span asp-validation-for="ExistingResourceGroupNameAndLocation" class=""></span>
-                <span id="ResourceGroups-none" class="field-validation-error"></span>
-                <small class="form-text text-muted">A resource group is a container that holds related resources for your environment.</small>
-                <a id="newResourceGroup" href="javascript:void(0);" onclick="showHideNew('resourceGroup', 'NewResourceGroupName', 'RGSpinner', this, 'resource group');">Select existing resource group</a>
-            </div>
-            
-            <div class="form-element">
-                <label asp-for="NewKeyVaultName">Azure Key Vault name</label>                
-                <div id="KeyVaultSpinner" class="async-select" style="display: none;">
-                    <select id="KeyVaults" asp-for="ExistingKeyVaultIdLocationAndUri">
-                        <option disabled selected> -- Loading Key Vaults -- </option>
-                    </select>
-                    <i class="fa fa-spinner fa-spin"></i>
-                </div>
-                <div id="keyVault" class="newResource">
-                    <input asp-for="NewKeyVaultName" value="@Model.NewKeyVaultName" placeholder="New Key Vault name" />
-                    <span asp-validation-for="NewKeyVaultName" class=""></span>
-                </div>
-                <span asp-validation-for="ExistingKeyVaultIdLocationAndUri" class=""></span>
-                <span id="KeyVaults-none" class="field-validation-error"></span>
-                <small class="form-text text-muted">Key Vault is a secure Azure service to store passwords and certificates. Each environment has it's own Key Vault to store secrets like service passwords, domain credentials and user passwords.</small>
-                <a id="newKeyVault" href="javascript:void(0);" onclick="showHideNew('keyVault', 'NewKeyVaultName', 'KeyVaultSpinner', this, 'Key Vault');">Select existing Key Vault</a>
-            </div>
-            
-            <div class="form-element">
-                <label asp-for="BatchAccountResourceIdLocationUrl">Batch account</label>
-                <div id="BatchAccSpinner" class="async-select">
-                    <select id="BatchAccounts" asp-for="BatchAccountResourceIdLocationUrl">
-                        <option disabled selected> -- Loading Batch Accounts -- </option>
-                    </select>
-                    <i class="fa fa-spinner fa-spin"></i>
-                </div>
-                <div id="batchAcc" class="newResource" style="display: none;">
-                    <input asp-for="NewBatchAccountName" value="@Model.NewBatchAccountName" placeholder="New Batch account name"/>
-                    <span asp-validation-for="NewBatchAccountName" class=""></span>
-                </div>
-                <span asp-validation-for="BatchAccountResourceIdLocationUrl" class=""></span>
-                <small>Azure Batch is used to provision virtual machines.</small>
-
-                <a id="newBatchAcc" href="javascript:void(0);" onclick="showHideNew('batchAcc', 'NewBatchAccountName', 'BatchAccSpinner', this, 'Batch account');">Create new Batch account</a>
-            </div>
-
-            <div class="form-element">
-                <label asp-for="StorageAccountResourceIdAndLocation">Storage account</label>
-                <div id="StorageAccSpinner" class="async-select">
-                    <select id="StorageAccounts" asp-for="StorageAccountResourceIdAndLocation">
-                        <option disabled selected> -- Loading Storage Accounts -- </option>
-                    </select>
-                    <i class="fa fa-spinner fa-spin"></i>
-                </div>
-                <div id="storageAcc" class="newResource" style="display: none;">
-                    <input asp-for="NewStorageAccountName" value="@Model.NewStorageAccountName" placeholder="New Storage account name"/>
-                    <span asp-validation-for="NewStorageAccountName" class=""></span>
-                </div>
-                <span asp-validation-for="StorageAccountResourceIdAndLocation" class=""></span>
-                <span id="StorageAccounts-none" class="field-validation-error"></span>
-                <span id="StorageAccounts-region" class="field-validation-error"></span>
-                <small>The Azure Storage account is used to store any required data, or can be mounted by render nodes for input and output files.</small>
-
-                <a id="newStorageAcc" href="javascript:void(0);" onclick="showHideNew('storageAcc', 'NewStorageAccountName', 'StorageAccSpinner', this, 'storage account');">Create new storage account</a>
-            </div>
-            <div class="form-element">
-                <label asp-for="NewFileShareName">File Share</label>
-                <div id="fileShare">
-                    <input asp-for="NewFileShareName" value="share" placeholder="File share name"/>
-                    <span asp-validation-for="NewFileShareName" class=""></span>
-                </div>
-                <small>The Azure Files Share can be mounted by nodes and used to fetch inputs or store outputs.</small>
-            </div>
-            <div class="form-element">
-                <label asp-for="SubnetResourceIdLocationAndAddressPrefix">Virtual Network and Subnet</label>
-                <div id="SubnetSpinner" class="async-select">
-                    <select id="Subnets" asp-for="SubnetResourceIdLocationAndAddressPrefix">
-                        <option disabled selected> -- Loading Subnets -- </option>
-                    </select>
-                    <i class="fa fa-spinner fa-spin"></i>
-                </div>
-                <div id="vNet" class="newResource" style="display: none;">
-                    <input asp-for="NewVnetName" value="@Model.NewVnetName" placeholder="New Virtual Network name"/>
-                    <span asp-validation-for="NewVnetName" class=""></span>
-                </div>
-                <span asp-validation-for="SubnetResourceIdLocationAndAddressPrefix" class=""></span>
-                <small>Virtual Machines will be deployed to this Subnet ensuring they have access to any cloud or on-premise storage. Ensure that the subnet has sufficient IP addresses for the number of virtual machines you plan to run.</small>
-
-                <a id="newVNet" href="javascript:void(0);" onclick="showHideNew('vNet', 'NewVnetName', 'SubnetSpinner', this, 'virtual network');">Create new virtual network</a>
-            </div>
-            <div class="form-element">
-                <label asp-for="ApplicationInsightsIdAndLocation">Application Insights</label>
-                <div id="InsightsSpinner" class="async-select">
-                    <select id="ApplicationInsights" asp-for="ApplicationInsightsIdAndLocation">
-                        <option disabled selected> -- Loading Application Insights -- </option>
-                    </select>
-                    <i class="fa fa-spinner fa-spin"></i>
-                </div>
-                <div id="appInsights" class="newResource" style="display: none;">
-                    <input asp-for="NewApplicationInsightsName" value="@Model.NewApplicationInsightsName" placeholder="New Application Insights account name"/>
-                    <span asp-validation-for="NewApplicationInsightsName" class=""></span>
-                    <label asp-for="NewApplicationInsightsName" style="margin-top: 5px;">Application Insights location</label>
-                    <div id="InsightsLocationSpinner" class="async-select">
-                        <select id="NewApplicationInsightsLocation" asp-for="NewApplicationInsightsLocation">
-                            <option disabled selected> -- Loading Application Insights Locations -- </option>
+        <div class="section-wrapper">
+            <div class="section-bar"></div>
+            <div class="section-content">
+                <div class="form-element">
+                    <label asp-for="NewResourceGroupName">Resource group name</label>
+                    <div id="RGSpinner" class="async-select" style="display: none;">
+                        <select id="ResourceGroups" asp-for="ExistingResourceGroupNameAndLocation">
+                            <option disabled selected> -- Loading Resource Groups -- </option>
                         </select>
                         <i class="fa fa-spinner fa-spin"></i>
                     </div>
+                    <div id="resourceGroup" class="newResource">
+                        <input asp-for="NewResourceGroupName" value="@Model.NewResourceGroupName" placeholder="New resource group name" />
+                        <span asp-validation-for="NewResourceGroupName" class=""></span>
+                    </div>
+                    <span asp-validation-for="ExistingResourceGroupNameAndLocation" class=""></span>
+                    <span id="ResourceGroups-none" class="field-validation-error"></span>
+                    <small class="form-text text-muted">A resource group is a container that holds related resources for your environment.</small>
+                    <a id="newResourceGroup" href="javascript:void(0);" onclick="showHideNew('resourceGroup', 'NewResourceGroupName', 'RGSpinner', this, 'resource group');">Select existing resource group</a>
                 </div>
-                <span asp-validation-for="ApplicationInsightsIdAndLocation" class=""></span>
-                <small>Application Insights is used to capture metrics around virtual machine usage and is utilized by the auto-scaler.</small>
+                
+                <div class="form-element">
+                    <label asp-for="NewKeyVaultName">Azure Key Vault name</label>                
+                    <div id="KeyVaultSpinner" class="async-select" style="display: none;">
+                        <select id="KeyVaults" asp-for="ExistingKeyVaultIdLocationAndUri">
+                            <option disabled selected> -- Loading Key Vaults -- </option>
+                        </select>
+                        <i class="fa fa-spinner fa-spin"></i>
+                    </div>
+                    <div id="keyVault" class="newResource">
+                        <input asp-for="NewKeyVaultName" value="@Model.NewKeyVaultName" placeholder="New Key Vault name" />
+                        <span asp-validation-for="NewKeyVaultName" class=""></span>
+                    </div>
+                    <span asp-validation-for="ExistingKeyVaultIdLocationAndUri" class=""></span>
+                    <span id="KeyVaults-none" class="field-validation-error"></span>
+                    <small class="form-text text-muted">Key Vault is a secure Azure service to store passwords and certificates. Each environment has it's own Key Vault to store secrets like service passwords, domain credentials and user passwords.</small>
+                    <a id="newKeyVault" href="javascript:void(0);" onclick="showHideNew('keyVault', 'NewKeyVaultName', 'KeyVaultSpinner', this, 'Key Vault');">Select existing Key Vault</a>
+                </div>
+                
+                <div class="form-element">
+                    <label asp-for="BatchAccountResourceIdLocationUrl">Batch account</label>
+                    <div id="BatchAccSpinner" class="async-select">
+                        <select id="BatchAccounts" asp-for="BatchAccountResourceIdLocationUrl">
+                            <option disabled selected> -- Loading Batch Accounts -- </option>
+                        </select>
+                        <i class="fa fa-spinner fa-spin"></i>
+                    </div>
+                    <div id="batchAcc" class="newResource" style="display: none;">
+                        <input asp-for="NewBatchAccountName" value="@Model.NewBatchAccountName" placeholder="New Batch account name"/>
+                        <span asp-validation-for="NewBatchAccountName" class=""></span>
+                    </div>
+                    <span asp-validation-for="BatchAccountResourceIdLocationUrl" class=""></span>
+                    <small>Azure Batch is used to provision virtual machines.</small>
 
-                <a id="newInsights" href="javascript:void(0);" onclick="showHideNew('appInsights', 'NewApplicationInsightsName', 'InsightsSpinner', this, 'App Insights');">Create new App Insights</a>
+                    <a id="newBatchAcc" href="javascript:void(0);" onclick="showHideNew('batchAcc', 'NewBatchAccountName', 'BatchAccSpinner', this, 'Batch account');">Create new Batch account</a>
+                </div>
+
+                <div class="form-element">
+                    <label asp-for="StorageAccountResourceIdAndLocation">Storage account</label>
+                    <div id="StorageAccSpinner" class="async-select">
+                        <select id="StorageAccounts" asp-for="StorageAccountResourceIdAndLocation">
+                            <option disabled selected> -- Loading Storage Accounts -- </option>
+                        </select>
+                        <i class="fa fa-spinner fa-spin"></i>
+                    </div>
+                    <div id="storageAcc" class="newResource" style="display: none;">
+                        <input asp-for="NewStorageAccountName" value="@Model.NewStorageAccountName" placeholder="New Storage account name"/>
+                        <span asp-validation-for="NewStorageAccountName" class=""></span>
+                    </div>
+                    <span asp-validation-for="StorageAccountResourceIdAndLocation" class=""></span>
+                    <span id="StorageAccounts-none" class="field-validation-error"></span>
+                    <span id="StorageAccounts-region" class="field-validation-error"></span>
+                    <small>The Azure Storage account is used to store any required data, or can be mounted by render nodes for input and output files.</small>
+
+                    <a id="newStorageAcc" href="javascript:void(0);" onclick="showHideNew('storageAcc', 'NewStorageAccountName', 'StorageAccSpinner', this, 'storage account');">Create new storage account</a>
+                </div>
+                <div class="form-element">
+                    <label asp-for="NewFileShareName">File Share</label>
+                    <div id="fileShare">
+                        <input asp-for="NewFileShareName" value="share" placeholder="File share name"/>
+                        <span asp-validation-for="NewFileShareName" class=""></span>
+                    </div>
+                    <small>The Azure Files Share can be mounted by nodes and used to fetch inputs or store outputs.</small>
+                </div>
+                <div class="form-element">
+                    <label asp-for="SubnetResourceIdLocationAndAddressPrefix">Virtual Network and Subnet</label>
+                    <div id="SubnetSpinner" class="async-select">
+                        <select id="Subnets" asp-for="SubnetResourceIdLocationAndAddressPrefix">
+                            <option disabled selected> -- Loading Subnets -- </option>
+                        </select>
+                        <i class="fa fa-spinner fa-spin"></i>
+                    </div>
+                    <div id="vNet" class="newResource" style="display: none;">
+                        <input asp-for="NewVnetName" value="@Model.NewVnetName" placeholder="New Virtual Network name"/>
+                        <span asp-validation-for="NewVnetName" class=""></span>
+                    </div>
+                    <span asp-validation-for="SubnetResourceIdLocationAndAddressPrefix" class=""></span>
+                    <small>Virtual Machines will be deployed to this Subnet ensuring they have access to any cloud or on-premise storage. Ensure that the subnet has sufficient IP addresses for the number of virtual machines you plan to run.</small>
+
+                    <a id="newVNet" href="javascript:void(0);" onclick="showHideNew('vNet', 'NewVnetName', 'SubnetSpinner', this, 'virtual network');">Create new virtual network</a>
+                </div>
+                <div class="form-element">
+                    <label asp-for="ApplicationInsightsIdAndLocation">Application Insights</label>
+                    <div id="InsightsSpinner" class="async-select">
+                        <select id="ApplicationInsights" asp-for="ApplicationInsightsIdAndLocation">
+                            <option disabled selected> -- Loading Application Insights -- </option>
+                        </select>
+                        <i class="fa fa-spinner fa-spin"></i>
+                    </div>
+                    <div id="appInsights" class="newResource" style="display: none;">
+                        <input asp-for="NewApplicationInsightsName" value="@Model.NewApplicationInsightsName" placeholder="New Application Insights account name"/>
+                        <span asp-validation-for="NewApplicationInsightsName" class=""></span>
+                        <label asp-for="NewApplicationInsightsName" style="margin-top: 5px;">Application Insights location</label>
+                        <div id="InsightsLocationSpinner" class="async-select">
+                            <select id="NewApplicationInsightsLocation" asp-for="NewApplicationInsightsLocation">
+                                <option disabled selected> -- Loading Application Insights Locations -- </option>
+                            </select>
+                            <i class="fa fa-spinner fa-spin"></i>
+                        </div>
+                    </div>
+                    <span asp-validation-for="ApplicationInsightsIdAndLocation" class=""></span>
+                    <small>Application Insights is used to capture metrics around virtual machine usage and is utilized by the auto-scaler.</small>
+
+                    <a id="newInsights" href="javascript:void(0);" onclick="showHideNew('appInsights', 'NewApplicationInsightsName', 'InsightsSpinner', this, 'App Insights');">Create new App Insights</a>
+                </div>
             </div>
         </div>
     </div>
-</div>
-<div class="form-footer">
-    <div class="summary"></div>
-    <div class="button-bar">
-        <a id="previous" class="button" asp-controller="Environments" asp-action="Step1" asp-route-envId="@Model.EnvironmentName">Previous</a>
-        <button id="next" type="submit" formaction="Step2">Next : Identity <i id="nextSpinner" class="fa fa-spinner fa-spin" style="display: none;"></i></button>
+    <div class="form-footer">
+        <div class="summary"></div>
+        <div class="button-bar">
+            <a id="previous" class="button" asp-controller="Environments" asp-action="Step1" asp-route-envId="@Model.EnvironmentName">Previous</a>
+            <button id="next" type="submit">Next : Identity <i id="nextSpinner" class="fa fa-spinner fa-spin" style="display: none;"></i></button>
+        </div>
     </div>
-</div>
 }
+
 @section scripts
 {
     <script>
-        function showHideNew(newItemDiv, nameInput, selectDdl, el, entity) {
+        function showHideNew(newItemDiv, nameInput, selectDdl, el, entityText) {
             var newItemEl = `#${newItemDiv}`;
             if ($(newItemEl).is(":visible")) {
                 $(`#${nameInput}`).val(null);
                 $(`#${nameInput}`).prop("disabled", "disabled");
                 $(`#${selectDdl}`).show();
-                $(el).text("Create new " + entity);
+                $(el).text("Create new " + entityText);
                 $(newItemEl).hide();
             } else {
                 var inputBox = $(`#${nameInput}`);
                 $(`#${selectDdl}`).hide();
                 inputBox.prop("disabled", false);
-                $(el).text("Select existing " + entity);
+                $(el).text("Select existing " + entityText);
                 if (inputBox.val() === null || inputBox.val().trim() === "") {
                     var envName = "@Model.EnvironmentName";
                     switch (newItemDiv) {
@@ -226,8 +226,6 @@
         function loadResourceGroups(subscriptionId, location) {
             $("#RGSpinner").addClass("loading");
             $("#ResourceGroups-none").hide();
-
-            console.log('load resource groups: ' + subscriptionId + ' ' + location);
 
             $.get(`/api/subscriptions/${subscriptionId}/resourcegroups`,
                 function(resourceGroups) {
@@ -271,15 +269,11 @@
             $("#VaultSpinner").addClass("loading");
             $("#KeyVaults-none").hide();
 
-            console.log('load vaults: ' + subscriptionId + ' ' + location);
-
             $.get(`/api/subscriptions/${subscriptionId}/keyvaults`,
                 function(vaults) {
-                    console.log(vaults);
                     var activeCount = 0;
                     var dropDownItems = $.map(vaults,
                         function(vault) {
-                            console.log(`${vault.name} - ${vault.location} - ${vault.id} - ${vault.properties.vaultUri}`);
                             var disabled = "";
                             if (vault.location !== location) {
                                 disabled = "disabled";
@@ -514,7 +508,7 @@
                 showHideNew("resourceGroup", "NewResourceGroupName", "RGSpinner", $("#newResourceGroup"), "resource group");
             }
 
-            if ("@Model.ExistingKeyVaultIdLocationAndUri" || "@Model.ExistingKeyVaultVisible".toLowerCase() === "true") {
+            if ("@Model.ExistingKeyVaultIdLocationAndUri" !== "#" || "@Model.ExistingKeyVaultVisible".toLowerCase() === "true") {
                 showHideNew("keyVault", "NewKeyVaultName", "KeyVaultSpinner", $("#newKeyVault"), "Key Vault");
             }
 
