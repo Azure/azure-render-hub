@@ -16,10 +16,7 @@ Param(
   [string]$deadlineRegion,
   [string]$deadlineGroups = $null,
   [string]$deadlinePools = $null,
-  [string]$excludeFromLimitGroups = $null,
-  [string]$smbShares = $null,
-  [string]$nfsShares = $null,
-  [string]$hostMappings = $null
+  [string]$excludeFromLimitGroups = $null
 )
 
 $ErrorActionPreference = "Stop"
@@ -54,37 +51,6 @@ if (Get-Module -ListAvailable -Name AzureRm) {
 
 Import-Module AzureRm
 Login-AzureRmAccount -ServicePrincipal -TenantId $tenantId -CertificateThumbprint $keyVaultCertificateThumbprint -ApplicationId $applicationId
-
-# Redirect optional hosts to IP addresses
-if ('' -ne $hostMappings)
-{
-    $hostsFile = 'C:\Windows\System32\Drivers\etc\hosts'
-    $hostsContent = Get-Content $hostsFile
-    ${hostMappings}.Split(";") | ForEach {
-        $tokens = $_.Split("=")
-
-        if ($tokens.Count -eq 2)
-        {
-            $ip = $tokens[1]
-            $hostname = $tokens[0]
-            $line = "$ip    $hostname"
-
-            if (!($hostsContent -match $line))
-            {
-                Write-Output "Adding host mapping $line"
-                Add-Content $hostsFile "$line"
-            }
-            else
-            {
-                Write-Output "Skipping host redirect, already exists: $line"
-            }
-        }
-        else
-        {
-            Write-Output "Bad host and IP specified: $_"
-        }
-    }
-}
 
 $secrets = Get-AzureKeyVaultSecret -VaultName "$keyVaultName"
 $secrets | % { Write-Output "Found secret " $_.Name }
@@ -196,94 +162,6 @@ elseif ('' -ne $deadlineServiceUserName)
     $sharePassword = $deadlineServiceUserPassword
 }
 
-# Mount any Windows/SMB shares that are specified
-if ('' -ne $smbShares)
-{
-    Write-Output "Mounting SMB network drives $smbShares"
-    Write-Output "Current drives: "
-    Get-PSDrive -PSProvider 'FileSystem' | % { Write-Output "$($_.Root) => $($_.DisplayRoot)" }
-    $tokens = $smbShares.Split(";")
-    $tokens | ForEach {
-        Write-Output "Checking share $_"
-        $mapping = $_.Split("=")
-        $share = $mapping[0]
-        $drive = $mapping[1]
-
-        if ($share.StartsWith('\\') -and (-not $drive.StartsWith('/')))
-        {
-            # Remove any trailing slashes just in case
-            $drive = $drive.Replace('\', '')
-
-            if (Test-Path $drive)
-            {
-                Write-Output "Drive $drive is already mounted, skipping"
-            }
-            else
-            {
-                $drive = $drive -replace ":", ""
-                Write-Output "Mount share $share at $drive with user $shareUsername"
-                if ($shareUsername -and $sharePassword)
-                {
-                    net use ${drive}: "$share" /User:$shareUsername "$sharePassword" /Persistent:Yes
-                }
-                else
-                {
-                    net use ${drive}: "$share" /Persistent:Yes
-                }
-
-                if ($lastexitcode -ne 0)
-                {
-                    Write-Output "Failed to map network drive ${drive}: $share"
-                    exit 1
-                }
-            }
-        }
-        else
-        {
-            Write-Output "Skipping Linux share $_"
-        }
-    }
-}
-
-if ('' -ne $nfsShares)
-{
-    $nfsClient = Get-WindowsFeature NFS-Client
-    if (-not $nfsClient.Installed)
-    {
-        Install-WindowsFeature -Name NFS-Client
-    }
-
-    Write-Output "Mounting NFS network drives $nfsShares"
-    Write-Output "Current drives: "
-    Get-PSDrive -PSProvider 'FileSystem'
-
-    $tokens = $nfsShares.Split(";")
-    $tokens | ForEach {
-        Write-Output "Checking share $_"
-        $mapping = $_.Split("=")
-        $share = $mapping[0]
-        $drive = $mapping[1]
-
-        if ($share.StartsWith('\\') -and (-not $drive.StartsWith('/')))
-        {
-            if (Test-Path $drive)
-            {
-                Write-Output "Drive $drive is already mounted, skipping"
-            }
-            else
-            {
-                $drive = $drive -replace ":", ""
-                Write-Output "Mounting NFS share $share at $drive"
-                New-PSDrive -Name $drive -Root $share -Persist -PSProvider "FileSystem" -Confirm:$false
-            }
-        }
-        else
-        {
-            Write-Output "Skipping Linux share $_"
-        }
-    }
-}
-
 $deadlinePath = "$env:DEADLINE_PATH"
 if ('' -eq $deadlinePath)
 {
@@ -292,7 +170,7 @@ if ('' -eq $deadlinePath)
 }
 
 # Check if the Deadline Client is already installed
-if (Test-Path "$deadlinePath\deadlinecommand.exe")
+if ((Test-Path "$deadlinePath\deadlinecommand.exe") -and (Test-Path "C:\ProgramData\Thinkbox"))
 {
     # We need to ensure the config is set to "NoGui" otherwise the slave wont start.
     Get-Childitem 'C:\ProgramData\Thinkbox' -Recurse -Include deadline.ini | ForEach {
@@ -338,12 +216,7 @@ elseif ('' -ne $installerPath -and (Test-Path $installerPath))
         $installerArgs.Add("--launcherservice")
         $installerArgs.Add("true")
     }
-    #else
-    #{
-    #    $installerArgs.Add("--noguimode")
-    #    $installerArgs.Add("true")
-    #}
-    
+
     $installerArgs.Add("--noguimode")
     $installerArgs.Add("true")
 
