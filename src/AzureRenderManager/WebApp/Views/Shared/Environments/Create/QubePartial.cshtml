@@ -13,9 +13,10 @@
         <div class="section-bar"></div>
         <div class="section-content">
             <div class="form-element">
-                <label asp-for="QubeEnvironment.QubeSupervisor">Qube supervisor (only needed if installing the workers from a package)</label>
-                <input asp-for="QubeEnvironment.QubeSupervisor" value="@Model.QubeEnvironment.QubeSupervisor"/>
+                <label asp-for="QubeEnvironment.QubeSupervisor">Qube! Supervisor IP or hostname</label>
+                <input asp-for="QubeEnvironment.QubeSupervisor" value="@Model.QubeEnvironment.QubeSupervisor" />
                 <span asp-validation-for="QubeEnvironment.QubeSupervisor" class=""></span>
+                <small>The IP or hostname is only required if you're installing the Qube! Worker from a Package.  If the Qube! Worker is already installed on a custom image you won't need this.</small>
             </div>
         </div>
     </div>
