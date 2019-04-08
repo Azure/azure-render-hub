@@ -180,7 +180,7 @@ namespace WebApp.Authorization
             await AssignRoleToUser(environment, Guid.Parse(graphUser.Id), userRole);
         }
 
-        public async Task AssignRoleToUser(RenderingEnvironment environment, Guid objectId, PortalRole userRole)
+        private EnvironmentRoleAssignments GetEnvironmentRolesForPortalRole(PortalRole userRole)
         {
             EnvironmentRoleAssignments roleAssignments = null;
             switch (userRole)
@@ -201,6 +201,12 @@ namespace WebApp.Authorization
                 throw new Exception($"No role assignments configured for role {userRole}");
             }
 
+            return roleAssignments;
+        }
+
+        public async Task AssignRoleToUser(RenderingEnvironment environment, Guid objectId, PortalRole userRole)
+        {
+            EnvironmentRoleAssignments roleAssignments = GetEnvironmentRolesForPortalRole(userRole);
             await AssignRolesToUser(objectId, environment, roleAssignments);
         }
 
