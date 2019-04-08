@@ -13,7 +13,7 @@
 
 @await Html.PartialAsync("Environments/Create/CreateFormHeaderPartial")
 
-<form method="post">
+<form method="post" enctype="multipart/form-data" role="form">
     @await Html.PartialAsync("Menu/EnvironmentSubMenu", Model, new ViewDataDictionary(ViewData)
     {
         { "Step", 5 },

@@ -169,6 +169,17 @@
                                 </div>
                             </div>
                             <div class="form-element">
+                                <label></label>
+                                <div class="form-check">
+                                    <input asp-for="DeadlineEnvironment.UseDeadlineDatabaseCertificate" type="checkbox">
+                                    <label>Deadline DB Requires a Certificate</label>
+                                </div>
+                            </div>
+                            <div class="form-element">
+                                <label asp-for="DeadlineEnvironment.DeadlineDatabaseCertificateFileName">Current Certificate</label>
+                                <input asp-for="DeadlineEnvironment.DeadlineDatabaseCertificateFileName" value="@(Model.DeadlineEnvironment.DeadlineDatabaseCertificateFileName ?? "None")" readonly="readonly"/>
+                            </div>
+                            <div class="form-element">
                                 <label asp-for="DeadlineEnvironment.DeadlineDatabaseCertificate">Deadline Database Client Certificate</label>
                                 <input asp-for="DeadlineEnvironment.DeadlineDatabaseCertificate" type="file" accept=".pfx" />
                                 <span asp-validation-for="DeadlineEnvironment.DeadlineDatabaseCertificate" class=""></span>

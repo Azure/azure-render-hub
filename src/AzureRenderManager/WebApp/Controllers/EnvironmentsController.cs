@@ -666,16 +666,24 @@ namespace WebApp.Controllers
             environment.RenderManagerConfig.Deadline.ServiceUser = model.RunAsService ? model.ServiceUser : null;
             environment.RenderManagerConfig.Deadline.ServicePassword = model.RunAsService ? model.ServicePassword : null;
 
-            if (model.DeadlineDatabaseCertificate != null && model.DeadlineDatabaseCertificate.Length > 0)
+            if (model.UseDeadlineDatabaseCertificate)
             {
-                using (var ms = new MemoryStream())
+                if (model.DeadlineDatabaseCertificate != null && model.DeadlineDatabaseCertificate.Length > 0)
                 {
-                    model.DeadlineDatabaseCertificate.CopyTo(ms);
-                    environment.RenderManagerConfig.Deadline.DeadlineDatabaseCertificate = new Certificate
+                    using (var ms = new MemoryStream())
                     {
-                        CertificateData = ms.ToArray()
-                    };
+                        model.DeadlineDatabaseCertificate.CopyTo(ms);
+                        environment.RenderManagerConfig.Deadline.DeadlineDatabaseCertificate = new Certificate
+                        {
+                            FileName = model.DeadlineDatabaseCertificate.FileName,
+                            CertificateData = ms.ToArray()
+                        };
+                    }
                 }
+            }
+            else
+            {
+                environment.RenderManagerConfig.Deadline.DeadlineDatabaseCertificate = null;
             }
 
             environment.RenderManagerConfig.Deadline.DeadlineDatabaseCertificate.Password =

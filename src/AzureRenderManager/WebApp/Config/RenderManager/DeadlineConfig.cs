@@ -39,8 +39,8 @@ namespace WebApp.Config.RenderManager
         public string ServicePassword { get; set; }
 
         [Credential("DeadlineDbClientCertificate")]
-        [JsonIgnore]
-        public Certificate DeadlineDatabaseCertificate { get; set; } = new Certificate();
+        //[JsonIgnore]
+        public Certificate DeadlineDatabaseCertificate { get; set; }// = new Certificate();
     }
 
     public enum LicenseMode
