@@ -11,7 +11,7 @@
 }
 
 <h2>@Model.EnvironmentName - user access</h2>
-<p>View the users that have permissions to access this environment.</p>
+<p>View the users that have permission to access this environment.</p>
 
 @await Html.PartialAsync("Menu/EnvironmentMainMenu", Model, new ViewDataDictionary(ViewData) { { "Step", "useraccess" } })
 
@@ -111,7 +111,7 @@
             <span class="step-index">3</span>
             <div class="step-header">
                 <h3>Add User</h3>
-                <p>Assign a user permissions to this environment.</p>
+                <p>Assign permissions to a user for this environment.</p>
             </div>
         </div>
         <div class="section-wrapper">
@@ -157,7 +157,7 @@
         </div>
         <div class="resources">
             <h4>Owner Role</h4>
-            <p>The owner role has admin access to the environment and can deleted resources, manage pools and assign user permissions.</p>
+            <p>The owner role has admin access to the environment and can delete resources, manage pools and assign user permissions.</p>
             <p>The role maps to the following Azure Built-In roles for each resource.</p>
         </div>
     </div>
