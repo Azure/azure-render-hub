@@ -34,10 +34,7 @@ namespace WebApp.Code.Session
             {
                 options.SetAbsoluteExpiration(expiresUtc.Value.AddMinutes(-1));
             }
-            options.SetSlidingExpiration(TimeSpan.FromHours(1));
-
             _cache.Set(key, ticket, options);
-
             return Task.CompletedTask;
         }
 
