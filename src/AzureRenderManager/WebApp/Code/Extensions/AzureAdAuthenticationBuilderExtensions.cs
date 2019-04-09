@@ -4,9 +4,14 @@ using System;
 
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.AspNetCore.Http.Extensions;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Microsoft.Identity.Client;
+using Microsoft.IdentityModel.Clients.ActiveDirectory;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using WebApp.Code.Session;
 
 namespace WebApp.Code.Extensions
 {
@@ -47,6 +52,26 @@ namespace WebApp.Code.Extensions
 
                 // trying to get refresh to work
                 options.Scope.Add("offline_access"); // allow refreshing
+
+                options.Events = new OpenIdConnectEvents
+                {
+                    OnAuthorizationCodeReceived = async ctx =>
+                    {
+                        var request = ctx.HttpContext.Request;
+                        var currentUri = UriHelper.BuildAbsolute(request.Scheme, request.Host, request.PathBase, request.Path);
+                        var credential = new Microsoft.IdentityModel.Clients.ActiveDirectory.ClientCredential(ctx.Options.ClientId, ctx.Options.ClientSecret);
+
+                        var memoryCache = ctx.HttpContext.RequestServices.GetRequiredService<IMemoryCache>();
+                        var cache = new SessionTokenCache(ctx.Principal, memoryCache);
+                        var tokenCache = cache.GetCacheInstance();
+                        var authContext = new AuthenticationContext(ctx.Options.Authority, true, tokenCache);
+
+                        var result = await authContext.AcquireTokenByAuthorizationCodeAsync(
+                            ctx.ProtocolMessage.Code, new Uri(currentUri), credential, ctx.Options.Resource);
+
+                        ctx.HandleCodeRedemption(result.AccessToken, result.IdToken);
+                    }
+                };
             }
 
             public void Configure(OpenIdConnectOptions options)
