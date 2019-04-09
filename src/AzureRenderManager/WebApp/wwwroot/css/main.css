@@ -149,12 +149,12 @@ hr {
   .form-element input {
     display: flex; }
   .form-element span.field-validation-error {
-    padding: 2px 5px;
+    padding: 2px 0 0 2px;
     color: #ff5151;
     display: block; }
   .form-element small {
     display: block;
-    margin: 3px 0 0 3px; }
+    margin: 1px 0 0 3px; }
   .form-element p.spacer {
     height: 26px;
     margin: 0; }
