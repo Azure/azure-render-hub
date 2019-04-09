@@ -93,7 +93,7 @@ namespace WebApp.Config.Coordinators
                         repository.Subnet.Location, // The subnet location pins us to a region
                         tags: AzureResourceProvider.GetEnvironmentTags(repository.EnvironmentName)));
 
-                await azureResourceProvider.AssignManagementIdentityAsync(
+                await azureResourceProvider.AssignRoleToIdentityAsync(
                     repository.SubscriptionId,
                     repository.ResourceGroupResourceId,
                     AzureResourceProvider.ContributorRole,

@@ -8,7 +8,6 @@ using System.Linq;
 using System.Net;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
-
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Management.Batch;
 using Microsoft.Extensions.Configuration;
@@ -32,7 +31,7 @@ using WebApp.Operations;
 using WebApp.CostManagement;
 using Microsoft.AspNetCore.Diagnostics;
 using WebApp.Models;
-using System.Diagnostics;
+using WebApp.Authorization;
 
 namespace WebApp.Controllers
 {
@@ -42,6 +41,7 @@ namespace WebApp.Controllers
     {
         private readonly IConfiguration _configuration;
         private readonly IAzureResourceProvider _azureResourceProvider;
+        private readonly AuthorizationManager _authorizationManager;
         private readonly IKeyVaultMsiClient _keyVaultMsiClient;
         private readonly IIdentityProvider _identityProvider;
         private readonly IManagementClientProvider _managementClientProvider;
@@ -53,6 +53,7 @@ namespace WebApp.Controllers
         public EnvironmentsController(
             IConfiguration configuration,
             IAzureResourceProvider azureResourceProvider,
+            AuthorizationManager authorizationManager,
             IKeyVaultMsiClient keyVaultMsiClient,
             IIdentityProvider identityProvider,
             IEnvironmentCoordinator environmentCoordinator,
@@ -67,6 +68,7 @@ namespace WebApp.Controllers
         {
             _configuration = configuration;
             _azureResourceProvider = azureResourceProvider;
+            _authorizationManager = authorizationManager;
             _keyVaultMsiClient = keyVaultMsiClient;
             _identityProvider = identityProvider;
             _managementClientProvider = managementClientProvider;
@@ -510,6 +512,83 @@ namespace WebApp.Controllers
 
             var model = new ViewEnvironmentModel(environment);
             return View("View/Resources", model);
+        }
+
+        [HttpGet]
+        [Route("Environments/{envId}/UserAccess")]
+        public async Task<IActionResult> UserAccess(string envId)
+        {
+            var environment = await _environmentCoordinator.GetEnvironment(envId);
+            if (environment == null)
+            {
+                return RedirectToAction("Index");
+            }
+
+            var canAssignTask = _azureResourceProvider.CanCreateRoleAssignments(environment.SubscriptionId, environment.ResourceGroupName);
+
+            var (classicAdmins, permissions) = await (
+                _authorizationManager.ListClassicAdministrators(environment),
+                _authorizationManager.ListUserPermissions(environment));
+
+            var model = new EnvironmentUserPermissionsModel(environment)
+            {
+                ClassicAdministrators = classicAdmins,
+                UserPermissions = permissions,
+                NoGraphAccess = permissions.Any(p => p.GraphResolutionFailure),
+            };
+
+            var canAssign = await canAssignTask;
+            if (!canAssign)
+            {
+                model.Error = "You don't have the required permissions to assign roles to users";
+                model.ErrorMessage = "In order to complete this step, which involves creating role assignments, you must have the Owner or User Access Administrator role for the specified Subscription. " +
+                                     "Either request someone with this role to complete the step, or ask your admin to make you an Owner or User Access Administrator for the Subscription.";
+            }
+
+            return View("View/UserAccess", model);
+        }
+
+        [HttpPost]
+        [Route("Environments/{envId}/UserAccess")]
+        public async Task<IActionResult> UserAccess(string envId, EnvironmentUserPermissionsModel model)
+        {
+            var environment = await _environmentCoordinator.GetEnvironment(envId);
+            if (environment == null)
+            {
+                return RedirectToAction("Index");
+            }
+
+            if (model.NoGraphAccess && model.ObjectId == null)
+            {
+                ModelState.AddModelError(nameof(EnvironmentUserPermissionsModel.ObjectId), "A valid Object Id must be specified.");
+            }
+
+            if (!model.NoGraphAccess && string.IsNullOrWhiteSpace(model.EmailAddress))
+            {
+                ModelState.AddModelError(nameof(EnvironmentUserPermissionsModel.EmailAddress), "A valid email address must be specified.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return View("View/UserAccess", model);
+            }
+
+            if (model.NoGraphAccess)
+            {
+                await _authorizationManager.AssignRoleToUser(
+                    environment,
+                    model.ObjectId.Value,
+                    model.UserRole);
+            }
+            else
+            {
+                await _authorizationManager.AssignRoleToUser(
+                    environment,
+                    model.EmailAddress,
+                    model.UserRole);
+            }
+
+            return RedirectToAction("UserAccess", new { envId });
         }
 
         [HttpGet]
@@ -1435,31 +1514,31 @@ namespace WebApp.Controllers
         private async Task AssignManagementIdentityToResources(RenderingEnvironment environment)
         {
             await (
-            _azureResourceProvider.AssignManagementIdentityAsync(
+            _azureResourceProvider.AssignRoleToIdentityAsync(
                 environment.SubscriptionId,
                 environment.ResourceGroupResourceId,
                 AzureResourceProvider.ContributorRole,
                 _identityProvider.GetPortalManagedServiceIdentity()),
 
-            _azureResourceProvider.AssignManagementIdentityAsync(
+            _azureResourceProvider.AssignRoleToIdentityAsync(
                 environment.SubscriptionId,
                 environment.ApplicationInsightsAccount.ResourceId,
                 AzureResourceProvider.ContributorRole,
                 _identityProvider.GetPortalManagedServiceIdentity()),
 
-            _azureResourceProvider.AssignManagementIdentityAsync(
+            _azureResourceProvider.AssignRoleToIdentityAsync(
                 environment.SubscriptionId,
                 environment.Subnet.VnetResourceId,
                 AzureResourceProvider.VirtualMachineContributorRole,
                 _identityProvider.GetPortalManagedServiceIdentity()),
 
-            _azureResourceProvider.AssignManagementIdentityAsync(
+            _azureResourceProvider.AssignRoleToIdentityAsync(
                 environment.SubscriptionId,
                 environment.BatchAccount.ResourceId,
                 AzureResourceProvider.ContributorRole,
                 _identityProvider.GetPortalManagedServiceIdentity()),
 
-            _azureResourceProvider.AssignManagementIdentityAsync(
+            _azureResourceProvider.AssignRoleToIdentityAsync(
                 environment.SubscriptionId,
                 environment.StorageAccount.ResourceId,
                 AzureResourceProvider.ContributorRole,

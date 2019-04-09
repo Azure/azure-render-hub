@@ -4,10 +4,12 @@ using System;
 using System.Collections.Generic;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
+using Microsoft.Azure.Management.Authorization.Models;
 using Microsoft.Azure.Management.KeyVault.Models;
 using Microsoft.Azure.Management.ResourceManager.Models;
 
 using WebApp.Config;
+using WebApp.Models.Environments;
 
 namespace WebApp.Arm
 {
@@ -29,6 +31,11 @@ namespace WebApp.Arm
         Task<bool> CanCreateRoleAssignments(
             Guid subscriptionId,
             string resourceGroupName);
+
+        Task<List<ClassicAdministrator>> ListClassicAdministrators(Guid subscriptionId);
+
+        Task<bool> IsCurrentUserClassicAdministrator(
+            Guid subscriptionId);
 
         Task DeleteResourceGroupAsync(Guid subscriptionId, string resourceGroupName);
 
@@ -115,6 +122,8 @@ namespace WebApp.Arm
 
         Task DeleteVNetAsync(Guid subscriptionId, string resourceGroupName, string vnetName);
 
-        Task AssignManagementIdentityAsync(Guid subscriptionId, string resourceId, string role, Identity.Identity identity);
+        Task<List<UserPermission>> GetUserPermissions(Guid subscriptionId, string scope);
+
+        Task AssignRoleToIdentityAsync(Guid subscriptionId, string resourceId, string role, Identity.Identity identity);
     }
 }
