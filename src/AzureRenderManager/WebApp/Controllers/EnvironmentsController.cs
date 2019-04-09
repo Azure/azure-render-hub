@@ -979,12 +979,12 @@ namespace WebApp.Controllers
             if (!ModelState.IsValid)
             {
                 // disabled select inputs will be null if disabled
-                model.ExistingKeyVaultVisible = !string.IsNullOrEmpty(model.ExistingKeyVaultIdLocationAndUri) && model.ExistingKeyVaultIdLocationAndUri != "#";
-                model.ExistingResourceGroupVisible = !string.IsNullOrEmpty(model.ExistingResourceGroupNameAndLocation);
-                model.NewBatchAccountVisible = string.IsNullOrEmpty(model.BatchAccountResourceIdLocationUrl);
-                model.NewStorageAccountVisible = string.IsNullOrEmpty(model.StorageAccountResourceIdAndLocation);
-                model.NewAppInsightsVisible = string.IsNullOrEmpty(model.ApplicationInsightsIdAndLocation);
-                model.NewVNetVisible = string.IsNullOrEmpty(model.SubnetResourceIdLocationAndAddressPrefix);
+                //model.ExistingKeyVaultVisible = !string.IsNullOrEmpty(model.ExistingKeyVaultIdLocationAndUri) && model.ExistingKeyVaultIdLocationAndUri != "#";
+                //model.ExistingResourceGroupVisible = !string.IsNullOrEmpty(model.ExistingResourceGroupNameAndLocation);
+                //model.NewBatchAccountVisible = string.IsNullOrEmpty(model.BatchAccountResourceIdLocationUrl);
+                //model.NewStorageAccountVisible = string.IsNullOrEmpty(model.StorageAccountResourceIdAndLocation);
+                //model.NewAppInsightsVisible = string.IsNullOrEmpty(model.ApplicationInsightsIdAndLocation);
+                //model.NewVNetVisible = string.IsNullOrEmpty(model.SubnetResourceIdLocationAndAddressPrefix);
 
                 return View("Create/Step2", model);
             }

@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 using System;
 using System.ComponentModel.DataAnnotations;
+using System.Text.RegularExpressions;
 using WebApp.Code;
 using WebApp.Config;
 
@@ -25,12 +26,21 @@ namespace WebApp.Models.Environments.Create
                 ExistingResourceGroupNameAndLocation 
                     = $"{environment.ResourceGroupName};{environment.LocationName}";
             }
+            else
+            {
+                NewResourceGroupName = EnvironmentName + "-rg";
+            }
             
             if (environment.KeyVault != null)
             {
                 NewKeyVaultName = null;
                 ExistingKeyVaultIdLocationAndUri 
                     = $"{environment.KeyVault.ResourceId};{environment.KeyVault.Location};{environment.KeyVault.Uri}";
+            }
+            else
+            {
+                var kvName = EnvironmentName.Length > 21 ? EnvironmentName.Substring(0, 21) : EnvironmentName;
+                NewKeyVaultName = $"{Regex.Replace(kvName, "/[&\\/\\\\_-]/g", "")}-kv";
             }
 
             if (environment.BatchAccount != null)
@@ -73,15 +83,11 @@ namespace WebApp.Models.Environments.Create
 
         public string ExistingResourceGroupNameAndLocation { get; set; }
 
-        public bool ExistingResourceGroupVisible { get; set; }
-
         [RegularExpression(Validation.RegularExpressions.KeyVault, ErrorMessage = "The Key Vault name must begin with a letter, end with a letter or digit, and not contain consecutive hyphens.")]
         [StringLength(24, MinimumLength = 3, ErrorMessage = "Key Vault name must be between 3 and 24 characters")]
         public string NewKeyVaultName { get; set; }
 
         public string ExistingKeyVaultIdLocationAndUri { get; set; }
-
-        public bool ExistingKeyVaultVisible { get; set; }
 
         public string BatchAccountResourceIdLocationUrl { get; set; }
 
@@ -89,15 +95,11 @@ namespace WebApp.Models.Environments.Create
         [StringLength(24, MinimumLength = 3, ErrorMessage = "Batch account name must be between 3 and 24 characters")]
         public string NewBatchAccountName { get; set; }
 
-        public bool NewBatchAccountVisible { get; set; }
-
         public string StorageAccountResourceIdAndLocation { get; set; }
 
         [RegularExpression(Validation.RegularExpressions.StorageAccountName, ErrorMessage = "Storage account name can only contain lowercase letters and numbers.")]
         [StringLength(24, MinimumLength = 3, ErrorMessage = "Storage account name must be between 3 and 24 characters")]
         public string NewStorageAccountName { get; set; }
-
-        public bool NewStorageAccountVisible { get; set; }
 
         [RegularExpression(Validation.RegularExpressions.FileShareName, ErrorMessage = "File share name must start with a letter or number, and can contain only letters, numbers, and the dash (-) character.")]
         [StringLength(63, MinimumLength = 3, ErrorMessage = "File share name must be between 3 and 63 characters")]
@@ -112,8 +114,6 @@ namespace WebApp.Models.Environments.Create
         [StringLength(64, MinimumLength = 0, ErrorMessage = "VNet name must be between 2 and 64 characters")]
         public string NewVnetName { get; set; }
 
-        public bool NewVNetVisible { get; set; }
-
         /// <summary>
         /// Semi-colon delimited resource id and location
         /// </summary>
@@ -124,8 +124,6 @@ namespace WebApp.Models.Environments.Create
         public string NewApplicationInsightsName { get; set; }
 
         public string NewApplicationInsightsLocation { get; set; }
-
-        public bool NewAppInsightsVisible { get; set; }
 
         public string Error { get; set; }
 
