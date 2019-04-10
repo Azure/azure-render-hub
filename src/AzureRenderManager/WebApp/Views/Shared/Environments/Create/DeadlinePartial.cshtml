@@ -92,17 +92,26 @@
                 </div>
             </div>
             <div class="form-element">
-                <label asp-for="DeadlineEnvironment.DeadlineDatabaseCertificate">Deadline Database Client Certificate</label>
-                <input asp-for="DeadlineEnvironment.DeadlineDatabaseCertificate" type="file" accept=".pfx" />
-                <span asp-validation-for="DeadlineEnvironment.DeadlineDatabaseCertificate" class=""></span>
-                <small>The Deadline Database client certificate used for authentication.  The certificate and password are stored in Key Vault.</small>
+                <label></label>
+                <div class="form-check">
+                    <input asp-for="DeadlineEnvironment.UseDeadlineDatabaseCertificate" type="checkbox">
+                    <label>The Deadline DB Requires a Certificate</label>
+                </div>
             </div>
-            <div class="form-element">
-                <label asp-for="DeadlineEnvironment.DeadlineDatabaseCertificatePassword">Deadline Database Certificate Password</label>
-                <input asp-for="DeadlineEnvironment.DeadlineDatabaseCertificatePassword" value="@Model.DeadlineEnvironment.DeadlineDatabaseCertificatePassword" type="password" />
-                <span asp-validation-for="DeadlineEnvironment.DeadlineDatabaseCertificatePassword" class=""></span>
-                <small>The Deadline Database client certificate password, if required.</small>
+            <div id="DeadlineDatabaseCertForm">
+                <div class="form-element">
+                    <label asp-for="DeadlineEnvironment.DeadlineDatabaseCertificate">Deadline Database Client Certificate</label>
+                    <input asp-for="DeadlineEnvironment.DeadlineDatabaseCertificate" type="file" accept=".pfx" />
+                    <span asp-validation-for="DeadlineEnvironment.DeadlineDatabaseCertificate" class=""></span>
+                    <small>The Deadline Database client certificate used for authentication.  The certificate and password are stored in Key Vault.</small>
+                </div>
+                <div class="form-element">
+                    <label asp-for="DeadlineEnvironment.DeadlineDatabaseCertificatePassword">Deadline Database Certificate Password</label>
+                    <input asp-for="DeadlineEnvironment.DeadlineDatabaseCertificatePassword" value="@Model.DeadlineEnvironment.DeadlineDatabaseCertificatePassword" type="password" />
+                    <span asp-validation-for="DeadlineEnvironment.DeadlineDatabaseCertificatePassword" class=""></span>
+                    <small>The Deadline Database client certificate password, if required.</small>
+                </div>
+            </div>
             </div>
         </div>
-    </div>
 </div>
