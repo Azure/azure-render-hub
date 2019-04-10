@@ -28,7 +28,7 @@
     @Html.HiddenFor(model => model.EnvironmentName)
     @Html.HiddenFor(model => model.RenderManager)
 
-    <div asp-validation-summary="ModelOnly" class=""></div>
+    <div asp-validation-summary="All" class=""></div>
 
     <div class="form-section">
         <div class="section-title">
@@ -181,7 +181,7 @@
                             </div>
                             <div class="form-element">
                                 <label asp-for="DeadlineEnvironment.DeadlineDatabaseCertificate">Deadline Database Client Certificate</label>
-                                <input asp-for="DeadlineEnvironment.DeadlineDatabaseCertificate" type="file" accept=".pfx" />
+                                <input asp-for="DeadlineEnvironment.DeadlineDatabaseCertificate" type="file" accept=".pfx" value="" />
                                 <span asp-validation-for="DeadlineEnvironment.DeadlineDatabaseCertificate" class=""></span>
                                 <small>The Deadline Database client certificate used for authentication.  The certificate and password are stored in Key Vault.</small>
                             </div>
@@ -255,6 +255,15 @@
         $(document).ready(function () {
             registerCheckboxEnabledFormSection("JoinDomain", "DomainForm");
             registerCheckboxEnabledFormSection("DeadlineEnvironment_RunAsService", "DeadlineServiceForm");
+
+            if ('@Model.Error' !== '')
+            {
+                toastr.options.timeOut = 0;
+                toastr.options.extendedTimeOut = 0;
+                toastr.options.closeButton = true;
+                toastr.options.positionClass = "toast-top-center";
+                toastr.warning('@Model.ErrorMessage', '@Model.Error').css("width", "600px");
+            }
         });
     </script>
 }

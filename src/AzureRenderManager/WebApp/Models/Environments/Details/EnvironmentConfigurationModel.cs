@@ -21,6 +21,8 @@ namespace WebApp.Models.Environments.Details
             if (environment != null)
             {
                 EnvironmentName = environment.Name;
+                MaxIdleCpuPercent = 15; // Defaults
+                MaxIdleGpuPercent = 2;
 
                 if (environment.AutoScaleConfiguration != null)
                 {

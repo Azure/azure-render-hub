@@ -568,6 +568,14 @@ namespace WebApp.Controllers
                         ModelState.AddModelError(nameof(DeadlineEnvironment.ServicePassword), "The service password must be specified when running the Deadline client as a service.");
                     }
                 }
+
+                if (model.DeadlineEnvironment != null && model.DeadlineEnvironment.UseDeadlineDatabaseCertificate)
+                {
+                    if (model.DeadlineEnvironment.DeadlineDatabaseCertificate == null)
+                    {
+                        ModelState.AddModelError(nameof(DeadlineEnvironment.DeadlineDatabaseCertificate), "Use Deadline Database Certificate was checked, but no certificate was specified.");
+                    }
+                }
             }
 
             if (environment.RenderManager == RenderManagerType.Qube610 || environment.RenderManager == RenderManagerType.Qube70)
@@ -636,9 +644,22 @@ namespace WebApp.Controllers
                 environment.Domain.DomainJoinPassword = model.DomainJoinPassword;
             }
 
-            await _environmentCoordinator.UpdateEnvironment(environment);
+            await UpdateEnvironment(environment, model);
 
             return View("View/Manager", model);
+        }
+
+        private async Task UpdateEnvironment(RenderingEnvironment environment, EnvironmentBaseModel model)
+        {
+            try
+            {
+                await _environmentCoordinator.UpdateEnvironment(environment);
+            }
+            catch (Exception e)
+            {
+                model.Error = e.Message;
+                model.ErrorMessage = e.ToString();
+            }
         }
 
         private void ApplyDeadlineConfigToEnvironment(RenderingEnvironment environment, DeadlineEnvironment model)
@@ -680,14 +701,20 @@ namespace WebApp.Controllers
                         };
                     }
                 }
+
+                // This shouldn't be possible, but you never know
+                if (environment.RenderManagerConfig.Deadline.DeadlineDatabaseCertificate == null)
+                {
+                    environment.RenderManagerConfig.Deadline.DeadlineDatabaseCertificate = new Certificate();
+                }
+
+                environment.RenderManagerConfig.Deadline.DeadlineDatabaseCertificate.Password = 
+                    model.DeadlineDatabaseCertificatePassword;
             }
             else
             {
                 environment.RenderManagerConfig.Deadline.DeadlineDatabaseCertificate = null;
             }
-
-            environment.RenderManagerConfig.Deadline.DeadlineDatabaseCertificate.Password =
-                model.DeadlineDatabaseCertificatePassword;
         }
 
         [HttpGet]
@@ -1133,82 +1160,11 @@ namespace WebApp.Controllers
             // return RedirectToAction("Step5", new { envId = environment.Name });
 
             environment.InProgress = false;
-            await _environmentCoordinator.UpdateEnvironment(environment);
+
+            await UpdateEnvironment(environment, model);
+
             // after saving, either go to overview details, or a success page.
             return RedirectToAction("Overview", new { envId = model.EnvironmentName });
-        }
-
-        [HttpGet]
-        [Route("Environments/Step5/{envId?}")]
-        public async Task<ActionResult> Step5(string envId)
-        {
-            var environment = await _environmentCoordinator.GetEnvironment(envId);
-            if (environment == null)
-            {
-                // redirect to Step1 if no config.
-                return RedirectToAction("Step1", new { envId });
-            }
-
-            var model = new AddEnvironmentFinalizeModel(environment);
-            return View("Create/Step5", model);
-        }
-
-        [HttpPost]
-        public async Task<ActionResult> Step5(AddEnvironmentFinalizeModel model)
-        {
-            if (!ModelState.IsValid)
-            {
-                return View("Create/Step5", model);
-            }
-
-            var environment = await _environmentCoordinator.GetEnvironment(model.EnvironmentName);
-            if (environment == null)
-            {
-                return BadRequest("No new environment configuration in progress");
-            }
-
-            // todo: set what we need to here
-            // await UpdateEnvironment(environment);
-
-            return RedirectToAction("Step6", new { envId = environment.Name });
-        }
-
-        [HttpGet]
-        [Route("Environments/Step6/{envId?}")]
-        public async Task<ActionResult> Step6(string envId)
-        {
-            var environment = await _environmentCoordinator.GetEnvironment(envId);
-            if (environment == null)
-            {
-                // redirect to Step1 if no config.
-                return RedirectToAction("Step1", new { envId });
-            }
-
-            var model = new AddEnvironmentFinalizeModel(environment);
-            return View("Create/Step6", model);
-        }
-
-        [HttpPost]
-        public async Task<ActionResult> Step6(AddEnvironmentFinalizeModel model)
-        {
-            if (!ModelState.IsValid)
-            {
-                // return to last step. actually this could be step 4, 5, or 6.
-                return View("Create/Step6", model);
-            }
-
-            var environment = await _environmentCoordinator.GetEnvironment(model.EnvironmentName);
-            if (environment == null)
-            {
-                return BadRequest("No new environment configuration in progress");
-            }
-
-            // todo: set what we need to here
-            environment.InProgress = false;
-            await _environmentCoordinator.UpdateEnvironment(environment);
-
-            // after saving, either go to overview details, or a success page.
-            return RedirectToAction("Details", new { envId = model.EnvironmentName });
         }
 
         private bool NewOrExistingFieldValid(string existingId, string newId = null)

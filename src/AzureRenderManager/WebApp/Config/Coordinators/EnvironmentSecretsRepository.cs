@@ -74,6 +74,7 @@ namespace WebApp.Config.Coordinators
                 catch (Exception e)
                 {
                     _logger.LogError(e, "Unable to save credentials");
+                    throw;
                 }
             }
         }
@@ -119,9 +120,16 @@ namespace WebApp.Config.Coordinators
                 else if (property.PropertyType == typeof(Certificate))
                 {
                     var cert = (Certificate)propValue;
+
                     if (TryGetAttribute<CredentialAttribute>(property, out var attribute))
                     {
-                        if (cert.CertificateData != null && cert.CertificateData.Length > 0)
+                        if (cert == null)
+                        {
+                            await _keyVaultClient.DeleteCertificateAsync(environment.KeyVault.SubscriptionId,
+                                environment.KeyVault,
+                                attribute.Name);
+                        }
+                        else if (cert.CertificateData != null && cert.CertificateData.Length > 0)
                         {
                             await _keyVaultClient.ImportKeyVaultCertificateAsync(
                                 environment.KeyVault.SubscriptionId,
