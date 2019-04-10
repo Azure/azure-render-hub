@@ -23,7 +23,6 @@ namespace WebApp.Models.Environments
         {
             // default to deleting the resource group
             // TODO: add a flag to the env to verify if customer or us created the RG. 
-            DeleteResourceGroup = true;
             Resources = resources ?? new List<GenericResource>();
 
             if (environment != null)
@@ -32,6 +31,7 @@ namespace WebApp.Models.Environments
                 SubscriptionId = environment.SubscriptionId;
                 LocationName = environment.LocationName;
                 ResourceGroup = environment.ResourceGroupName;
+                DeleteResourceGroup = !string.IsNullOrEmpty(ResourceGroup);
                 BatchAccount = environment.BatchAccount?.Name;
                 StorageAccount = environment.StorageAccount?.Name;
                 ApplicationInsights = environment.ApplicationInsightsAccount?.Name;
@@ -47,6 +47,8 @@ namespace WebApp.Models.Environments
         public string LocationName { get; set; }
 
         public string ResourceGroup { get; set; }
+
+        public bool HasResourceGroup => false == string.IsNullOrEmpty(ResourceGroup);
 
         [Required(ErrorMessage = "Please enter the environment name to confirm delete.")]
         [ConfirmDeletion(ErrorMessage = "The entered name must match the current environment name.")]

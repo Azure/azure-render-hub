@@ -148,22 +148,25 @@ namespace WebApp.Controllers
             }
 
             var model = new DeleteEnvironmentModel(environment);
-            try
+            try 
             {
                 var sudId = environment.SubscriptionId.ToString();
-                var resources = await _azureResourceProvider.ListResourceGroupResources(sudId, environment.ResourceGroupName);
-                var mapped = resources.Select(resource => new GenericResource(resource)).ToList();
-                model.Resources.AddRange(mapped);
+                var mapped = new List<GenericResource>();
+                if (!string.IsNullOrEmpty(environment.ResourceGroupName))
+                {
+                    var resources = await _azureResourceProvider.ListResourceGroupResources(sudId, environment.ResourceGroupName);
+                    mapped.AddRange(resources.Select(resource => new GenericResource(resource)));
+                }
 
-                return View(model);
+                model.Resources.AddRange(mapped);
             }
             catch (CloudException cEx)
             {
                 model.ResourceLoadFailed = true;
-                ModelState.AddModelError("", $"Failed to list resources from the Resource Group with error: {cEx.Message}");
-
-                return View(model);
+                ModelState.AddModelError("", $"Failed to list resources from the Resource Group with error: {cEx.Message}");   
             }
+
+            return View(model);
         }
 
         /// <summary>
@@ -183,8 +186,7 @@ namespace WebApp.Controllers
 
             if (!model.SubscriptionId.HasValue)
             {
-                ModelState.AddModelError("",
-                    "Environment does not have a configured subscription ID. Deletion cannot continue.");
+                ModelState.AddModelError("", "Environment does not have a configured subscription ID. Deletion cannot continue.");
             }
 
             if (!ModelState.IsValid)
@@ -195,8 +197,7 @@ namespace WebApp.Controllers
             var environment = await _environmentCoordinator.GetEnvironment(model.EnvironmentName);
             if (environment == null)
             {
-                return BadRequest(
-                    $"No new environment configuration was found with the name: '{model.EnvironmentName}'");
+                return BadRequest($"No new environment configuration was found with the name: '{model.EnvironmentName}'");
             }
 
             environment.State = EnvironmentState.Deleting;
@@ -209,6 +210,7 @@ namespace WebApp.Controllers
                 DeleteKeyVault = model.DeleteKeyVault,
                 DeleteVNet = model.DeleteVNet,
             };
+
             await _environmentCoordinator.UpdateEnvironment(environment);
 
             return RedirectToAction("Deleting", new { envId = environment.Name });
@@ -971,21 +973,12 @@ namespace WebApp.Controllers
 
                 if (!nameAvailability.NameAvailable.GetValueOrDefault(false))
                 {
-                    // todo: remove existing when working
                     ModelState.AddModelError(nameof(AddEnvironmentStep2Model.NewKeyVaultName), $"The Key Vault name is not available. {nameAvailability.Message}");
                 }
             }
 
             if (!ModelState.IsValid)
             {
-                // disabled select inputs will be null if disabled
-                //model.ExistingKeyVaultVisible = !string.IsNullOrEmpty(model.ExistingKeyVaultIdLocationAndUri) && model.ExistingKeyVaultIdLocationAndUri != "#";
-                //model.ExistingResourceGroupVisible = !string.IsNullOrEmpty(model.ExistingResourceGroupNameAndLocation);
-                //model.NewBatchAccountVisible = string.IsNullOrEmpty(model.BatchAccountResourceIdLocationUrl);
-                //model.NewStorageAccountVisible = string.IsNullOrEmpty(model.StorageAccountResourceIdAndLocation);
-                //model.NewAppInsightsVisible = string.IsNullOrEmpty(model.ApplicationInsightsIdAndLocation);
-                //model.NewVNetVisible = string.IsNullOrEmpty(model.SubnetResourceIdLocationAndAddressPrefix);
-
                 return View("Create/Step2", model);
             }
 
