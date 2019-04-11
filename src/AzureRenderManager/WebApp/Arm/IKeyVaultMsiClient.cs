@@ -33,6 +33,11 @@ namespace WebApp.Arm
             KeyVault keyVault,
             string secretName);
 
+        Task DeleteCertificateAsync(
+            Guid subscriptionId,
+            KeyVault keyVault,
+            string certificateName);
+
         Task ImportKeyVaultCertificateAsync(
             Guid subscriptionId,
             KeyVault keyVault,

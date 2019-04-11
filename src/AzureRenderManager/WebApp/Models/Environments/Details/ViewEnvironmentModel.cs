@@ -106,10 +106,16 @@ namespace WebApp.Models.Environments.Details
                             WindowsDeadlineRepositoryShare = environment.RenderManagerConfig.Deadline.WindowsRepositoryPath,
                             RepositoryUser = environment.RenderManagerConfig.Deadline.RepositoryUser,
                             RepositoryPassword = environment.RenderManagerConfig.Deadline.RepositoryPassword,
-                            LicenseMode = environment.RenderManagerConfig.Deadline.LicenseMode.ToString(),
+                            InstallDeadlineClient = environment.RenderManagerConfig.Deadline.LicenseServer != null,
+                            LicenseMode = environment.RenderManagerConfig.Deadline.LicenseMode,
                             LicenseServer = environment.RenderManagerConfig.Deadline.LicenseServer,
                             DeadlineRegion = environment.RenderManagerConfig.Deadline.DeadlineRegion,
                             DeadlineDatabaseCertificatePassword = environment.RenderManagerConfig.Deadline.DeadlineDatabaseCertificate?.Password,
+                            RunAsService = environment.RenderManagerConfig.Deadline.RunAsService,
+                            ServiceUser = environment.RenderManagerConfig.Deadline.ServiceUser,
+                            ServicePassword = environment.RenderManagerConfig.Deadline.ServicePassword,
+                            UseDeadlineDatabaseCertificate = environment.RenderManagerConfig.Deadline.DeadlineDatabaseCertificate?.FileName != null,
+                            DeadlineDatabaseCertificateFileName = environment.RenderManagerConfig.Deadline.DeadlineDatabaseCertificate?.FileName,
                         };
                     }
 

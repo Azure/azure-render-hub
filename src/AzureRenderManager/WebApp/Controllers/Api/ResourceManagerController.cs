@@ -11,6 +11,8 @@ using Microsoft.Azure.Management.ApplicationInsights.Management.Models;
 using Microsoft.Azure.Management.Batch;
 using Microsoft.Azure.Management.Batch.Models;
 using Microsoft.Azure.Management.Consumption;
+using Microsoft.Azure.Management.KeyVault;
+using Microsoft.Azure.Management.KeyVault.Models;
 using Microsoft.Azure.Management.Network;
 using Microsoft.Azure.Management.ResourceManager;
 using Microsoft.Azure.Management.ResourceManager.Models;
@@ -243,6 +245,25 @@ namespace WebApp.Controllers.Api
                 // cache them for next time
                 return HttpContext.Session.Set(CacheKeys.LocationList, locations);
             }
+        }
+
+        [Route("api/subscriptions/{subscriptionId}/keyvaults"), HttpGet]
+        public async Task<List<Vault>> GetKeyVaults(string subscriptionId)
+        {
+            var cacheKey = CacheKeys.MakeKey(CacheKeys.KeyVaultList, subscriptionId);
+            var cached = HttpContext.Session.Get<List<Vault>>(cacheKey);
+            if (cached != null)
+            {
+                return cached;
+            }
+            
+            var accessToken = await GetAccessToken();
+            var token = new TokenCredentials(accessToken);
+            var keyVaultClient = new KeyVaultManagementClient(token) { SubscriptionId = subscriptionId };
+            var vaults = await keyVaultClient.Vaults.ListBySubscriptionWithHttpMessagesAsync();
+
+            var ordered = vaults.Body.OrderBy(kv => kv.Name).ToList();
+            return HttpContext.Session.Set(cacheKey, ordered);
         }
     }
 }

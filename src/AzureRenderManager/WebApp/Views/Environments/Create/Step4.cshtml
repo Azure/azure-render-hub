@@ -13,7 +13,8 @@
 
 @await Html.PartialAsync("Environments/Create/CreateFormHeaderPartial")
 
-<form method="post">
+@using (Html.BeginForm("Step4", "Environments", new {envId = Model.EnvironmentName}, FormMethod.Post, true, new { id = "myForm" }))
+{
     @await Html.PartialAsync("Menu/EnvironmentSubMenu", Model, new ViewDataDictionary(ViewData)
     {
         { "Step", 5 },
@@ -24,7 +25,7 @@
     @Html.HiddenFor(model => model.EnvironmentName)
     @Html.HiddenFor(model => model.RenderManager)
 
-    <div asp-validation-summary="ModelOnly" class=""></div>
+    <div asp-validation-summary="All" class=""></div>
     <div class="form-section">
         <div class="section-title">
             <span class="step-index">4.1</span>
@@ -68,7 +69,7 @@
             </div>
         </div>
     </div>
-    @{
+    {
         switch (Model.RenderManager)
         {
             case RenderManagerType.Deadline:
@@ -93,17 +94,29 @@
         <div class="summary"></div>
         <div class="button-bar">
             <a class="button" asp-controller="Environments" asp-action="Step3" asp-route-envId="@Model.EnvironmentName">Previous</a>
-            <input type="submit" class="" value="Done" formaction="Step4" />
+            <input type="submit" class="" value="Done" />
         </div>
     </div>
-</form>
+}
 
 @section Scripts
-    {
+{
     <script>
         $(document).ready(function () {
+            // Order matters so sub-sections get enabled/disabled as expected.
             registerCheckboxEnabledFormSection("JoinDomain", "DomainForm");
+            registerCheckboxEnabledFormSection("DeadlineEnvironment_InstallDeadlineClient", "DeadlineInstallationForm");
             registerCheckboxEnabledFormSection("DeadlineEnvironment_RunAsService", "DeadlineServiceForm");
+            registerCheckboxEnabledFormSection("DeadlineEnvironment_UseDeadlineDatabaseCertificate", "DeadlineDatabaseCertForm");
+
+            if ('@Model.Error' !== '')
+            {
+                toastr.options.timeOut = 0;
+                toastr.options.extendedTimeOut = 0;
+                toastr.options.closeButton = true;
+                toastr.options.positionClass = "toast-top-center";
+                toastr.warning('@Model.ErrorMessage', '@Model.Error').css("width", "600px");
+            }
         });
     </script>
 }
