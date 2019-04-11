@@ -688,22 +688,33 @@ namespace WebApp.Controllers
                 environment.Domain.DomainJoinPassword = model.DomainJoinPassword;
             }
 
-            await UpdateEnvironment(environment, model);
+            if(!await UpdateEnvironment(environment, model))
+            {
+                return View("View/Manager", model);
+            }
 
-            return View("View/Manager", model);
+            return RedirectToAction("Manager", new { envId });
         }
 
-        private async Task UpdateEnvironment(RenderingEnvironment environment, EnvironmentBaseModel model)
+        private async Task<bool> UpdateEnvironment(RenderingEnvironment environment, EnvironmentBaseModel model)
         {
             try
             {
                 await _environmentCoordinator.UpdateEnvironment(environment);
+                return true;
+            }
+            catch (CryptographicException e) when (e.HResult == -2147024810)
+            {
+                ModelState.AddModelError(
+                    nameof(DeadlineEnvironment.DeadlineDatabaseCertificatePassword), 
+                    "The certificate password is not correct, or the certificate cannot be decrypted.");
             }
             catch (Exception e)
             {
                 model.Error = e.Message;
                 model.ErrorMessage = e.ToString();
             }
+            return false;
         }
 
         private void ApplyDeadlineConfigToEnvironment(RenderingEnvironment environment, DeadlineEnvironment model)
@@ -1200,7 +1211,10 @@ namespace WebApp.Controllers
 
             environment.InProgress = false;
 
-            await UpdateEnvironment(environment, model);
+            if (!await UpdateEnvironment(environment, model))
+            {
+                return View("Create/Step4", model);
+            }
 
             // after saving, either go to overview details, or a success page.
             return RedirectToAction("Overview", new { envId = model.EnvironmentName });

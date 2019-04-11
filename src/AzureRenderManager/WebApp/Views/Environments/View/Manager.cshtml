@@ -185,23 +185,25 @@
                                         <label>Deadline DB Requires a Certificate</label>
                                     </div>
                                 </div>
-                                <div class="form-element">
-                                    <label asp-for="DeadlineEnvironment.DeadlineDatabaseCertificateFileName">Current Certificate</label>
-                                    <input asp-for="DeadlineEnvironment.DeadlineDatabaseCertificateFileName" value="@(Model.DeadlineEnvironment.DeadlineDatabaseCertificateFileName ?? "None")" readonly="readonly" />
+                                <div id="DeadlineDatabaseCertForm">
+                                    <div class="form-element">
+                                        <label asp-for="DeadlineEnvironment.DeadlineDatabaseCertificateFileName">Current Certificate</label>
+                                        <input asp-for="DeadlineEnvironment.DeadlineDatabaseCertificateFileName" value="@(Model.DeadlineEnvironment.DeadlineDatabaseCertificateFileName ?? "None")" readonly="readonly" />
+                                    </div>
+                                    <div class="form-element">
+                                        <label asp-for="DeadlineEnvironment.DeadlineDatabaseCertificate">Deadline Database Client Certificate</label>
+                                        <input asp-for="DeadlineEnvironment.DeadlineDatabaseCertificate" type="file" accept=".pfx" value="" />
+                                        <span asp-validation-for="DeadlineEnvironment.DeadlineDatabaseCertificate" class=""></span>
+                                        <small>The Deadline Database client certificate used for authentication.  The certificate and password are stored in Key Vault.</small>
+                                    </div>
+                                    <div class="form-element">
+                                        <label asp-for="DeadlineEnvironment.DeadlineDatabaseCertificatePassword">Deadline Database Certificate Password</label>
+                                        <input asp-for="DeadlineEnvironment.DeadlineDatabaseCertificatePassword" value="@Model.DeadlineEnvironment.DeadlineDatabaseCertificatePassword" type="password" />
+                                        <span asp-validation-for="DeadlineEnvironment.DeadlineDatabaseCertificatePassword" class=""></span>
+                                        <small>The Deadline Database client certificate password, if required.</small>
+                                    </div>
                                 </div>
-                                <div class="form-element">
-                                    <label asp-for="DeadlineEnvironment.DeadlineDatabaseCertificate">Deadline Database Client Certificate</label>
-                                    <input asp-for="DeadlineEnvironment.DeadlineDatabaseCertificate" type="file" accept=".pfx" value="" />
-                                    <span asp-validation-for="DeadlineEnvironment.DeadlineDatabaseCertificate" class=""></span>
-                                    <small>The Deadline Database client certificate used for authentication.  The certificate and password are stored in Key Vault.</small>
                                 </div>
-                                <div class="form-element">
-                                    <label asp-for="DeadlineEnvironment.DeadlineDatabaseCertificatePassword">Deadline Database Certificate Password</label>
-                                    <input asp-for="DeadlineEnvironment.DeadlineDatabaseCertificatePassword" value="@Model.DeadlineEnvironment.DeadlineDatabaseCertificatePassword" type="password" />
-                                    <span asp-validation-for="DeadlineEnvironment.DeadlineDatabaseCertificatePassword" class=""></span>
-                                    <small>The Deadline Database client certificate password, if required.</small>
-                                </div>
-                            </div>
                             </div>
                         </div>
                 </div>
@@ -264,8 +266,11 @@
     {
     <script>
         $(document).ready(function () {
+            // Order matters so sub-sections get enabled/disabled as expected.
             registerCheckboxEnabledFormSection("JoinDomain", "DomainForm");
+            registerCheckboxEnabledFormSection("DeadlineEnvironment_InstallDeadlineClient", "DeadlineInstallationForm");
             registerCheckboxEnabledFormSection("DeadlineEnvironment_RunAsService", "DeadlineServiceForm");
+            registerCheckboxEnabledFormSection("DeadlineEnvironment_UseDeadlineDatabaseCertificate", "DeadlineDatabaseCertForm");
 
             if ('@Model.Error' !== '')
             {

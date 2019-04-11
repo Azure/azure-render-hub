@@ -86,12 +86,6 @@
     <Content Update="Views\Environments\Create\Step4.cshtml">
       <Pack>$(IncludeRazorContentInPack)</Pack>
     </Content>
-    <Content Update="Views\Environments\Create\Step5.cshtml">
-      <Pack>$(IncludeRazorContentInPack)</Pack>
-    </Content>
-    <Content Update="Views\Environments\Create\Step6.cshtml">
-      <Pack>$(IncludeRazorContentInPack)</Pack>
-    </Content>
     <Content Update="Views\Environments\Create\Step3.cshtml">
       <Pack>$(IncludeRazorContentInPack)</Pack>
     </Content>

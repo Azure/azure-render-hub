@@ -152,7 +152,7 @@ namespace WebApp.Arm
             }
             catch (CryptographicException e) when (e.HResult == -2147024810)
             {
-                throw new Exception($"The certificate password is not correct.");
+                throw;
             }
             catch (Exception e)
             {
