@@ -622,14 +622,6 @@ namespace WebApp.Controllers
                 ValidateDeadlineForm(model.DeadlineEnvironment);
             }
 
-            if (environment.RenderManager == RenderManagerType.Qube610 || environment.RenderManager == RenderManagerType.Qube70)
-            {
-                if (string.IsNullOrWhiteSpace(model.QubeEnvironment?.QubeSupervisor))
-                {
-                    ModelState.AddModelError(nameof(QubeEnvironment.QubeSupervisor), $"The Qube supervisor cannot be empty.");
-                }
-            }
-
             if (environment.RenderManager == RenderManagerType.Tractor)
             {
                 if (string.IsNullOrWhiteSpace(model.TractorEnvironment?.TractorSettings))
@@ -1143,14 +1135,6 @@ namespace WebApp.Controllers
             if (environment.RenderManager == RenderManagerType.Deadline)
             {
                 ValidateDeadlineForm(model.DeadlineEnvironment);
-            }
-
-            if (environment.RenderManager == RenderManagerType.Qube610 || environment.RenderManager == RenderManagerType.Qube70)
-            {
-                if (string.IsNullOrWhiteSpace(model.QubeEnvironment?.QubeSupervisor))
-                {
-                    ModelState.AddModelError(nameof(QubeEnvironment.QubeSupervisor), $"The Qube supervisor cannot be empty.");
-                }
             }
 
             if (environment.RenderManager == RenderManagerType.Tractor)
