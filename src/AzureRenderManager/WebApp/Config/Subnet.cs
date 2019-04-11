@@ -5,7 +5,24 @@ namespace WebApp.Config
 {
     public class Subnet : AzureResource
     {
-        public string VnetResourceId { get; set; }
+        public string VnetResourceId {
+            get
+            {
+                if (string.IsNullOrEmpty(ResourceId))
+                {
+                    return null;
+                }
+
+                var tokens = ResourceId.Split("/subnets/");
+
+                if (tokens.Length != 2)
+                {
+                    return null;
+                }
+
+                return tokens[0]; //VNet Resource Id
+            }
+        }
 
         public string AddressPrefix { get; set; }
 

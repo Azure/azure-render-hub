@@ -15,5 +15,20 @@ namespace WebApp.Code.Extensions
         public string TenantId { get; set; }
 
         public string CallbackPath { get; set; }
+
+        public string AADInstance { get; set; }
+
+        public string GraphResourceId { get; set; }
+
+        public string AuthEndpointPrefix { get; set; }
+
+        public string GraphScopes { get; set; }
+
+        public string Authority {
+            get
+            {
+                return $"{Instance}{TenantId}";
+            }
+        }
     }
 }
