@@ -148,9 +148,6 @@ namespace WebApp.Arm
                         X509KeyStorageFlags.PersistKeySet |
                         X509KeyStorageFlags.Exportable);
 
-                    var importBase64 = Convert.ToBase64String(value);
-                    Console.WriteLine(importBase64);
-
                     var exportedBytes = cert.Export(X509ContentType.Pkcs12, certificatePassword);
                     var exportedBase64 = Convert.ToBase64String(exportedBytes);
 
