@@ -189,9 +189,11 @@ function registerCheckboxEnabledFormSection(checkboxId, outerDivId) {
     $(id).change(function () {
         if ($(id).is(":checked") === true) {
             $(divId + " :input").removeAttr("readonly");
+            $(divId + " select").removeAttr("disabled");
             $(divId + " :input[type='file']").removeAttr("disabled");
         } else {
             $(divId + " :input").attr("readonly", "readonly");
+            $(divId + " select").attr("disabled", "disabled");
             $(divId + " :input[type='file']").attr("disabled", "disabled");
         }
     });

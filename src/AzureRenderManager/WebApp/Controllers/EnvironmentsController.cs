@@ -538,44 +538,7 @@ namespace WebApp.Controllers
 
             if (environment.RenderManager == RenderManagerType.Deadline)
             {
-                if (string.IsNullOrWhiteSpace(model.DeadlineEnvironment?.WindowsDeadlineRepositoryShare))
-                {
-                    ModelState.AddModelError(nameof(DeadlineEnvironment.WindowsDeadlineRepositoryShare), "The Deadline respoitory server cannot be empty.");
-                }
-
-                if (string.IsNullOrWhiteSpace(model.DeadlineEnvironment?.LicenseMode))
-                {
-                    ModelState.AddModelError(nameof(DeadlineEnvironment.LicenseMode), "The Deadline license mode cannot be empty.");
-                }
-
-                // If they specify standard licensing, ensure there's a license server.
-                if (!string.IsNullOrWhiteSpace(model.DeadlineEnvironment?.LicenseMode) &&
-                    model.DeadlineEnvironment.LicenseMode == LicenseMode.Standard.ToString() &&
-                    string.IsNullOrWhiteSpace(model.DeadlineEnvironment?.LicenseServer))
-                {
-                    ModelState.AddModelError(nameof(DeadlineEnvironment.LicenseServer), "The Deadline license server cannot be empty when using standard licensing.");
-                }
-
-                if (model.DeadlineEnvironment != null && model.DeadlineEnvironment.RunAsService)
-                {
-                    if (string.IsNullOrWhiteSpace(model.DeadlineEnvironment.ServiceUser))
-                    {
-                        ModelState.AddModelError(nameof(DeadlineEnvironment.ServiceUser), "The service user must be specified when running the Deadline client as a service.");
-                    }
-
-                    if (string.IsNullOrWhiteSpace(model.DeadlineEnvironment.ServicePassword))
-                    {
-                        ModelState.AddModelError(nameof(DeadlineEnvironment.ServicePassword), "The service password must be specified when running the Deadline client as a service.");
-                    }
-                }
-
-                if (model.DeadlineEnvironment != null && model.DeadlineEnvironment.UseDeadlineDatabaseCertificate)
-                {
-                    if (model.DeadlineEnvironment.DeadlineDatabaseCertificate == null)
-                    {
-                        ModelState.AddModelError(nameof(DeadlineEnvironment.DeadlineDatabaseCertificate), "Use Deadline Database Certificate was checked, but no certificate was specified.");
-                    }
-                }
+                ValidateDeadlineForm(model.DeadlineEnvironment);
             }
 
             if (environment.RenderManager == RenderManagerType.Qube610 || environment.RenderManager == RenderManagerType.Qube70)
@@ -669,20 +632,16 @@ namespace WebApp.Controllers
                 environment.RenderManagerConfig.Deadline = new DeadlineConfig();
             }
 
-            environment.RenderManagerConfig.Deadline.WindowsRepositoryPath = model.WindowsDeadlineRepositoryShare;
-            environment.RenderManagerConfig.Deadline.RepositoryUser = model.RepositoryUser;
-            environment.RenderManagerConfig.Deadline.RepositoryPassword = model.RepositoryPassword;
-            environment.RenderManagerConfig.Deadline.LicenseServer = model.LicenseServer;
-            environment.RenderManagerConfig.Deadline.DeadlineRegion = model.DeadlineRegion;
-            environment.RenderManagerConfig.Deadline.ExcludeFromLimitGroups =
+            // Deadline install config
+            environment.RenderManagerConfig.Deadline.LicenseMode = model.InstallDeadlineClient ? model.LicenseMode : null;
+            environment.RenderManagerConfig.Deadline.LicenseServer = model.InstallDeadlineClient ? model.LicenseServer : null;
+            environment.RenderManagerConfig.Deadline.DeadlineRegion = model.InstallDeadlineClient ? model.DeadlineRegion : null;
+            environment.RenderManagerConfig.Deadline.ExcludeFromLimitGroups = model.InstallDeadlineClient ?
                 string.IsNullOrWhiteSpace(model.ExcludeFromLimitGroups) ?
                     null :
-                    model.ExcludeFromLimitGroups.Replace(" ", "");
+                    model.ExcludeFromLimitGroups.Replace(" ", "") : null;
 
-            LicenseMode mode;
-            Enum.TryParse<LicenseMode>(model.LicenseMode, out mode);
-            environment.RenderManagerConfig.Deadline.LicenseMode = mode;
-
+            // Deadline service config
             environment.RenderManagerConfig.Deadline.RunAsService = model.RunAsService;
             environment.RenderManagerConfig.Deadline.ServiceUser = model.RunAsService ? model.ServiceUser : null;
             environment.RenderManagerConfig.Deadline.ServicePassword = model.RunAsService ? model.ServicePassword : null;
@@ -1060,36 +1019,7 @@ namespace WebApp.Controllers
 
             if (environment.RenderManager == RenderManagerType.Deadline)
             {
-                if (string.IsNullOrWhiteSpace(model.DeadlineEnvironment?.WindowsDeadlineRepositoryShare))
-                {
-                    ModelState.AddModelError(nameof(DeadlineEnvironment.WindowsDeadlineRepositoryShare), $"The Deadline respoitory server cannot be empty.");
-                }
-
-                if (string.IsNullOrWhiteSpace(model.DeadlineEnvironment?.LicenseMode))
-                {
-                    ModelState.AddModelError(nameof(DeadlineEnvironment.LicenseMode), $"The Deadline license mode cannot be empty.");
-                }
-
-                // If they specify standard licensing, ensure there's a license server.
-                if (!string.IsNullOrWhiteSpace(model.DeadlineEnvironment?.LicenseMode) &&
-                    model.DeadlineEnvironment.LicenseMode == LicenseMode.Standard.ToString() &&
-                    string.IsNullOrWhiteSpace(model.DeadlineEnvironment?.LicenseServer))
-                {
-                    ModelState.AddModelError(nameof(DeadlineEnvironment.LicenseServer), $"The Deadline license server cannot be empty when using standard licensing.");
-                }
-
-                if (model.DeadlineEnvironment != null && model.DeadlineEnvironment.RunAsService)
-                {
-                    if (string.IsNullOrWhiteSpace(model.DeadlineEnvironment.ServiceUser))
-                    {
-                        ModelState.AddModelError(nameof(DeadlineEnvironment.ServiceUser), "The service user must be specified when running the Deadline client as a service.");
-                    }
-
-                    if (string.IsNullOrWhiteSpace(model.DeadlineEnvironment.ServicePassword))
-                    {
-                        ModelState.AddModelError(nameof(DeadlineEnvironment.ServicePassword), "The service password must be specified when running the Deadline client as a service.");
-                    }
-                }
+                ValidateDeadlineForm(model.DeadlineEnvironment);
             }
 
             if (environment.RenderManager == RenderManagerType.Qube610 || environment.RenderManager == RenderManagerType.Qube70)
@@ -1165,6 +1095,61 @@ namespace WebApp.Controllers
 
             // after saving, either go to overview details, or a success page.
             return RedirectToAction("Overview", new { envId = model.EnvironmentName });
+        }
+
+        private void ValidateDeadlineForm(DeadlineEnvironment model)
+        {
+            if (model == null)
+            {
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(model.WindowsDeadlineRepositoryShare))
+            {
+                ModelState.AddModelError(nameof(DeadlineEnvironment.WindowsDeadlineRepositoryShare), $"The Deadline respoitory server cannot be empty.");
+            }
+
+            if (model.InstallDeadlineClient)
+            {
+                if (model.LicenseMode == null)
+                {
+                    ModelState.AddModelError(nameof(DeadlineEnvironment.LicenseMode), $"The Deadline license mode cannot be empty.");
+                }
+
+                // If they specify standard licensing, ensure there's a license server.
+                if (model.LicenseMode != null &&
+                    model.LicenseMode.Value == LicenseMode.Standard &&
+                    string.IsNullOrWhiteSpace(model.LicenseServer))
+                {
+                    ModelState.AddModelError(nameof(DeadlineEnvironment.LicenseServer), $"The Deadline license server cannot be empty when using standard licensing.");
+                }
+
+                if (string.IsNullOrEmpty(model.DeadlineRegion))
+                {
+                    ModelState.AddModelError(nameof(DeadlineEnvironment.DeadlineRegion), $"The Deadline region cannot be empty.");
+                }
+
+                if (model.RunAsService)
+                {
+                    if (string.IsNullOrWhiteSpace(model.ServiceUser))
+                    {
+                        ModelState.AddModelError(nameof(DeadlineEnvironment.ServiceUser), "The service user must be specified when running the Deadline client as a service.");
+                    }
+
+                    if (string.IsNullOrWhiteSpace(model.ServicePassword))
+                    {
+                        ModelState.AddModelError(nameof(DeadlineEnvironment.ServicePassword), "The service password must be specified when running the Deadline client as a service.");
+                    }
+                }
+
+                if (model.UseDeadlineDatabaseCertificate)
+                {
+                    if (model.DeadlineDatabaseCertificate == null)
+                    {
+                        ModelState.AddModelError(nameof(DeadlineEnvironment.DeadlineDatabaseCertificate), "Use Deadline Database Certificate was checked, but no certificate was specified.");
+                    }
+                }
+            }
         }
 
         private bool NewOrExistingFieldValid(string existingId, string newId = null)

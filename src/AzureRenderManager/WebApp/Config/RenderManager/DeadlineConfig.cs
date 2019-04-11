@@ -24,7 +24,7 @@ namespace WebApp.Config.RenderManager
         public string LicenseServer { get; set; }
 
         [JsonConverter(typeof(StringEnumConverter))]
-        public LicenseMode LicenseMode { get; set; }
+        public LicenseMode? LicenseMode { get; set; }
 
         public string DeadlineRegion { get; set; }
 
