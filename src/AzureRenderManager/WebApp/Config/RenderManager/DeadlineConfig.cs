@@ -39,18 +39,13 @@ namespace WebApp.Config.RenderManager
         public string ServicePassword { get; set; }
 
         [Credential("DeadlineDbClientCertificate")]
-        //[JsonIgnore]
-        public Certificate DeadlineDatabaseCertificate { get; set; }// = new Certificate();
+        public Certificate DeadlineDatabaseCertificate { get; set; }
     }
 
     public enum LicenseMode
     {
         [Description("Standard")]
         Standard,
-
-        // We need to add support for this
-//        [Description("UsageBased")]
-//        UsageBased,
 
         [Description("LicenseFree")]
         LicenseFree
