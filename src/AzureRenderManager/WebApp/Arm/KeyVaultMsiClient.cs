@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
@@ -26,25 +27,27 @@ namespace WebApp.Arm
             AzureServiceTokenProvider azureServiceTokenProvider = new AzureServiceTokenProvider();
             var accessToken = await azureServiceTokenProvider.GetAccessTokenAsync("https://vault.azure.net");
             var token = new TokenCredentials(accessToken);
-            var keyVaultClient = new KeyVaultClient(token);
-            try
+            using (var keyVaultClient = new KeyVaultClient(token))
             {
-                var certSecret = await keyVaultClient.GetSecretAsync(keyVault.Uri, certificateName);
-                if (certSecret == null)
+                try
                 {
-                    return null;
-                }
+                    var certSecret = await keyVaultClient.GetSecretAsync(keyVault.Uri, certificateName);
+                    if (certSecret == null)
+                    {
+                        return null;
+                    }
 
-                return new X509Certificate2(
-                    Convert.FromBase64String(certSecret.Value),
-                    string.Empty,
-                    X509KeyStorageFlags.MachineKeySet |
-                    X509KeyStorageFlags.PersistKeySet |
-                    X509KeyStorageFlags.Exportable);
-            }
-            catch (Exception e)
-            {
-                throw new Exception($"Failed to get certificate with principal: {azureServiceTokenProvider.PrincipalUsed}", e);
+                    return new X509Certificate2(
+                        Convert.FromBase64String(certSecret.Value),
+                        string.Empty,
+                        X509KeyStorageFlags.MachineKeySet |
+                        X509KeyStorageFlags.PersistKeySet |
+                        X509KeyStorageFlags.Exportable);
+                }
+                catch (Exception e)
+                {
+                    throw new Exception($"Failed to get certificate with principal: {azureServiceTokenProvider.PrincipalUsed}", e);
+                }
             }
         }
 
@@ -57,19 +60,21 @@ namespace WebApp.Arm
             AzureServiceTokenProvider azureServiceTokenProvider = new AzureServiceTokenProvider();
             var accessToken = await azureServiceTokenProvider.GetAccessTokenAsync("https://vault.azure.net");
             var token = new TokenCredentials(accessToken);
-            var keyVaultClient = new KeyVaultClient(token);
-            try
+            using (var keyVaultClient = new KeyVaultClient(token))
             {
-                var secret = await keyVaultClient.GetSecretAsync(keyVault.Uri, secretName);
-                return secret?.Value;
-            }
-            catch (KeyVaultErrorException e) when(e.Body?.Error?.Code == "SecretNotFound")
-            {
-                // Ignore
-            }
-            catch (Exception e)
-            {
-                throw new Exception($"Failed to get secret with principal: {azureServiceTokenProvider.PrincipalUsed}", e);
+                try
+                {
+                    var secret = await keyVaultClient.GetSecretAsync(keyVault.Uri, secretName);
+                    return secret?.Value;
+                }
+                catch (KeyVaultErrorException e) when (e.Body?.Error?.Code == "SecretNotFound")
+                {
+                    // Ignore
+                }
+                catch (Exception e)
+                {
+                    throw new Exception($"Failed to get secret with principal: {azureServiceTokenProvider.PrincipalUsed}", e);
+                }
             }
 
             return null;
@@ -82,14 +87,16 @@ namespace WebApp.Arm
             AzureServiceTokenProvider azureServiceTokenProvider = new AzureServiceTokenProvider();
             var accessToken = await azureServiceTokenProvider.GetAccessTokenAsync("https://vault.azure.net");
             var token = new TokenCredentials(accessToken);
-            var keyVaultClient = new KeyVaultClient(token);
-            try
+            using (var keyVaultClient = new KeyVaultClient(token))
             {
-                await keyVaultClient.SetSecretAsync(keyVault.Uri, secretName, value);
-            }
-            catch (Exception e)
-            {
-                throw new Exception($"Failed to set secret with principal: {azureServiceTokenProvider.PrincipalUsed}", e);
+                try
+                {
+                    await keyVaultClient.SetSecretAsync(keyVault.Uri, secretName, value);
+                }
+                catch (Exception e)
+                {
+                    throw new Exception($"Failed to set secret with principal: {azureServiceTokenProvider.PrincipalUsed}", e);
+                }
             }
         }
 
@@ -99,21 +106,23 @@ namespace WebApp.Arm
             AzureServiceTokenProvider azureServiceTokenProvider = new AzureServiceTokenProvider();
             var accessToken = await azureServiceTokenProvider.GetAccessTokenAsync("https://vault.azure.net");
             var token = new TokenCredentials(accessToken);
-            var keyVaultClient = new KeyVaultClient(token);
-            try
+            using (var keyVaultClient = new KeyVaultClient(token))
             {
-                await keyVaultClient.DeleteSecretAsync(keyVault.Uri, secretName);
-            }
-            catch (KeyVaultErrorException ex)
-            {
-                if (ex.Body?.Error?.Code != "SecretNotFound")
+                try
                 {
-                    throw new Exception($"Failed to delete secret with principal: {azureServiceTokenProvider.PrincipalUsed}", ex);
+                    await keyVaultClient.DeleteSecretAsync(keyVault.Uri, secretName);
                 }
-            }
-            catch (Exception e)
-            {
-                throw new Exception($"Failed to delete secret with principal: {azureServiceTokenProvider.PrincipalUsed}", e);
+                catch (KeyVaultErrorException ex)
+                {
+                    if (ex.Body?.Error?.Code != "SecretNotFound")
+                    {
+                        throw new Exception($"Failed to delete secret with principal: {azureServiceTokenProvider.PrincipalUsed}", ex);
+                    }
+                }
+                catch (Exception e)
+                {
+                    throw new Exception($"Failed to delete secret with principal: {azureServiceTokenProvider.PrincipalUsed}", e);
+                }
             }
         }
 
@@ -123,40 +132,42 @@ namespace WebApp.Arm
             AzureServiceTokenProvider azureServiceTokenProvider = new AzureServiceTokenProvider();
             var accessToken = await azureServiceTokenProvider.GetAccessTokenAsync("https://vault.azure.net");
             var token = new TokenCredentials(accessToken);
-            var keyVaultClient = new KeyVaultClient(token);
-            try
+            using (var keyVaultClient = new KeyVaultClient(token))
             {
-                if (certificatePassword == null)
+                try
                 {
-                    certificatePassword = string.Empty;
+                    if (certificatePassword == null)
+                    {
+                        certificatePassword = string.Empty;
+                    }
+
+                    var cert = new X509Certificate2(
+                        value,
+                        certificatePassword,
+                        X509KeyStorageFlags.MachineKeySet |
+                        X509KeyStorageFlags.PersistKeySet |
+                        X509KeyStorageFlags.Exportable);
+
+                    var importBase64 = Convert.ToBase64String(value);
+                    Console.WriteLine(importBase64);
+
+                    var exportedBytes = cert.Export(X509ContentType.Pkcs12, certificatePassword);
+                    var exportedBase64 = Convert.ToBase64String(exportedBytes);
+
+                    await keyVaultClient.ImportCertificateAsync(
+                        keyVault.Uri,
+                        certificateName,
+                        Convert.ToBase64String(value),
+                        certificatePassword);
                 }
-
-                var cert = new X509Certificate2(
-                    value,
-                    certificatePassword,
-                    X509KeyStorageFlags.MachineKeySet |
-                    X509KeyStorageFlags.PersistKeySet |
-                    X509KeyStorageFlags.Exportable);
-
-                var importBase64 = Convert.ToBase64String(value);
-                Console.WriteLine(importBase64);
-
-                var exportedBytes = cert.Export(X509ContentType.Pkcs12, certificatePassword);
-                var exportedBase64 = Convert.ToBase64String(exportedBytes);
-
-                await keyVaultClient.ImportCertificateAsync(
-                    keyVault.Uri,
-                    certificateName,
-                    Convert.ToBase64String(value),
-                    certificatePassword);
-            }
-            catch (CryptographicException e) when (e.HResult == -2147024810)
-            {
-                throw;
-            }
-            catch (Exception e)
-            {
-                throw new Exception($"Failed to import certificate with principal: {azureServiceTokenProvider.PrincipalUsed}", e);
+                catch (CryptographicException e) when (e.HResult == -2147024810)
+                {
+                    throw;
+                }
+                catch (Exception e)
+                {
+                    throw new Exception($"Failed to import certificate with principal: {azureServiceTokenProvider.PrincipalUsed}", e);
+                }
             }
         }
 
@@ -168,21 +179,23 @@ namespace WebApp.Arm
             AzureServiceTokenProvider azureServiceTokenProvider = new AzureServiceTokenProvider();
             var accessToken = await azureServiceTokenProvider.GetAccessTokenAsync("https://vault.azure.net");
             var token = new TokenCredentials(accessToken);
-            var keyVaultClient = new KeyVaultClient(token);
-            try
+            using (var keyVaultClient = new KeyVaultClient(token))
             {
-                await keyVaultClient.DeleteCertificateAsync(keyVault.Uri, certificateName);
-            }
-            catch (KeyVaultErrorException ex)
-            {
-                if (ex.Body?.Error?.Code != "CertificateNotFound")
+                try
                 {
-                    throw new Exception($"Failed to delete certificate with principal: {azureServiceTokenProvider.PrincipalUsed}", ex);
+                    await keyVaultClient.DeleteCertificateAsync(keyVault.Uri, certificateName);
                 }
-            }
-            catch (Exception e)
-            {
-                throw new Exception($"Failed to delete certificate with principal: {azureServiceTokenProvider.PrincipalUsed}", e);
+                catch (KeyVaultErrorException ex)
+                {
+                    if (ex.Body?.Error?.Code != "CertificateNotFound")
+                    {
+                        throw new Exception($"Failed to delete certificate with principal: {azureServiceTokenProvider.PrincipalUsed}", ex);
+                    }
+                }
+                catch (Exception e)
+                {
+                    throw new Exception($"Failed to delete certificate with principal: {azureServiceTokenProvider.PrincipalUsed}", e);
+                }
             }
         }
     }
