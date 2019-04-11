@@ -532,23 +532,24 @@
                 });
         }
 
-        function setAvailabilityError(numAvailable, spanId, message, noneAvailableCallback) {
+        function setAvailabilityError(numAvailable, spanId, message, setUiStateCallback) {
             if (numAvailable <= 0) {
                 $(`#${spanId}`)
                     .text(`There are no available ${message}. You will need to create one.`)
                     .show();
-
-                if (noneAvailableCallback) {
-                    noneAvailableCallback();
-                }
             } else {
                 $(`#${spanId}`).hide();
+            }
+
+            if (setUiStateCallback) {
+                setUiStateCallback();
             }
         }
 
         function populateAndPreSelectDropDown(dropDownItems, valueFromModel, ddlName, hasActive) {
             $(`#${ddlName}`).empty().append(dropDownItems);
             if (hasActive) {
+
                 const selectedValue = valueFromModel && valueFromModel.length > 0
                     ? valueFromModel
                     : $(`#${ddlName} option:first`).val();
@@ -564,7 +565,7 @@
         }
 
         function setInitialState(newValue, existingValue, createDiv, createInput, selectDiv, anchorLink) {
-            if (!!newValue) {
+            if (newValue) {
                 showCreateInput(createDiv, createInput, selectDiv, anchorLink);
             } else {
                 showSelectInput(createDiv, createInput, selectDiv, anchorLink);
@@ -577,8 +578,8 @@
                 loadStorageAccounts("@Model.SubscriptionId", "@Model.LocationName", storageAccountId);
             });
 
-            loadKeyVaults("@Model.SubscriptionId", "@Model.LocationName");
             loadResourceGroups("@Model.SubscriptionId", "@Model.LocationName");
+            loadKeyVaults("@Model.SubscriptionId", "@Model.LocationName");
             loadAppInsights("@Model.SubscriptionId");
             loadAppInsightsLocations("@Model.SubscriptionId", "@Model.LocationName");
             loadBatchAccounts("@Model.SubscriptionId", "@Model.LocationName");
