@@ -13,7 +13,7 @@
 
 @await Html.PartialAsync("Environments/Create/CreateFormHeaderPartial")
 
-<form method="post" enctype="multipart/form-data" role="form">
+<form id="partialform" method="post" enctype="multipart/form-data" asp-controller="Environment" asp-action="Step4" data-ajax="true" data-ajax-update="#partialform" data-ajax-mode="replace">
     @await Html.PartialAsync("Menu/EnvironmentSubMenu", Model, new ViewDataDictionary(ViewData)
     {
         { "Step", 5 },
@@ -24,7 +24,7 @@
     @Html.HiddenFor(model => model.EnvironmentName)
     @Html.HiddenFor(model => model.RenderManager)
 
-    <div asp-validation-summary="ModelOnly" class=""></div>
+    <div asp-validation-summary="All" class=""></div>
     <div class="form-section">
         <div class="section-title">
             <span class="step-index">4.1</span>
@@ -99,10 +99,11 @@
 </form>
 
 @section Scripts
-    {
+{
     <script>
         $(document).ready(function () {
             registerCheckboxEnabledFormSection("JoinDomain", "DomainForm");
+            registerCheckboxEnabledFormSection("DeadlineEnvironment_InstallDeadlineClient", "DeadlineInstallationForm");
             registerCheckboxEnabledFormSection("DeadlineEnvironment_RunAsService", "DeadlineServiceForm");
             registerCheckboxEnabledFormSection("DeadlineEnvironment_UseDeadlineDatabaseCertificate", "DeadlineDatabaseCertForm");
         });
