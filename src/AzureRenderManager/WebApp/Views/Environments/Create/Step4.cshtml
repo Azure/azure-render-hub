@@ -103,10 +103,20 @@
 {
     <script>
         $(document).ready(function () {
+            // Order matters so sub-sections get enabled/disabled as expected.
             registerCheckboxEnabledFormSection("JoinDomain", "DomainForm");
             registerCheckboxEnabledFormSection("DeadlineEnvironment_InstallDeadlineClient", "DeadlineInstallationForm");
             registerCheckboxEnabledFormSection("DeadlineEnvironment_RunAsService", "DeadlineServiceForm");
             registerCheckboxEnabledFormSection("DeadlineEnvironment_UseDeadlineDatabaseCertificate", "DeadlineDatabaseCertForm");
+
+            if ('@Model.Error' !== '')
+            {
+                toastr.options.timeOut = 0;
+                toastr.options.extendedTimeOut = 0;
+                toastr.options.closeButton = true;
+                toastr.options.positionClass = "toast-top-center";
+                toastr.warning('@Model.ErrorMessage', '@Model.Error').css("width", "600px");
+            }
         });
     </script>
 }
