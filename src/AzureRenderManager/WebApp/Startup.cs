@@ -22,12 +22,15 @@ using WebApp.AppInsights;
 using WebApp.AppInsights.ActiveNodes;
 using WebApp.AppInsights.PoolUsage;
 using WebApp.Arm;
+using WebApp.Authorization;
 using WebApp.BackgroundHosts.AutoScale;
 using WebApp.BackgroundHosts.Deployment;
 using WebApp.BackgroundHosts.LeaseMaintainer;
 using WebApp.BackgroundHosts.ScaleUpProcessor;
 using WebApp.Code.Contract;
 using WebApp.Code.Extensions;
+using WebApp.Code.Graph;
+using WebApp.Code.Session;
 using WebApp.Config;
 using WebApp.Config.Coordinators;
 using WebApp.Config.Pools;
@@ -79,15 +82,18 @@ namespace WebApp
 
                             return Task.CompletedTask;
                         };
+                    options.SessionStore = new MemoryCacheTicketStore();
                 });
 
-            // Session state cache
-            services.AddDistributedMemoryCache();
+            services.AddMemoryCache();
             services.AddSession(options =>
             {
                 options.Cookie.Name = "RenderFarmManager.Session";
                 options.IdleTimeout = TimeSpan.FromMinutes(10);
             });
+
+            services.AddSingleton<IGraphAuthProvider, GraphAuthProvider>();
+            services.AddSingleton<IGraphProvider, GraphProvider>();
 
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
             services.Configure<FormOptions>(x =>
@@ -130,6 +136,7 @@ namespace WebApp
 
             // These are scoped as they use the credentials of the user:
             services.AddScoped<IAzureResourceProvider, AzureResourceProvider>();
+            services.AddScoped<AuthorizationManager>();
             services.AddScoped<ICostCoordinator>(p =>
             {
                 var client = p.GetRequiredService<CostManagementClientAccessor>();

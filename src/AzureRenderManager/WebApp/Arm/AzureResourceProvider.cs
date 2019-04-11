@@ -5,7 +5,10 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Security.Cryptography.X509Certificates;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Azure.Management.ApplicationInsights.Management;
@@ -22,6 +25,10 @@ using Microsoft.Azure.Management.ResourceManager;
 using Microsoft.Azure.Management.ResourceManager.Models;
 using Microsoft.Azure.Management.Storage;
 using Microsoft.Azure.Management.Storage.Models;
+using Microsoft.Azure.Services.AppAuthentication;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Graph;
+using Microsoft.Identity.Client;
 using Microsoft.Rest;
 using Microsoft.Rest.Azure;
 using Microsoft.Rest.Azure.OData;
@@ -29,9 +36,11 @@ using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Auth;
 using Microsoft.WindowsAzure.Storage.File;
 using WebApp.Config;
+using WebApp.Models.Environments;
 using WebApp.Operations;
 using WebApp.Code.Extensions;
-using System.Security.Claims;
+using WebApp.Code.Graph;
+using WebApp.Authorization;
 
 namespace WebApp.Arm
 {
@@ -58,9 +67,20 @@ namespace WebApp.Arm
                 "microsoft.authorization/roleassignments/*",
                 "microsoft.authorization/roleassignments/write",
             });
+        
+        private readonly IConfiguration _configuration;
+        private readonly IGraphProvider _graphProvider;
+        private readonly IHttpClientFactory _httpClientFactory;
 
-        public AzureResourceProvider(IHttpContextAccessor contextAccessor) : base(contextAccessor)
+        public AzureResourceProvider(
+            IHttpContextAccessor contextAccessor,
+            IHttpClientFactory httpClientFactory,
+            IConfiguration configuration,
+            IGraphProvider graphProvider) : base(contextAccessor)
         {
+            _httpClientFactory = httpClientFactory;
+            _configuration = configuration;
+            _graphProvider = graphProvider;
         }
 
         public async Task<bool> CanCreateResources(
@@ -70,7 +90,7 @@ namespace WebApp.Arm
 
             var accessToken = await GetAccessToken();
             var token = new TokenCredentials(accessToken);
-            var authClient = new AuthorizationManagementClient(token) { SubscriptionId = subscriptionId.ToString() };
+            var authClient = new AuthorizationManagementClient(token, _httpClientFactory.CreateClient(), false) { SubscriptionId = subscriptionId.ToString() };
 
             var isClassicAdminTask = IsCurrentUserClassicAdministrator(authClient);
             var result = await GetRoleDefinitions(authClient, $"/subscriptions/{subscriptionId}");
@@ -82,6 +102,23 @@ namespace WebApp.Arm
             var isClassicAdmin = await isClassicAdminTask;
 
             return isClassicAdmin || subscriptionRoles.Any(ra => roleDefs.Any(rd => rd.Id == ra.RoleDefinitionId));
+        }
+
+        public async Task<bool> IsCurrentUserClassicAdministrator(Guid subscriptionId)
+        {
+            var accessToken = await GetAccessToken();
+            var token = new TokenCredentials(accessToken);
+            var authClient = new AuthorizationManagementClient(token) { SubscriptionId = subscriptionId.ToString() };
+            return await IsCurrentUserClassicAdministrator(authClient);
+        }
+
+        public async Task<List<ClassicAdministrator>> ListClassicAdministrators(Guid subscriptionId)
+        {
+            var accessToken = await GetAccessToken();
+            var token = new TokenCredentials(accessToken);
+            var authClient = new AuthorizationManagementClient(token) { SubscriptionId = subscriptionId.ToString() };
+            var result = await authClient.ClassicAdministrators.ListAsync();
+            return result.ToList();
         }
 
         private async Task<bool> IsCurrentUserClassicAdministrator(AuthorizationManagementClient authClient)
@@ -116,7 +153,7 @@ namespace WebApp.Arm
 
             var accessToken = await GetAccessToken();
             var token = new TokenCredentials(accessToken);
-            var authClient = new AuthorizationManagementClient(token) { SubscriptionId = subscriptionId.ToString() };
+            var authClient = new AuthorizationManagementClient(token, _httpClientFactory.CreateClient(), false) { SubscriptionId = subscriptionId.ToString() };
 
             var isClassicAdminTask = IsCurrentUserClassicAdministrator(authClient);
             var result = await GetRoleDefinitions(authClient, $"/subscriptions/{subscriptionId}");
@@ -143,7 +180,7 @@ namespace WebApp.Arm
         {
             var accessToken = await GetAccessToken();
             var token = new TokenCredentials(accessToken);
-            var resourceClient = new ResourceManagementClient(token) { SubscriptionId = subscriptionId.ToString() };
+            var resourceClient = new ResourceManagementClient(token, _httpClientFactory.CreateClient(), false) { SubscriptionId = subscriptionId.ToString() };
             return await resourceClient.ResourceGroups.CreateOrUpdateAsync(
                 resourceGroupName,
                 new ResourceGroup(location, tags: GetEnvironmentTags(environmentName)));
@@ -153,7 +190,7 @@ namespace WebApp.Arm
         {
             var accessToken = await GetAccessToken();
             var token = new TokenCredentials(accessToken);
-            var resourceClient = new ResourceManagementClient(token) { SubscriptionId = subscriptionId };
+            var resourceClient = new ResourceManagementClient(token, _httpClientFactory.CreateClient(), false) { SubscriptionId = subscriptionId };
             var resources = await resourceClient.Resources.ListByResourceGroupAsync(rgName);
 
             return resources.ToList();
@@ -163,7 +200,7 @@ namespace WebApp.Arm
         {
             var accessToken = await GetAccessToken();
             var token = new TokenCredentials(accessToken);
-            var resourceClient = new ResourceManagementClient(token) { SubscriptionId = subscriptionId.ToString() };
+            var resourceClient = new ResourceManagementClient(token, _httpClientFactory.CreateClient(), false) { SubscriptionId = subscriptionId.ToString() };
 
             try
             {
@@ -256,7 +293,7 @@ namespace WebApp.Arm
                 kvParams);
         }
 
-        public async Task AddReaderIdentityToAccessPolicies(Guid subscriptionId, KeyVault keyVault, ServicePrincipal identity)
+        public async Task AddReaderIdentityToAccessPolicies(Guid subscriptionId, KeyVault keyVault, Config.ServicePrincipal identity)
         {
             var accessToken = await GetAccessToken();
             var token = new TokenCredentials(accessToken);
@@ -465,7 +502,7 @@ namespace WebApp.Arm
         {
             var accessToken = await GetAccessToken();
             var token = new TokenCredentials(accessToken);
-            var batchClient = new BatchManagementClient(token) { SubscriptionId = subscriptionId.ToString() };
+            var batchClient = new BatchManagementClient(token, _httpClientFactory.CreateClient(), false) { SubscriptionId = subscriptionId.ToString() };
 
             // Check if the cert has already been uploaded.
             var existingCerts = await batchClient.Certificate.ListByBatchAccountAsync(batchAccount.ResourceGroupName, batchAccount.Name);
@@ -584,7 +621,6 @@ namespace WebApp.Arm
             {
                 AddressPrefix = subnetAddressRange,
                 Location = location,
-                VnetResourceId = vnet.Id,
                 ResourceId = vnet.Subnets.First().Id,
                 ExistingResource = false,
             };
@@ -600,7 +636,6 @@ namespace WebApp.Arm
             {
                 AddressPrefix = vnet.Subnets.First(s => s.Name == subnetName).AddressPrefix,
                 Location = location,
-                VnetResourceId = vnet.Id,
                 ResourceId = vnet.Subnets.First(s => s.Name == subnetName).Id,
                 ExistingResource = true,
             };
@@ -624,21 +659,49 @@ namespace WebApp.Arm
                 }
             }
         }
-
-        public async Task AssignManagementIdentityAsync(
-            Guid subscriptionId,
-            string resourceId,
-            string role,
-            Identity.Identity managementIdentity)
+        
+        public async Task<List<UserPermission>> GetUserPermissions(Guid subscriptionId, string scope)
         {
-            await AssignRoleToResource(
-                subscriptionId,
-                resourceId,
-                role,
-                managementIdentity);
+            var accessToken = await GetAccessToken();
+            var token = new TokenCredentials(accessToken);
+            var authClient = new AuthorizationManagementClient(token) { SubscriptionId = subscriptionId.ToString() };
+
+            var roleDefinitions = await GetRoleDefinitions(authClient, scope);
+            var roleDefs = roleDefinitions.ToList();
+
+            var roleAssignments = await GetRoleAssignments(authClient, scope, roleDefs);
+            roleAssignments = roleAssignments.Where(ra => ra.PrincipalType == "User").ToList();
+
+            var userPermissions = roleAssignments.Select(ra => new UserPermission
+            {
+                ObjectId = ra.PrincipalId,
+                Role = roleDefs.FirstOrDefault(rd => rd.Id == ra.RoleDefinitionId)?.RoleName,
+                Scope = ra.Scope,
+                Actions = roleDefs.FirstOrDefault(rd => rd.Id == ra.RoleDefinitionId)?.Permissions.SelectMany(p => p.Actions).ToList(),
+                GraphResolutionFailure = true,
+            }).ToList();
+
+            await ResolveUsersWithGraph(userPermissions);
+
+            return userPermissions;
         }
 
-        private async Task AssignRoleToResource(
+        private async Task ResolveUsersWithGraph(List<UserPermission> users)
+        {
+            var userObjectIds = users.Select(up => up.ObjectId).ToHashSet().ToList();
+            var graphUsers = await _graphProvider.LookupObjectIdsAsync(GetUser(), userObjectIds);
+            foreach (var user in users)
+            {
+                if (graphUsers.ContainsKey(user.ObjectId))
+                {
+                    user.Name = graphUsers[user.ObjectId].DisplayName;
+                    user.Email = graphUsers[user.ObjectId].UserPrincipalName;
+                    user.GraphResolutionFailure = false;
+                }
+            }
+        }
+
+        public async Task AssignRoleToIdentityAsync(
             Guid subscriptionId,
             string scope,
             string role,
@@ -646,7 +709,7 @@ namespace WebApp.Arm
         {
             var accessToken = await GetAccessToken();
             var token = new TokenCredentials(accessToken);
-            var authClient = new AuthorizationManagementClient(token) { SubscriptionId = subscriptionId.ToString() };
+            var authClient = new AuthorizationManagementClient(token, _httpClientFactory.CreateClient(), false) { SubscriptionId = subscriptionId.ToString() };
 
             var result = await GetRoleDefinitions(authClient, scope);
             var roleDefs = result.Where(rd => rd.RoleName == role).ToList();
@@ -656,7 +719,11 @@ namespace WebApp.Arm
                 throw new Exception($"No {role} role definition found for resource group");
             }
 
-            var roleAssignments = await GetRoleAssignmentsForCurrentUser(authClient, scope, roleDefs);
+            var roleAssignments = await GetRoleAssignmentsForUser(
+                authClient, 
+                scope, 
+                identity.ObjectId.ToString(), 
+                roleDefs);
 
             if (roleAssignments.All(ra => ra.RoleDefinitionId != roleDef.Id))
             {
@@ -667,17 +734,14 @@ namespace WebApp.Arm
                         Guid.NewGuid().ToString(),
                         new RoleAssignmentCreateParameters(roleDef.Id, identity.ObjectId.ToString()));
                 }
-                catch (CloudException ce)
+                catch (CloudException ce) when (ce.Body?.Code == "RoleAssignmentExists")
                 {
-                    if (ce.Body.Code != "RoleAssignmentExists")
-                    {
-                        throw;
-                    }
+                    // Ignore
                 }
             }
         }
 
-        private async Task<IPage<RoleDefinition>> GetRoleDefinitions(
+        private async Task<IPage<Microsoft.Azure.Management.Authorization.Models.RoleDefinition>> GetRoleDefinitions(
             AuthorizationManagementClient authClient,
             string scope)
         {
@@ -685,14 +749,32 @@ namespace WebApp.Arm
             return await authClient.RoleDefinitions.ListAsync(scope, roleFilter);
         }
 
-        private async Task<List<RoleAssignment>> GetRoleAssignmentsForCurrentUser(
+        private async Task<List<Microsoft.Azure.Management.Authorization.Models.RoleAssignment>> GetRoleAssignmentsForCurrentUser(
             AuthorizationManagementClient authClient,
             string scope,
-            List<RoleDefinition> roleDefinitions)
+            List<Microsoft.Azure.Management.Authorization.Models.RoleDefinition> roleDefinitions)
         {
             var user = GetUser();
             var ownerObjectId = user.Claims.GetObjectId();
-            var filter = new ODataQuery<RoleAssignmentFilter>(f => f.PrincipalId == ownerObjectId);
+            return await GetRoleAssignmentsForUser(authClient, scope, ownerObjectId, roleDefinitions);
+        }
+
+        private async Task<List<Microsoft.Azure.Management.Authorization.Models.RoleAssignment>> GetRoleAssignmentsForUser(
+            AuthorizationManagementClient authClient,
+            string scope,
+            string objectId,
+            List<Microsoft.Azure.Management.Authorization.Models.RoleDefinition> roleDefinitions)
+        {
+            var filter = new ODataQuery<RoleAssignmentFilter>(f => f.PrincipalId == objectId);
+            return await GetRoleAssignments(authClient, scope, roleDefinitions, filter);
+        }
+
+        private async Task<List<Microsoft.Azure.Management.Authorization.Models.RoleAssignment>> GetRoleAssignments(
+            AuthorizationManagementClient authClient,
+            string scope,
+            List<Microsoft.Azure.Management.Authorization.Models.RoleDefinition> roleDefinitions,
+            ODataQuery<RoleAssignmentFilter> filter = null)
+        {
             var result = await authClient.RoleAssignments.ListForScopeAsync(scope, filter);
             var roleAssignments = result.ToList();
             foreach (var ra in roleAssignments)
@@ -711,7 +793,7 @@ namespace WebApp.Arm
         {
             var accessToken = await GetAccessToken();
             var token = new TokenCredentials(accessToken);
-            var rmClient = new ResourceManagementClient(token) { SubscriptionId = subscriptionId.ToString() };
+            var rmClient = new ResourceManagementClient(token, _httpClientFactory.CreateClient(), false) { SubscriptionId = subscriptionId.ToString() };
             await rmClient.Providers.RegisterAsync(resourceProviderNamespace);
         }
     }
