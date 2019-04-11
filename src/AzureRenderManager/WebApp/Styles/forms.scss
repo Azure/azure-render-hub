@@ -128,7 +128,7 @@
 
     span {
         &.field-validation-error {
-            padding: 2px 5px;
+            padding: 2px 0 0 2px;
             color: $formError;
             display: block;
         }
@@ -136,7 +136,7 @@
 
     small {
         display: block;
-        margin: 3px 0 0 3px;
+        margin: 1px 0 0 3px;
     }
 
     p.spacer {

@@ -16,6 +16,7 @@ namespace WebApp.Code
         public const string StorageAccountList = "StorageAccounts";
         public const string SubnetList = "Subnets";
         public const string AppInsightsList = "AppInsights";
+        public const string KeyVaultList = "KeyVaults";
         public const string PoolList = "PoolList";
 
         public static string MakeKey(string key, string id, params string[] extras)
