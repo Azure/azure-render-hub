@@ -150,22 +150,25 @@ namespace WebApp.Controllers
             }
 
             var model = new DeleteEnvironmentModel(environment);
-            try
+            try 
             {
                 var sudId = environment.SubscriptionId.ToString();
-                var resources = await _azureResourceProvider.ListResourceGroupResources(sudId, environment.ResourceGroupName);
-                var mapped = resources.Select(resource => new GenericResource(resource)).ToList();
-                model.Resources.AddRange(mapped);
+                var mapped = new List<GenericResource>();
+                if (!string.IsNullOrEmpty(environment.ResourceGroupName))
+                {
+                    var resources = await _azureResourceProvider.ListResourceGroupResources(sudId, environment.ResourceGroupName);
+                    mapped.AddRange(resources.Select(resource => new GenericResource(resource)));
+                }
 
-                return View(model);
+                model.Resources.AddRange(mapped);
             }
             catch (CloudException cEx)
             {
                 model.ResourceLoadFailed = true;
-                ModelState.AddModelError("", $"Failed to list resources from the Resource Group with error: {cEx.Message}");
-
-                return View(model);
+                ModelState.AddModelError("", $"Failed to list resources from the Resource Group with error: {cEx.Message}");   
             }
+
+            return View(model);
         }
 
         /// <summary>
@@ -185,8 +188,7 @@ namespace WebApp.Controllers
 
             if (!model.SubscriptionId.HasValue)
             {
-                ModelState.AddModelError("",
-                    "Environment does not have a configured subscription ID. Deletion cannot continue.");
+                ModelState.AddModelError("", "Environment does not have a configured subscription ID. Deletion cannot continue.");
             }
 
             if (!ModelState.IsValid)
@@ -197,8 +199,7 @@ namespace WebApp.Controllers
             var environment = await _environmentCoordinator.GetEnvironment(model.EnvironmentName);
             if (environment == null)
             {
-                return BadRequest(
-                    $"No new environment configuration was found with the name: '{model.EnvironmentName}'");
+                return BadRequest($"No new environment configuration was found with the name: '{model.EnvironmentName}'");
             }
 
             environment.State = EnvironmentState.Deleting;
@@ -211,6 +212,7 @@ namespace WebApp.Controllers
                 DeleteKeyVault = model.DeleteKeyVault,
                 DeleteVNet = model.DeleteVNet,
             };
+
             await _environmentCoordinator.UpdateEnvironment(environment);
 
             return RedirectToAction("Deleting", new { envId = environment.Name });
@@ -617,44 +619,7 @@ namespace WebApp.Controllers
 
             if (environment.RenderManager == RenderManagerType.Deadline)
             {
-                if (string.IsNullOrWhiteSpace(model.DeadlineEnvironment?.WindowsDeadlineRepositoryShare))
-                {
-                    ModelState.AddModelError(nameof(DeadlineEnvironment.WindowsDeadlineRepositoryShare), "The Deadline respoitory server cannot be empty.");
-                }
-
-                if (string.IsNullOrWhiteSpace(model.DeadlineEnvironment?.LicenseMode))
-                {
-                    ModelState.AddModelError(nameof(DeadlineEnvironment.LicenseMode), "The Deadline license mode cannot be empty.");
-                }
-
-                // If they specify standard licensing, ensure there's a license server.
-                if (!string.IsNullOrWhiteSpace(model.DeadlineEnvironment?.LicenseMode) &&
-                    model.DeadlineEnvironment.LicenseMode == LicenseMode.Standard.ToString() &&
-                    string.IsNullOrWhiteSpace(model.DeadlineEnvironment?.LicenseServer))
-                {
-                    ModelState.AddModelError(nameof(DeadlineEnvironment.LicenseServer), "The Deadline license server cannot be empty when using standard licensing.");
-                }
-
-                if (model.DeadlineEnvironment != null && model.DeadlineEnvironment.RunAsService)
-                {
-                    if (string.IsNullOrWhiteSpace(model.DeadlineEnvironment.ServiceUser))
-                    {
-                        ModelState.AddModelError(nameof(DeadlineEnvironment.ServiceUser), "The service user must be specified when running the Deadline client as a service.");
-                    }
-
-                    if (string.IsNullOrWhiteSpace(model.DeadlineEnvironment.ServicePassword))
-                    {
-                        ModelState.AddModelError(nameof(DeadlineEnvironment.ServicePassword), "The service password must be specified when running the Deadline client as a service.");
-                    }
-                }
-            }
-
-            if (environment.RenderManager == RenderManagerType.Qube610 || environment.RenderManager == RenderManagerType.Qube70)
-            {
-                if (string.IsNullOrWhiteSpace(model.QubeEnvironment?.QubeSupervisor))
-                {
-                    ModelState.AddModelError(nameof(QubeEnvironment.QubeSupervisor), $"The Qube supervisor cannot be empty.");
-                }
+                ValidateDeadlineForm(model.DeadlineEnvironment);
             }
 
             if (environment.RenderManager == RenderManagerType.Tractor)
@@ -715,9 +680,33 @@ namespace WebApp.Controllers
                 environment.Domain.DomainJoinPassword = model.DomainJoinPassword;
             }
 
-            await _environmentCoordinator.UpdateEnvironment(environment);
+            if(!await UpdateEnvironment(environment, model))
+            {
+                return View("View/Manager", model);
+            }
 
-            return View("View/Manager", model);
+            return RedirectToAction("Manager", new { envId });
+        }
+
+        private async Task<bool> UpdateEnvironment(RenderingEnvironment environment, EnvironmentBaseModel model)
+        {
+            try
+            {
+                await _environmentCoordinator.UpdateEnvironment(environment);
+                return true;
+            }
+            catch (CryptographicException e) when (e.HResult == -2147024810)
+            {
+                ModelState.AddModelError(
+                    nameof(DeadlineEnvironment.DeadlineDatabaseCertificatePassword), 
+                    "The certificate password is not correct, or the certificate cannot be decrypted.");
+            }
+            catch (Exception e)
+            {
+                model.Error = e.Message;
+                model.ErrorMessage = e.ToString();
+            }
+            return false;
         }
 
         private void ApplyDeadlineConfigToEnvironment(RenderingEnvironment environment, DeadlineEnvironment model)
@@ -727,38 +716,48 @@ namespace WebApp.Controllers
                 environment.RenderManagerConfig.Deadline = new DeadlineConfig();
             }
 
-            environment.RenderManagerConfig.Deadline.WindowsRepositoryPath = model.WindowsDeadlineRepositoryShare;
-            environment.RenderManagerConfig.Deadline.RepositoryUser = model.RepositoryUser;
-            environment.RenderManagerConfig.Deadline.RepositoryPassword = model.RepositoryPassword;
-            environment.RenderManagerConfig.Deadline.LicenseServer = model.LicenseServer;
-            environment.RenderManagerConfig.Deadline.DeadlineRegion = model.DeadlineRegion;
-            environment.RenderManagerConfig.Deadline.ExcludeFromLimitGroups =
+            // Deadline install config
+            environment.RenderManagerConfig.Deadline.LicenseMode = model.InstallDeadlineClient ? model.LicenseMode : null;
+            environment.RenderManagerConfig.Deadline.LicenseServer = model.InstallDeadlineClient ? model.LicenseServer : null;
+            environment.RenderManagerConfig.Deadline.DeadlineRegion = model.InstallDeadlineClient ? model.DeadlineRegion : null;
+            environment.RenderManagerConfig.Deadline.ExcludeFromLimitGroups = model.InstallDeadlineClient ?
                 string.IsNullOrWhiteSpace(model.ExcludeFromLimitGroups) ?
                     null :
-                    model.ExcludeFromLimitGroups.Replace(" ", "");
+                    model.ExcludeFromLimitGroups.Replace(" ", "") : null;
 
-            LicenseMode mode;
-            Enum.TryParse<LicenseMode>(model.LicenseMode, out mode);
-            environment.RenderManagerConfig.Deadline.LicenseMode = mode;
-
+            // Deadline service config
             environment.RenderManagerConfig.Deadline.RunAsService = model.RunAsService;
             environment.RenderManagerConfig.Deadline.ServiceUser = model.RunAsService ? model.ServiceUser : null;
             environment.RenderManagerConfig.Deadline.ServicePassword = model.RunAsService ? model.ServicePassword : null;
 
-            if (model.DeadlineDatabaseCertificate != null && model.DeadlineDatabaseCertificate.Length > 0)
+            if (model.UseDeadlineDatabaseCertificate)
             {
-                using (var ms = new MemoryStream())
+                if (model.DeadlineDatabaseCertificate != null && model.DeadlineDatabaseCertificate.Length > 0)
                 {
-                    model.DeadlineDatabaseCertificate.CopyTo(ms);
-                    environment.RenderManagerConfig.Deadline.DeadlineDatabaseCertificate = new Certificate
+                    using (var ms = new MemoryStream())
                     {
-                        CertificateData = ms.ToArray()
-                    };
+                        model.DeadlineDatabaseCertificate.CopyTo(ms);
+                        environment.RenderManagerConfig.Deadline.DeadlineDatabaseCertificate = new Certificate
+                        {
+                            FileName = model.DeadlineDatabaseCertificate.FileName,
+                            CertificateData = ms.ToArray()
+                        };
+                    }
                 }
-            }
 
-            environment.RenderManagerConfig.Deadline.DeadlineDatabaseCertificate.Password =
-                model.DeadlineDatabaseCertificatePassword;
+                // This shouldn't be possible, but you never know
+                if (environment.RenderManagerConfig.Deadline.DeadlineDatabaseCertificate == null)
+                {
+                    environment.RenderManagerConfig.Deadline.DeadlineDatabaseCertificate = new Certificate();
+                }
+
+                environment.RenderManagerConfig.Deadline.DeadlineDatabaseCertificate.Password = 
+                    model.DeadlineDatabaseCertificatePassword;
+            }
+            else
+            {
+                environment.RenderManagerConfig.Deadline.DeadlineDatabaseCertificate = null;
+            }
         }
 
         [HttpGet]
@@ -955,6 +954,16 @@ namespace WebApp.Controllers
         public async Task<ActionResult> Step2(string envId, AddEnvironmentStep2Model model)
         {
             // TODO: Move this into a step 2 validator ... maybe
+            if (!NewOrExistingFieldValid(model.ExistingResourceGroupNameAndLocation, model.NewResourceGroupName))
+            {
+                ModelState.AddModelError(nameof(AddEnvironmentStep2Model.ExistingResourceGroupNameAndLocation), "Either an existing or new resource group name should be supplied");
+            }
+
+            if (!NewOrExistingFieldValid(model.ExistingKeyVaultIdLocationAndUri, model.NewKeyVaultName))
+            {
+                ModelState.AddModelError(nameof(AddEnvironmentStep2Model.ExistingKeyVaultIdLocationAndUri), "Either an existing or new Key Vault name should be supplied");
+            }
+
             if (!NewOrExistingFieldValid(model.BatchAccountResourceIdLocationUrl, model.NewBatchAccountName))
             {
                 ModelState.AddModelError(nameof(AddEnvironmentStep2Model.BatchAccountResourceIdLocationUrl), "Either an existing or new Batch account should be supplied");
@@ -982,6 +991,26 @@ namespace WebApp.Controllers
             }
 
             // UI should stop this now, but we shouldn't trust the UI.
+            if (NewOrExistingFieldValid(model.ExistingResourceGroupNameAndLocation))
+            {
+                // check the resource group and environment are in the same location
+                var rgLocation = model.ExistingResourceGroupNameAndLocation.Split(";")[1];
+                if (false == rgLocation.Equals(environment.LocationName, StringComparison.OrdinalIgnoreCase))
+                {
+                    ModelState.AddModelError(nameof(AddEnvironmentStep2Model.ExistingResourceGroupNameAndLocation), $"Environment and resource group must be configured to the same location: ({environment.LocationName})");
+                }
+            }
+
+            if (NewOrExistingFieldValid(model.ExistingKeyVaultIdLocationAndUri))
+            {
+                // check the key vault and environment are in the same location
+                var kvLocation = model.ExistingKeyVaultIdLocationAndUri.Split(";")[1];
+                if (false == kvLocation.Equals(environment.LocationName, StringComparison.OrdinalIgnoreCase))
+                {
+                    ModelState.AddModelError(nameof(AddEnvironmentStep2Model.ExistingKeyVaultIdLocationAndUri), $"Environment and Key Vault must be configured to the same location: ({environment.LocationName})");
+                }
+            }
+
             if (NewOrExistingFieldValid(model.BatchAccountResourceIdLocationUrl))
             {
                 // check the batch account and environment are in the same location
@@ -1002,29 +1031,30 @@ namespace WebApp.Controllers
                 }
             }
 
-            if (environment.KeyVault == null)
+            if (!string.IsNullOrEmpty(model.NewKeyVaultName))
             {
+                if (environment.KeyVault != null)
+                {
+                    // in case we are updating from a previously selected one, remove it.
+                    environment.KeyVault = null;
+                    await _environmentCoordinator.UpdateEnvironment(environment);
+                    model.ExistingKeyVaultIdLocationAndUri = null;
+                }
+
                 // Ensure it doesn't exist if it hasn't been created already
                 var nameAvailability = await _azureResourceProvider.ValidateKeyVaultName(
                     environment.SubscriptionId,
                     environment.ResourceGroupName,
-                    model.KeyVaultName);
+                    model.NewKeyVaultName);
 
                 if (!nameAvailability.NameAvailable.GetValueOrDefault(false))
                 {
-                    ModelState.AddModelError(nameof(AddEnvironmentStep2Model.KeyVaultName), $"The Key Vault name is not available. {nameAvailability.Message}");
-                    return View("Create/Step2", model);
+                    ModelState.AddModelError(nameof(AddEnvironmentStep2Model.NewKeyVaultName), $"The Key Vault name is not available. {nameAvailability.Message}");
                 }
             }
 
             if (!ModelState.IsValid)
             {
-                // disabled select inputs will be null if disabled
-                model.NewBatchAccountVisible = string.IsNullOrEmpty(model.BatchAccountResourceIdLocationUrl);
-                model.NewStorageAccountVisible = string.IsNullOrEmpty(model.StorageAccountResourceIdAndLocation);
-                model.NewAppInsightsVisible = string.IsNullOrEmpty(model.ApplicationInsightsIdAndLocation);
-                model.NewVNetVisible = string.IsNullOrEmpty(model.SubnetResourceIdLocationAndAddressPrefix);
-
                 return View("Create/Step2", model);
             }
 
@@ -1032,7 +1062,7 @@ namespace WebApp.Controllers
             {
                 await CreateOrUpdateResourceGroup(environment, model);
 
-                // We want to make sure all tasks complete if they can to ensure the creaetd resources get
+                // We want to make sure all tasks complete if they can to ensure the created resources get
                 // persisted in the environment
                 await Task.WhenAll(
                     CreateOrUpdateKeyVault(environment, model),
@@ -1104,44 +1134,7 @@ namespace WebApp.Controllers
 
             if (environment.RenderManager == RenderManagerType.Deadline)
             {
-                if (string.IsNullOrWhiteSpace(model.DeadlineEnvironment?.WindowsDeadlineRepositoryShare))
-                {
-                    ModelState.AddModelError(nameof(DeadlineEnvironment.WindowsDeadlineRepositoryShare), $"The Deadline respoitory server cannot be empty.");
-                }
-
-                if (string.IsNullOrWhiteSpace(model.DeadlineEnvironment?.LicenseMode))
-                {
-                    ModelState.AddModelError(nameof(DeadlineEnvironment.LicenseMode), $"The Deadline license mode cannot be empty.");
-                }
-
-                // If they specify standard licensing, ensure there's a license server.
-                if (!string.IsNullOrWhiteSpace(model.DeadlineEnvironment?.LicenseMode) &&
-                    model.DeadlineEnvironment.LicenseMode == LicenseMode.Standard.ToString() &&
-                    string.IsNullOrWhiteSpace(model.DeadlineEnvironment?.LicenseServer))
-                {
-                    ModelState.AddModelError(nameof(DeadlineEnvironment.LicenseServer), $"The Deadline license server cannot be empty when using standard licensing.");
-                }
-
-                if (model.DeadlineEnvironment != null && model.DeadlineEnvironment.RunAsService)
-                {
-                    if (string.IsNullOrWhiteSpace(model.DeadlineEnvironment.ServiceUser))
-                    {
-                        ModelState.AddModelError(nameof(DeadlineEnvironment.ServiceUser), "The service user must be specified when running the Deadline client as a service.");
-                    }
-
-                    if (string.IsNullOrWhiteSpace(model.DeadlineEnvironment.ServicePassword))
-                    {
-                        ModelState.AddModelError(nameof(DeadlineEnvironment.ServicePassword), "The service password must be specified when running the Deadline client as a service.");
-                    }
-                }
-            }
-
-            if (environment.RenderManager == RenderManagerType.Qube610 || environment.RenderManager == RenderManagerType.Qube70)
-            {
-                if (string.IsNullOrWhiteSpace(model.QubeEnvironment?.QubeSupervisor))
-                {
-                    ModelState.AddModelError(nameof(QubeEnvironment.QubeSupervisor), $"The Qube supervisor cannot be empty.");
-                }
+                ValidateDeadlineForm(model.DeadlineEnvironment);
             }
 
             if (environment.RenderManager == RenderManagerType.Tractor)
@@ -1200,86 +1193,70 @@ namespace WebApp.Controllers
                 environment.RenderManagerConfig.Tractor.TractorSettings = model.TractorEnvironment.TractorSettings;
             }
 
-            // TODO Re-enable package upload step
-            // return RedirectToAction("Step5", new { envId = environment.Name });
-
             environment.InProgress = false;
-            await _environmentCoordinator.UpdateEnvironment(environment);
+
+            if (!await UpdateEnvironment(environment, model))
+            {
+                return View("Create/Step4", model);
+            }
+
             // after saving, either go to overview details, or a success page.
             return RedirectToAction("Overview", new { envId = model.EnvironmentName });
         }
 
-        [HttpGet]
-        [Route("Environments/Step5/{envId?}")]
-        public async Task<ActionResult> Step5(string envId)
+        private void ValidateDeadlineForm(DeadlineEnvironment model)
         {
-            var environment = await _environmentCoordinator.GetEnvironment(envId);
-            if (environment == null)
+            if (model == null)
             {
-                // redirect to Step1 if no config.
-                return RedirectToAction("Step1", new { envId });
+                return;
             }
 
-            var model = new AddEnvironmentFinalizeModel(environment);
-            return View("Create/Step5", model);
-        }
-
-        [HttpPost]
-        public async Task<ActionResult> Step5(AddEnvironmentFinalizeModel model)
-        {
-            if (!ModelState.IsValid)
+            if (string.IsNullOrWhiteSpace(model.WindowsDeadlineRepositoryShare))
             {
-                return View("Create/Step5", model);
+                ModelState.AddModelError(nameof(DeadlineEnvironment.WindowsDeadlineRepositoryShare), $"The Deadline respoitory server cannot be empty.");
             }
 
-            var environment = await _environmentCoordinator.GetEnvironment(model.EnvironmentName);
-            if (environment == null)
+            if (model.InstallDeadlineClient)
             {
-                return BadRequest("No new environment configuration in progress");
+                if (model.LicenseMode == null)
+                {
+                    ModelState.AddModelError(nameof(DeadlineEnvironment.LicenseMode), $"The Deadline license mode cannot be empty.");
+                }
+
+                // If they specify standard licensing, ensure there's a license server.
+                if (model.LicenseMode != null &&
+                    model.LicenseMode.Value == LicenseMode.Standard &&
+                    string.IsNullOrWhiteSpace(model.LicenseServer))
+                {
+                    ModelState.AddModelError(nameof(DeadlineEnvironment.LicenseServer), $"The Deadline license server cannot be empty when using standard licensing.");
+                }
+
+                if (string.IsNullOrEmpty(model.DeadlineRegion))
+                {
+                    ModelState.AddModelError(nameof(DeadlineEnvironment.DeadlineRegion), $"The Deadline region cannot be empty.");
+                }
+
+                if (model.RunAsService)
+                {
+                    if (string.IsNullOrWhiteSpace(model.ServiceUser))
+                    {
+                        ModelState.AddModelError(nameof(DeadlineEnvironment.ServiceUser), "The service user must be specified when running the Deadline client as a service.");
+                    }
+
+                    if (string.IsNullOrWhiteSpace(model.ServicePassword))
+                    {
+                        ModelState.AddModelError(nameof(DeadlineEnvironment.ServicePassword), "The service password must be specified when running the Deadline client as a service.");
+                    }
+                }
+
+                if (model.UseDeadlineDatabaseCertificate)
+                {
+                    if (model.DeadlineDatabaseCertificate == null)
+                    {
+                        ModelState.AddModelError(nameof(DeadlineEnvironment.DeadlineDatabaseCertificate), "Use Deadline Database Certificate was checked, but no certificate was specified.");
+                    }
+                }
             }
-
-            // todo: set what we need to here
-            // await UpdateEnvironment(environment);
-
-            return RedirectToAction("Step6", new { envId = environment.Name });
-        }
-
-        [HttpGet]
-        [Route("Environments/Step6/{envId?}")]
-        public async Task<ActionResult> Step6(string envId)
-        {
-            var environment = await _environmentCoordinator.GetEnvironment(envId);
-            if (environment == null)
-            {
-                // redirect to Step1 if no config.
-                return RedirectToAction("Step1", new { envId });
-            }
-
-            var model = new AddEnvironmentFinalizeModel(environment);
-            return View("Create/Step6", model);
-        }
-
-        [HttpPost]
-        public async Task<ActionResult> Step6(AddEnvironmentFinalizeModel model)
-        {
-            if (!ModelState.IsValid)
-            {
-                // return to last step. actually this could be step 4, 5, or 6.
-                return View("Create/Step6", model);
-            }
-
-            var environment = await _environmentCoordinator.GetEnvironment(model.EnvironmentName);
-            if (environment == null)
-            {
-                return BadRequest("No new environment configuration in progress");
-            }
-
-            // todo: set what we need to here
-            environment.InProgress = false;
-            await _environmentCoordinator.UpdateEnvironment(environment);
-
-            // after saving, either go to overview details, or a success page.
-            return RedirectToAction("Details", new { envId = model.EnvironmentName });
         }
 
         private bool NewOrExistingFieldValid(string existingId, string newId = null)
@@ -1416,11 +1393,17 @@ namespace WebApp.Controllers
         {
             try
             {
+                var resourceGroupName = string.IsNullOrEmpty(model.NewResourceGroupName)
+                    ? model.ExistingResourceGroupNameAndLocation.Split(";")[0]
+                    : model.NewResourceGroupName;
+
                 await _azureResourceProvider.CreateResourceGroupAsync(
                     environment.SubscriptionId,
                     environment.LocationName,
-                    environment.ResourceGroupName,
+                    resourceGroupName,
                     environment.Name);
+
+                environment.ResourceGroupName = resourceGroupName;
             }
             catch (CloudException cEx)
             {
@@ -1433,7 +1416,8 @@ namespace WebApp.Controllers
         {
             try
             {
-                if (environment.KeyVault == null)
+                // if existing then ignore the create and just assign it to the environment
+                if (!string.IsNullOrEmpty(model.NewKeyVaultName))
                 {
                     var keyVaultResponse = await _azureResourceProvider.CreateKeyVaultAsync(
                         _identityProvider.GetPortalManagedServiceIdentity(),
@@ -1441,14 +1425,31 @@ namespace WebApp.Controllers
                         environment.SubscriptionId,
                         environment.ResourceGroupName,
                         environment.LocationName,
-                        model.KeyVaultName,
+                        model.NewKeyVaultName,
                         environment.Name);
 
                     environment.KeyVault = new KeyVault
                     {
                         ResourceId = keyVaultResponse.Id,
+                        Location = keyVaultResponse.Location,
                         Uri = keyVaultResponse.Properties.VaultUri,
-                        ExistingResource = false,
+                        ExistingResource = false
+                    };
+                }
+                else
+                {
+                    var kvParts = model.ExistingKeyVaultIdLocationAndUri.Split(";");
+                    if (kvParts.Length < 3)
+                    {
+                        throw new Exception("Existing KeyVault resource Id must be in the form of (ResourceId;Location;VaultUri)");
+                    }
+
+                    environment.KeyVault = new KeyVault
+                    {
+                        ResourceId = kvParts[0],
+                        Location = kvParts[1],
+                        Uri = kvParts[2],
+                        ExistingResource = true,
                     };
                 }
             }
@@ -1457,7 +1458,7 @@ namespace WebApp.Controllers
                 ModelState.AddModelError("", $"Failed to create Azure Key Vault with error: {cEx.Message}");
                 if (cEx.Response?.StatusCode == HttpStatusCode.Conflict && cEx.Body?.Code == "VaultAlreadyExists")
                 {
-                    ModelState.AddModelError(nameof(AddEnvironmentStep2Model.KeyVaultName), "The Key Vault name already exists, please choose a different name. It may be that the KeyVault exists in another Subscription or Location.");
+                    ModelState.AddModelError(nameof(AddEnvironmentStep2Model.NewKeyVaultName), "The Key Vault name already exists, please choose a different name. It may be that the KeyVault exists in another Subscription or Location.");
                 }
 
                 throw;

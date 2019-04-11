@@ -28,7 +28,7 @@ namespace WebApp.Config
 
         public EnvironmentState State { get; set; }
 
-        public string ResourceGroupName => Name + "-rg";
+        public string ResourceGroupName { get; set; }
 
         public string ResourceGroupResourceId => $"/subscriptions/{SubscriptionId}/resourceGroups/{ResourceGroupName}";
 

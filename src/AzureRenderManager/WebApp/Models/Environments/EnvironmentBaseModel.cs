@@ -20,5 +20,9 @@ namespace WebApp.Models.Environments
         public RenderManagerType? RenderManager { get; set; }
 
         public string RenderManagerName => RenderManager.HasValue ? RenderManager.GetDescription() : "Render Manager";
+
+        public string Error { get; set; }
+
+        public string ErrorMessage { get; set; }
     }
 }

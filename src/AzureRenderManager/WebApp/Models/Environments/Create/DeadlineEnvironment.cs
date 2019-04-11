@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json;
 using WebApp.Code;
 using WebApp.Code.Attributes;
+using WebApp.Config.RenderManager;
 
 namespace WebApp.Models.Environments.Create
 {
@@ -23,13 +24,13 @@ namespace WebApp.Models.Environments.Create
         [JsonIgnore]
         public string RepositoryPassword { get; set; }
 
+        public bool InstallDeadlineClient { get; set; }
+
         // Deadline Lic server: 27008@10.2.0.6
         public string LicenseServer { get; set; }
 
-        [Required]
-        public string LicenseMode { get; set; }
+        public LicenseMode? LicenseMode { get; set; }
 
-        [Required]
         public string DeadlineRegion { get; set; }
 
         // Exclude these pool nodes from the following limit groups, e.g. license groups
@@ -42,8 +43,12 @@ namespace WebApp.Models.Environments.Create
 
         public string ServicePassword { get; set; }
 
+        public bool UseDeadlineDatabaseCertificate { get; set; }
+
         public IFormFile DeadlineDatabaseCertificate { get; set; }
 
         public string DeadlineDatabaseCertificatePassword { get; set; }
+
+        public string DeadlineDatabaseCertificateFileName { get; set; }
     }
 }
