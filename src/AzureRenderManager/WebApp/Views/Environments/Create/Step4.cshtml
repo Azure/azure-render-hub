@@ -13,7 +13,8 @@
 
 @await Html.PartialAsync("Environments/Create/CreateFormHeaderPartial")
 
-<form id="partialform" method="post" enctype="multipart/form-data" asp-controller="Environment" asp-action="Step4" data-ajax="true" data-ajax-update="#partialform" data-ajax-mode="replace">
+@using (Html.BeginForm("Step4", "Environments", new {envId = Model.EnvironmentName}, FormMethod.Post, true, new { id = "myForm" }))
+{
     @await Html.PartialAsync("Menu/EnvironmentSubMenu", Model, new ViewDataDictionary(ViewData)
     {
         { "Step", 5 },
@@ -68,7 +69,7 @@
             </div>
         </div>
     </div>
-    @{
+    {
         switch (Model.RenderManager)
         {
             case RenderManagerType.Deadline:
@@ -93,10 +94,10 @@
         <div class="summary"></div>
         <div class="button-bar">
             <a class="button" asp-controller="Environments" asp-action="Step3" asp-route-envId="@Model.EnvironmentName">Previous</a>
-            <input type="submit" class="" value="Done" formaction="Step4" />
+            <input type="submit" class="" value="Done" />
         </div>
     </div>
-</form>
+}
 
 @section Scripts
 {
