@@ -13,7 +13,7 @@
 
 @await Html.PartialAsync("Environments/Create/CreateFormHeaderPartial")
 
-@using (Html.BeginForm("Step4", "Environments", new {envId = Model.EnvironmentName}, FormMethod.Post, true, new { id = "myForm" }))
+@using (Html.BeginForm("Step4", "Environments", new {envId = Model.EnvironmentName}, FormMethod.Post, true, new { id = "myForm", enctype = "multipart/form-data" }))
 {
     @await Html.PartialAsync("Menu/EnvironmentSubMenu", Model, new ViewDataDictionary(ViewData)
     {
