@@ -44,6 +44,11 @@ namespace WebApp.Tests
 
                 void Populate(object o)
                 {
+                    if (o == null)
+                    {
+                        return;
+                    }
+
                     if (o is AzureResource r)
                     {
                         // create a fake resource ID - RG name is 5th component
