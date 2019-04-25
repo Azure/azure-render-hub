@@ -851,7 +851,7 @@ namespace WebApp.Controllers
                 return RedirectToAction("Step1", new { envId });
             }
 
-            var model = new AddEnvironmentStep3Model(environment);
+            var model = new AddEnvironmentStep4Model(environment);
 
             var canAssign = await _azureResourceProvider.CanCreateRoleAssignments(environment.SubscriptionId, environment.ResourceGroupName);
             if (!canAssign)
@@ -865,11 +865,11 @@ namespace WebApp.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> Step3(AddEnvironmentStep3Model model)
+        public async Task<ActionResult> Step3(AddEnvironmentStep4Model model)
         {
             if (!model.KeyVaultServicePrincipalAppId.HasValue)
             {
-                ModelState.AddModelError(nameof(AddEnvironmentStep3Model.KeyVaultServicePrincipalAppId), "KeyVaultServicePrincipalAppId is a required field.");
+                ModelState.AddModelError(nameof(AddEnvironmentStep4Model.KeyVaultServicePrincipalAppId), "KeyVaultServicePrincipalAppId is a required field.");
             }
 
             if (!ModelState.IsValid)
@@ -922,7 +922,7 @@ namespace WebApp.Controllers
                 await _environmentCoordinator.UpdateEnvironment(environment);
             }
 
-            return RedirectToAction("Step4", new { envId = environment.Name });
+            return RedirectToAction("Step5", new { envId = environment.Name });
         }
 
         [HttpGet]
@@ -936,7 +936,7 @@ namespace WebApp.Controllers
                 return RedirectToAction("Step1", new { envId });
             }
 
-            var model = new AddEnvironmentStep2Model(environment);
+            var model = new AddEnvironmentStep3Model(environment);
 
             var canCreate = await _azureResourceProvider.CanCreateResources(environment.SubscriptionId);
             if (!canCreate)
@@ -951,37 +951,37 @@ namespace WebApp.Controllers
 
         [HttpPost]
         [Route("Environments/Step2/{envId}")]
-        public async Task<ActionResult> Step2(string envId, AddEnvironmentStep2Model model)
+        public async Task<ActionResult> Step2(string envId, AddEnvironmentStep3Model model)
         {
             // TODO: Move this into a step 2 validator ... maybe
             if (!NewOrExistingFieldValid(model.ExistingResourceGroupNameAndLocation, model.NewResourceGroupName))
             {
-                ModelState.AddModelError(nameof(AddEnvironmentStep2Model.ExistingResourceGroupNameAndLocation), "Either an existing or new resource group name should be supplied");
+                ModelState.AddModelError(nameof(AddEnvironmentStep3Model.ExistingResourceGroupNameAndLocation), "Either an existing or new resource group name should be supplied");
             }
 
             if (!NewOrExistingFieldValid(model.ExistingKeyVaultIdLocationAndUri, model.NewKeyVaultName))
             {
-                ModelState.AddModelError(nameof(AddEnvironmentStep2Model.ExistingKeyVaultIdLocationAndUri), "Either an existing or new Key Vault name should be supplied");
+                ModelState.AddModelError(nameof(AddEnvironmentStep3Model.ExistingKeyVaultIdLocationAndUri), "Either an existing or new Key Vault name should be supplied");
             }
 
             if (!NewOrExistingFieldValid(model.BatchAccountResourceIdLocationUrl, model.NewBatchAccountName))
             {
-                ModelState.AddModelError(nameof(AddEnvironmentStep2Model.BatchAccountResourceIdLocationUrl), "Either an existing or new Batch account should be supplied");
+                ModelState.AddModelError(nameof(AddEnvironmentStep3Model.BatchAccountResourceIdLocationUrl), "Either an existing or new Batch account should be supplied");
             }
 
             if (!NewOrExistingFieldValid(model.StorageAccountResourceIdAndLocation, model.NewStorageAccountName))
             {
-                ModelState.AddModelError(nameof(AddEnvironmentStep2Model.StorageAccountResourceIdAndLocation), "Either an existing or new Storage account should be supplied");
+                ModelState.AddModelError(nameof(AddEnvironmentStep3Model.StorageAccountResourceIdAndLocation), "Either an existing or new Storage account should be supplied");
             }
 
             if (!NewOrExistingFieldValid(model.SubnetResourceIdLocationAndAddressPrefix, model.NewVnetName))
             {
-                ModelState.AddModelError(nameof(AddEnvironmentStep2Model.SubnetResourceIdLocationAndAddressPrefix), "Either an existing or new VNet name should be supplied");
+                ModelState.AddModelError(nameof(AddEnvironmentStep3Model.SubnetResourceIdLocationAndAddressPrefix), "Either an existing or new VNet name should be supplied");
             }
 
             if (!NewOrExistingFieldValid(model.ApplicationInsightsIdAndLocation, model.NewApplicationInsightsName))
             {
-                ModelState.AddModelError(nameof(AddEnvironmentStep2Model.ApplicationInsightsIdAndLocation), "Either an existing or new Application Insights name should be supplied");
+                ModelState.AddModelError(nameof(AddEnvironmentStep3Model.ApplicationInsightsIdAndLocation), "Either an existing or new Application Insights name should be supplied");
             }
 
             var environment = await _environmentCoordinator.GetEnvironment(model.EnvironmentName);
@@ -997,7 +997,7 @@ namespace WebApp.Controllers
                 var rgLocation = model.ExistingResourceGroupNameAndLocation.Split(";")[1];
                 if (false == rgLocation.Equals(environment.LocationName, StringComparison.OrdinalIgnoreCase))
                 {
-                    ModelState.AddModelError(nameof(AddEnvironmentStep2Model.ExistingResourceGroupNameAndLocation), $"Environment and resource group must be configured to the same location: ({environment.LocationName})");
+                    ModelState.AddModelError(nameof(AddEnvironmentStep3Model.ExistingResourceGroupNameAndLocation), $"Environment and resource group must be configured to the same location: ({environment.LocationName})");
                 }
             }
 
@@ -1007,7 +1007,7 @@ namespace WebApp.Controllers
                 var kvLocation = model.ExistingKeyVaultIdLocationAndUri.Split(";")[1];
                 if (false == kvLocation.Equals(environment.LocationName, StringComparison.OrdinalIgnoreCase))
                 {
-                    ModelState.AddModelError(nameof(AddEnvironmentStep2Model.ExistingKeyVaultIdLocationAndUri), $"Environment and Key Vault must be configured to the same location: ({environment.LocationName})");
+                    ModelState.AddModelError(nameof(AddEnvironmentStep3Model.ExistingKeyVaultIdLocationAndUri), $"Environment and Key Vault must be configured to the same location: ({environment.LocationName})");
                 }
             }
 
@@ -1017,7 +1017,7 @@ namespace WebApp.Controllers
                 var batchAccountLocation = model.BatchAccountResourceIdLocationUrl.Split(";")[1];
                 if (false == batchAccountLocation.Equals(environment.LocationName, StringComparison.OrdinalIgnoreCase))
                 {
-                    ModelState.AddModelError(nameof(AddEnvironmentStep2Model.BatchAccountResourceIdLocationUrl), $"Environment and Batch account must be configured to the same location: ({environment.LocationName})");
+                    ModelState.AddModelError(nameof(AddEnvironmentStep3Model.BatchAccountResourceIdLocationUrl), $"Environment and Batch account must be configured to the same location: ({environment.LocationName})");
                 }
             }
 
@@ -1027,7 +1027,7 @@ namespace WebApp.Controllers
                 var subnetLocation = model.SubnetResourceIdLocationAndAddressPrefix.Split(";")[1];
                 if (false == subnetLocation.Equals(environment.LocationName, StringComparison.OrdinalIgnoreCase))
                 {
-                    ModelState.AddModelError(nameof(AddEnvironmentStep2Model.SubnetResourceIdLocationAndAddressPrefix), $"Environment and Subnet must be configured to the same location: ({environment.LocationName})");
+                    ModelState.AddModelError(nameof(AddEnvironmentStep3Model.SubnetResourceIdLocationAndAddressPrefix), $"Environment and Subnet must be configured to the same location: ({environment.LocationName})");
                 }
             }
 
@@ -1049,7 +1049,7 @@ namespace WebApp.Controllers
 
                 if (!nameAvailability.NameAvailable.GetValueOrDefault(false))
                 {
-                    ModelState.AddModelError(nameof(AddEnvironmentStep2Model.NewKeyVaultName), $"The Key Vault name is not available. {nameAvailability.Message}");
+                    ModelState.AddModelError(nameof(AddEnvironmentStep3Model.NewKeyVaultName), $"The Key Vault name is not available. {nameAvailability.Message}");
                 }
             }
 
@@ -1091,8 +1091,8 @@ namespace WebApp.Controllers
         }
 
         [HttpGet]
-        [Route("Environments/Step4/{envId?}")]
-        public async Task<ActionResult> Step4(string envId)
+        [Route("Environments/Step5/{envId?}")]
+        public async Task<ActionResult> Step5(string envId)
         {
             var environment = await _environmentCoordinator.GetEnvironment(envId);
             if (environment == null)
@@ -1101,12 +1101,12 @@ namespace WebApp.Controllers
                 return RedirectToAction("Step1", new { envId });
             }
 
-            var model = new AddEnvironmentStep4Model(environment);
-            return View("Create/Step4", model);
+            var model = new AddEnvironmentStep5Model(environment);
+            return View("Create/Step5", model);
         }
 
         [HttpPost]
-        public async Task<ActionResult> Step4(AddEnvironmentStep4Model model)
+        public async Task<ActionResult> Step5(AddEnvironmentStep5Model model)
         {
             if (model.JoinDomain)
             {
@@ -1147,7 +1147,7 @@ namespace WebApp.Controllers
 
             if (!ModelState.IsValid)
             {
-                return View("Create/Step4", model);
+                return View("Create/Step5", model);
             }
 
             if (environment.RenderManagerConfig == null)
@@ -1197,7 +1197,7 @@ namespace WebApp.Controllers
 
             if (!await UpdateEnvironment(environment, model))
             {
-                return View("Create/Step4", model);
+                return View("Create/Step5", model);
             }
 
             // after saving, either go to overview details, or a success page.
@@ -1278,7 +1278,7 @@ namespace WebApp.Controllers
             return true;
         }
 
-        private async Task CreateOrUpdateStorageAndBatchAccounts(RenderingEnvironment environment, AddEnvironmentStep2Model model)
+        private async Task CreateOrUpdateStorageAndBatchAccounts(RenderingEnvironment environment, AddEnvironmentStep3Model model)
         {
             if (!string.IsNullOrEmpty(model.NewStorageAccountName))
             {
@@ -1350,7 +1350,7 @@ namespace WebApp.Controllers
             environment.KeyVaultServicePrincipal.Thumbprint = certificate.Thumbprint;
         }
 
-        private async Task CreateOrUpdateVnet(RenderingEnvironment environment, AddEnvironmentStep2Model model)
+        private async Task CreateOrUpdateVnet(RenderingEnvironment environment, AddEnvironmentStep3Model model)
         {
             if (!string.IsNullOrEmpty(model.NewVnetName))
             {
@@ -1389,7 +1389,7 @@ namespace WebApp.Controllers
             }
         }
 
-        private async Task CreateOrUpdateResourceGroup(RenderingEnvironment environment, AddEnvironmentStep2Model model)
+        private async Task CreateOrUpdateResourceGroup(RenderingEnvironment environment, AddEnvironmentStep3Model model)
         {
             try
             {
@@ -1412,7 +1412,7 @@ namespace WebApp.Controllers
             }
         }
 
-        private async Task CreateOrUpdateKeyVault(RenderingEnvironment environment, AddEnvironmentStep2Model model)
+        private async Task CreateOrUpdateKeyVault(RenderingEnvironment environment, AddEnvironmentStep3Model model)
         {
             try
             {
@@ -1458,14 +1458,14 @@ namespace WebApp.Controllers
                 ModelState.AddModelError("", $"Failed to create Azure Key Vault with error: {cEx.Message}");
                 if (cEx.Response?.StatusCode == HttpStatusCode.Conflict && cEx.Body?.Code == "VaultAlreadyExists")
                 {
-                    ModelState.AddModelError(nameof(AddEnvironmentStep2Model.NewKeyVaultName), "The Key Vault name already exists, please choose a different name. It may be that the KeyVault exists in another Subscription or Location.");
+                    ModelState.AddModelError(nameof(AddEnvironmentStep3Model.NewKeyVaultName), "The Key Vault name already exists, please choose a different name. It may be that the KeyVault exists in another Subscription or Location.");
                 }
 
                 throw;
             }
         }
 
-        private async Task CreateOrUpdateAppInsights(RenderingEnvironment environment, AddEnvironmentStep2Model model)
+        private async Task CreateOrUpdateAppInsights(RenderingEnvironment environment, AddEnvironmentStep3Model model)
         {
             string appInsightsName;
             string appInsightsLocation;

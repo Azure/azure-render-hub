@@ -10,7 +10,7 @@
 }
 
 @await Html.PartialAsync("Environments/Create/CreateFormHeaderPartial")
-@using (Html.BeginForm("Step2", "Environments", new {envId = Model.EnvironmentName }, FormMethod.Post, true, new { id = "myForm" }))
+@using (Html.BeginForm("Step2", "Environments", new { envId = Model.EnvironmentName }, FormMethod.Post, true, new { id = "myForm" }))
 {
     @await Html.PartialAsync("Menu/EnvironmentSubMenu", Model, new ViewDataDictionary(ViewData)
     {
@@ -35,7 +35,7 @@
         <div class="section-title">
             <span class="step-index">2</span>
             <div class="step-header">
-                <h3>Resources</h3>
+                <h3>Azure Connection</h3>
                 <p>
                     Select the required Batch account, Storage account, VNet and Application Insights for the
                     environment. For any of these you can create new ones should you wish.
@@ -46,94 +46,18 @@
             <div class="section-bar"></div>
             <div class="section-content">
                 <div class="form-element">
-                    <label asp-for="NewResourceGroupName">Resource group name</label>
-                    <div id="RGSpinner" style="display: none;">
-                        <div class="async-select">
-                            <select id="ResourceGroups" asp-for="ExistingResourceGroupNameAndLocation">
-                                <option disabled selected> -- Loading Resource Groups -- </option>
-                            </select>
-                            <i class="fa fa-spinner fa-spin"></i>
-                        </div>
-                        <span asp-validation-for="ExistingResourceGroupNameAndLocation" class=""></span>
-                        <span id="ResourceGroups-none" class="field-validation-error"></span>
-                    </div>
-                    <div id="resourceGroup" class="newResource">
-                        <input asp-for="NewResourceGroupName" value="@Model.NewResourceGroupName" placeholder="New resource group name" />
-                        <span asp-validation-for="NewResourceGroupName" class=""></span>
-                    </div>
-                    <small class="form-text text-muted">A resource group is a container that holds related resources for your environment.</small>
-                    <a id="newResourceGroup" href="javascript:void(0);" onclick="showHideNew('resourceGroup', 'NewResourceGroupName', 'RGSpinner', this);">Select existing resource group</a>
-                </div>
-                
-                <div class="form-element">
-                    <label asp-for="NewKeyVaultName">Azure Key Vault name</label>                
-                    <div id="KeyVaultSpinner" style="display: none;">
-                        <div class="async-select">
-                            <select id="KeyVaults" asp-for="ExistingKeyVaultIdLocationAndUri">
-                                <option disabled selected> -- Loading Key Vaults -- </option>
-                            </select>
-                            <i class="fa fa-spinner fa-spin"></i>
-                        </div>
-                        <span asp-validation-for="ExistingKeyVaultIdLocationAndUri" class=""></span>
-                        <span id="KeyVaults-none" class="field-validation-error"></span>
-                    </div>
-                    <div id="keyVault" class="newResource">
-                        <input asp-for="NewKeyVaultName" value="@Model.NewKeyVaultName" placeholder="New Key Vault name" />
-                        <span asp-validation-for="NewKeyVaultName" class=""></span>
-                    </div>
-                    <small class="form-text text-muted">Key Vault is a secure Azure service to store passwords and certificates. Each environment has it's own Key Vault to store secrets like service passwords, domain credentials and user passwords.</small>
-                    <a id="newKeyVault" href="javascript:void(0);" onclick="showHideNew('keyVault', 'NewKeyVaultName', 'KeyVaultSpinner', this);">Select existing Key Vault</a>
-                </div>
-                
-                <div class="form-element">
-                    <label asp-for="BatchAccountResourceIdLocationUrl">Batch account</label>
-                    <div id="BatchAccSpinner">
-                        <div class="async-select">
-                            <select id="BatchAccounts" asp-for="BatchAccountResourceIdLocationUrl">
-                                <option disabled selected> -- Loading Batch Accounts -- </option>
-                            </select>
-                            <i class="fa fa-spinner fa-spin"></i>
-                        </div>
-                        <span asp-validation-for="BatchAccountResourceIdLocationUrl" class=""></span>
-                        <span id="BatchAccounts-none" class="field-validation-error"></span>
-                    </div>
-                    <div id="batchAcc" class="newResource" style="display: none;">
-                        <input asp-for="NewBatchAccountName" value="@Model.NewBatchAccountName" placeholder="New Batch account name"/>
-                        <span asp-validation-for="NewBatchAccountName" class=""></span>
-                    </div>
-                    <small>Azure Batch is used to provision virtual machines.</small>
-                    <a id="newBatchAcc" href="javascript:void(0);" onclick="showHideNew('batchAcc', 'NewBatchAccountName', 'BatchAccSpinner', this);">Create new Batch account</a>
+                    <input id="DeleteResource" asp-for="AzureConnectionType" type="radio" value="true" />
+                    <label asp-for="AzureConnectionType">No connection (Azure-only deployment)</label>
+
+                    <input id="DeleteResource" asp-for="AzureConnectionType" type="radio" value="true" />
+                    <label asp-for="AzureConnectionType">No connection (Azure-only deployment)</label>
+
+                    <input id="DeleteResource" asp-for="AzureConnectionType" type="radio" value="true" />
+                    <label asp-for="AzureConnectionType">No connection (Azure-only deployment)</label>
                 </div>
 
-                <div class="form-element">
-                    <label asp-for="StorageAccountResourceIdAndLocation">Storage account</label>
-                    <div id="StorageAccSpinner">
-                        <div class="async-select">
-                            <select id="StorageAccounts" asp-for="StorageAccountResourceIdAndLocation">
-                                <option disabled selected> -- Loading Storage Accounts -- </option>
-                            </select>
-                            <i class="fa fa-spinner fa-spin"></i>
-                        </div>
-                        <span asp-validation-for="StorageAccountResourceIdAndLocation" class=""></span>
-                        <span id="StorageAccounts-none" class="field-validation-error"></span>
-                    </div>
-                    <div id="storageAcc" class="newResource" style="display: none;">
-                        <input asp-for="NewStorageAccountName" value="@Model.NewStorageAccountName" placeholder="New Storage account name"/>
-                        <span asp-validation-for="NewStorageAccountName" class=""></span>
-                    </div>
-                    <small>The Azure Storage account is used to store any required data, or can be mounted by render nodes for input and output files.</small>
-                    <a id="newStorageAcc" href="javascript:void(0);" onclick="showHideNew('storageAcc', 'NewStorageAccountName', 'StorageAccSpinner', this);">Create new storage account</a>
-                </div>
 
-                <div class="form-element">
-                    <label asp-for="NewFileShareName">File Share</label>
-                    <div id="fileShare">
-                        <input asp-for="NewFileShareName" value="share" placeholder="File share name"/>
-                        <span asp-validation-for="NewFileShareName" class=""></span>
-                    </div>
-                    <small>The Azure Files Share can be mounted by nodes and used to fetch inputs or store outputs.</small>
-                </div>
-                
+
                 <div class="form-element">
                     <label asp-for="SubnetResourceIdLocationAndAddressPrefix">Virtual Network and Subnet</label>
                     <div id="SubnetSpinner">
@@ -147,41 +71,14 @@
                         <span id="Subnets-none" class="field-validation-error"></span>
                     </div>
                     <div id="vNet" class="newResource" style="display: none;">
-                        <input asp-for="NewVnetName" value="@Model.NewVnetName" placeholder="New Virtual Network name"/>
-                        <span asp-validation-for="NewVnetName" class=""></span>
+                        <input asp-for="VNetSettings.VNetName" value="@Model.VNetSettings.VNetName" placeholder="New Virtual Network name" />
+                        <span asp-validation-for="VNetSettings.VNetName" class=""></span>
                     </div>
                     <small>Virtual Machines will be deployed to this Subnet ensuring they have access to any cloud or on-premise storage. Ensure that the subnet has sufficient IP addresses for the number of virtual machines you plan to run.</small>
                     <a id="newVNet" href="javascript:void(0);" onclick="showHideNew('vNet', 'NewVnetName', 'SubnetSpinner', this);">Create new virtual network</a>
                 </div>
-
-                <div class="form-element">
-                    <label asp-for="ApplicationInsightsIdAndLocation">Application Insights</label>
-                    <div id="InsightsSpinner">
-                        <div class="async-select">
-                            <select id="ApplicationInsights" asp-for="ApplicationInsightsIdAndLocation">
-                                <option disabled selected> -- Loading Application Insights -- </option>
-                            </select>
-                            <i class="fa fa-spinner fa-spin"></i>
-                        </div>
-                        <span asp-validation-for="ApplicationInsightsIdAndLocation" class=""></span>
-                        <span id="AppInsights-none" class="field-validation-error"></span>
-                    </div>
-                    <div id="appInsights" class="newResource" style="display: none;">
-                        <input asp-for="NewApplicationInsightsName" value="@Model.NewApplicationInsightsName" placeholder="New Application Insights account name"/>
-                        <span asp-validation-for="NewApplicationInsightsName" class=""></span>
-                        <label asp-for="NewApplicationInsightsName" style="margin-top: 5px;">Application Insights location</label>
-                        <div id="InsightsLocationSpinner" class="async-select">
-                            <select id="NewApplicationInsightsLocation" asp-for="NewApplicationInsightsLocation">
-                                <option disabled selected> -- Loading Application Insights Locations -- </option>
-                            </select>
-                            <i class="fa fa-spinner fa-spin"></i>
-                        </div>
-                    </div>
-                    <small>Application Insights is used to capture metrics around virtual machine usage and is utilized by the auto-scaler.</small>
-                    <a id="newInsights" href="javascript:void(0);" onclick="showHideNew('appInsights', 'NewApplicationInsightsName', 'InsightsSpinner', this);">Create new App Insights</a>
                 </div>
             </div>
-        </div>
     </div>
     <div class="form-footer">
         <div class="summary"></div>
@@ -193,7 +90,7 @@
 }
 
 @section scripts
-{
+    {
     <script>
         function showHideNew(createDiv, createInput, selectDiv, anchorLink) {
             if ($(`#${createDiv}`).is(":visible")) {
@@ -268,179 +165,6 @@
             }
         }
 
-        function loadResourceGroups(subscriptionId, location) {
-            $("#RGSpinner").addClass("loading");
-            $("#ResourceGroups-none").hide();
-
-            $.get(`/api/subscriptions/${subscriptionId}/resourcegroups`,
-                function(resourceGroups) {
-                    var activeCount = 0;
-                    var dropDownItems = $.map(resourceGroups,
-                        function(rg) {
-                            var disabled = "";
-                            if (rg.location !== location) {
-                                disabled = "disabled";
-                            } else {
-                                activeCount ++;
-                            }
-
-                            return `<option ${disabled} value="${rg.name};${rg.location}">${rg.name} (${rg.location})</option>`;
-                        }
-                    );
-
-                    setAvailabilityError(activeCount, "ResourceGroups-none", `resource groups in '${location}'`, () => {
-                        setInitialState("@Model.NewResourceGroupName", "@Model.ExistingResourceGroupNameAndLocation", "resourceGroup", "NewResourceGroupName", "RGSpinner", $("#newResourceGroup"));
-                    });
-
-                    if (dropDownItems && dropDownItems.length > 0) {
-                        dropDownItems.splice(0, 0, "<option value='#'>Select an existing resource group or create a new one ...</option>");
-                    } else {
-                        dropDownItems = [
-                            `<option disabled value='#'>No existing resource groups found in ${location}</option>`
-                        ];
-                    }
-
-                    populateAndPreSelectDropDown(dropDownItems, "@Model.ExistingResourceGroupNameAndLocation", "ResourceGroups", activeCount > 0);
-                    $("#RGSpinner").removeClass("loading");
-                }
-            );
-        }
-
-        function loadKeyVaults(subscriptionId, location) {
-            $("#VaultSpinner").addClass("loading");
-            $("#KeyVaults-none").hide();
-
-            $.get(`/api/subscriptions/${subscriptionId}/keyvaults`,
-                function(vaults) {
-                    var activeCount = 0;
-                    var dropDownItems = $.map(vaults,
-                        function(vault) {
-                            var disabled = "";
-                            if (vault.location !== location) {
-                                disabled = "disabled";
-                            } else {
-                                activeCount ++;
-                            }
-
-                            return `<option ${disabled} value="${vault.id};${vault.location};${vault.properties.vaultUri}">${vault.name} (${vault.location})</option>`;
-                        }
-                    );
-
-                    setAvailabilityError(activeCount, "KeyVaults-none", `Key Vaults in '${location}'`, () => {
-                        setInitialState("@Model.NewKeyVaultName", "@Model.ExistingKeyVaultIdLocationAndUri", "keyVault", "NewKeyVaultName", "KeyVaultSpinner", $("#newKeyVault"));
-                    });
-
-                    if (dropDownItems && dropDownItems.length > 0) {
-                        dropDownItems.splice(0, 0, "<option value='#'>Select an existing resource group or create a new one ...</option>");
-                    } else {
-                        dropDownItems = [
-                            `<option disabled value='#'>No existing resource groups found in ${location}</option>`
-                        ];
-                    }
-
-                    populateAndPreSelectDropDown(dropDownItems, "@Model.ExistingKeyVaultIdLocationAndUri", "KeyVaults", true);
-                    $("#VaultSpinner").removeClass("loading");
-                }
-            );
-        }
-
-        function loadBatchAccounts(subscriptionId, location) {
-            $("#BatchAccSpinner").addClass("loading");
-            $("#BatchAccounts-none").hide();
-
-            $.get(`/api/subscriptions/${subscriptionId}/batchaccounts/${location}`,
-                function (accounts) {
-                    var activeCount = 0;
-                    var dropDownItems = $.map(accounts,
-                        function(account) {
-                            var storageId = "";
-                            activeCount++;
-                            if ("properties.autoStorage" in account && account["properties.autoStorage"] !== null) {
-                                storageId = account["properties.autoStorage"].storageAccountId;
-                            }
-
-                            const data = `data-location="${account.location}" data-storage-account="${storageId}"`;
-                            return `<option ${data} value="${account.id};${account.location};${account["properties.accountEndpoint"]}">${account.name} (${account.location})</option>`;
-                        }
-                    );
-
-                    setAvailabilityError(activeCount, "BatchAccounts-none", `Batch accounts in '${location}'`, () => {
-                        if (activeCount > 0) {
-                            setInitialState("@Model.NewBatchAccountName", "@Model.BatchAccountResourceIdLocationUrl", "batchAcc", "NewBatchAccountName", "BatchAccSpinner", $("#newBatchAcc"));
-                        } else {
-                            showCreateInput("batchAcc", "NewBatchAccountName", "BatchAccSpinner", $("#newBatchAcc"));
-                        }
-                    });
-
-                    if (dropDownItems && dropDownItems.length > 0) {
-                        dropDownItems.splice(0, 0, "<option value='#'>Select an existing Batch account, or create a new one ...</option>");
-                    } else {
-                        dropDownItems = [
-                            `<option disabled value='#'>No existing Batch accounts found in ${location}</option>`
-                        ];
-                    }
-
-                    populateAndPreSelectDropDown(dropDownItems, "@Model.BatchAccountResourceIdLocationUrl".replace("https://", ""), "BatchAccounts", true);
-                    $("#BatchAccSpinner").removeClass("loading");
-                }
-            );
-        }
-
-        function loadStorageAccounts(subscriptionId, location, storageAccountId) {
-            $("#StorageAccSpinner").addClass("loading");
-            $("#StorageAccounts-error").hide();
-            $("#StorageAccounts-none").hide();
-
-            if (!location || location.length === 0) {
-                $("#StorageAccounts").empty().append("<option>No location is configured for the environment ...</option>");
-                $("#StorageAccSpinner").removeClass("loading");
-                return;
-            }
-
-            $.get(`/api/subscriptions/${subscriptionId}/storageaccounts/${location}`,
-                function(accounts) {
-                    var activeCount = 0;
-                    var dropDownItems = $.map(accounts,
-                        function(account) {
-                            var disabled = "";
-                            if (account.location !== location) {
-                                disabled = "disabled";
-                            } else {
-                                activeCount ++;
-                            }
-
-                            const data = `data-storage-account=${account.name}`;
-                            return `<option ${disabled} ${data} value="${account.id};${account.location}">${account.name} (${account.location})</option>`;
-                        }
-                    );
-
-                    setAvailabilityError(activeCount, "StorageAccounts-none", `storage accounts in '${location}'`, () => {
-                        if (activeCount > 0) {
-                            setInitialState("@Model.NewStorageAccountName", "@Model.StorageAccountResourceIdAndLocation", "storageAcc", "NewStorageAccountName", "StorageAccSpinner", $("#newStorageAcc"));
-                        } else {
-                            showCreateInput("storageAcc", "NewStorageAccountName", "StorageAccSpinner", $("#newStorageAcc"));
-                        }
-                    });
-
-                    if (dropDownItems && dropDownItems.length > 0) {
-                        dropDownItems.splice(0, 0, "<option value='#'>Select an existing Storage account or create a new one ...</option>");
-                    } else {
-                        dropDownItems = [
-                            `<option value='#'>No existing Storage accounts found in ${location}</option>`
-                        ];
-                    }
-
-                    const valueFromModel = "@Model.StorageAccountResourceIdAndLocation";
-                    const selectedValue = !valueFromModel || valueFromModel.length === 0
-                        ? (storageAccountId ? `${storageAccountId};${location}` : $("#StorageAccounts option:first").val())
-                        : valueFromModel;
-
-                    populateAndPreSelectDropDown(dropDownItems, selectedValue, "StorageAccounts", activeCount > 0);
-                    $("#StorageAccSpinner").removeClass("loading");
-                }
-            );
-        }
-
         function loadSubnets(subscriptionId, location) {
             $("#SubnetSpinner").addClass("loading");
             $("#Subnets-none").hide();
@@ -457,7 +181,7 @@
 
                     setAvailabilityError(activeCount, "Subnets-none", `Subnets in '${location}'`, () => {
                         if (activeCount > 0) {
-                            setInitialState("@Model.NewVnetName", "@Model.SubnetResourceIdLocationAndAddressPrefix", "vNet", "NewVnetName", "SubnetSpinner", $("#newVNet"));
+                            setInitialState("@Model.VNetSettings.VNetName", "@Model.SubnetResourceIdLocationAndAddressPrefix", "vNet", "NewVnetName", "SubnetSpinner", $("#newVNet"));
                         } else {
                             showCreateInput("vNet", "NewVnetName", "SubnetSpinner", $("#newVNet"));
                         }
@@ -473,62 +197,6 @@
 
                     populateAndPreSelectDropDown(dropDownItems, "@Model.SubnetResourceIdLocationAndAddressPrefix", "Subnets", true);
                     $("#SubnetSpinner").removeClass("loading");
-                });
-        }
-
-        function loadAppInsights(subscriptionId) {
-            $("#InsightsSpinner").addClass("loading");
-            $("#AppInsights-none").hide();
-
-            $.get(`/api/subscriptions/${subscriptionId}/applicationinsights`,
-                function (appInsights) {
-                    var activeCount = 0;
-                    var dropDownItems = $.map(appInsights,
-                        function (insight) {
-                            activeCount++;
-                            return `<option value="${insight.id};${insight.location}">${insight.name}</option>`;
-                        }
-                    );
-
-                    setAvailabilityError(activeCount, "AppInsights-none", "Application Insights in this Azure Subscription", () => {
-                        if (activeCount > 0) {
-                            setInitialState("@Model.NewApplicationInsightsName", "@Model.ApplicationInsightsIdAndLocation", "appInsights", "NewApplicationInsightsName", "InsightsSpinner", $("#newInsights"));
-                        } else {
-                            showCreateInput("appInsights", "NewApplicationInsightsName", "InsightsSpinner", $("#newInsights"));
-                        }
-                    });
-
-                    if (dropDownItems && dropDownItems.length > 0) {
-                        dropDownItems.splice(0, 0, "<option value='#'>Select an existing Application Insights or create a new one ...</option>");
-                    } else {
-                        dropDownItems = [
-                            `<option disabled value='#'>No available Application Insights</option>`
-                        ];
-                    }
-
-                    populateAndPreSelectDropDown(dropDownItems, "@Model.ApplicationInsightsIdAndLocation", "ApplicationInsights", true);
-                    $("#InsightsSpinner").removeClass("loading");
-                });
-        }
-
-        function loadAppInsightsLocations(subscriptionId, location) {
-            $("#InsightsLocationSpinner").addClass("loading");
-
-            $.get(`/api/subscriptions/${subscriptionId}/resourceProvider/Microsoft.Insights/resourceType/components/locations`,
-                function (locations) {
-                    const dropDownItems = $.map(locations,
-                        function (location) {
-                            return `<option value="${location.name}">${location.displayName}</option>`;
-                        }
-                    );
-
-                    $("#NewApplicationInsightsLocation").empty().append(dropDownItems);
-                    $("#NewApplicationInsightsLocation").attr("selectedIndex", 1).change();
-                    $("#InsightsLocationSpinner").removeClass("loading");
-
-                    if ($("#NewApplicationInsightsLocation option[value=" + location + "]").length > 0) {
-                        $("#NewApplicationInsightsLocation").val(location);
-                    }
                 });
         }
 
@@ -573,16 +241,7 @@
         }
 
         $(document).ready(function() {
-            $("#BatchAccounts").change(function() {
-                const storageAccountId = $("#BatchAccounts :selected").data("storage-account");
-                loadStorageAccounts("@Model.SubscriptionId", "@Model.LocationName", storageAccountId);
-            });
 
-            loadResourceGroups("@Model.SubscriptionId", "@Model.LocationName");
-            loadKeyVaults("@Model.SubscriptionId", "@Model.LocationName");
-            loadAppInsights("@Model.SubscriptionId");
-            loadAppInsightsLocations("@Model.SubscriptionId", "@Model.LocationName");
-            loadBatchAccounts("@Model.SubscriptionId", "@Model.LocationName");
             loadSubnets("@Model.SubscriptionId", "@Model.LocationName");
 
             if ('@Model.Error' !== '') {

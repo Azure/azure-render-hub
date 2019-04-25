@@ -1,0 +1,122 @@
+﻿@using WebApp.Code.Extensions
+@using WebApp.Config
+@model WebApp.Models.Environments.Create.AddEnvironmentStep4Model;
+@{
+    ViewBag.Title = "Add Environment";
+}
+
+@section Breadcrumb
+    {
+    <a asp-controller="Environments" asp-action="Index">Environments</a> &gt;
+    <span>New</span>
+}
+
+@await Html.PartialAsync("Environments/Create/CreateFormHeaderPartial")
+
+@using (Html.BeginForm("Step4", "Environments", new {envId = Model.EnvironmentName}, FormMethod.Post, true, new { id = "myForm", enctype = "multipart/form-data" }))
+{
+    @await Html.PartialAsync("Menu/EnvironmentSubMenu", Model, new ViewDataDictionary(ViewData)
+    {
+        { "Step", 5 },
+        { "Wizard", "true" }
+    })
+
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(model => model.EnvironmentName)
+    @Html.HiddenFor(model => model.RenderManager)
+
+    <div asp-validation-summary="All" class=""></div>
+    <div class="form-section">
+        <div class="section-title">
+            <span class="step-index">4.1</span>
+            <div class="step-header">
+                <h3>Domain configuration</h3>
+                <p>Domain settings for Windows virtual machines</p>
+            </div>
+        </div>
+        <div class="section-wrapper">
+            <div class="section-bar"></div>
+            <div class="section-content">
+                <div class="form-element">
+                    <label></label>
+                    <div class="form-check">
+                        <input asp-for="JoinDomain" type="checkbox">
+                        <label>Join domain</label>
+                    </div>
+                </div>
+                <div id="DomainForm">
+                    <div class="form-element">
+                        <label asp-for="DomainName">Domain name</label>
+                        <input asp-for="DomainName" value="@Model.DomainName" />
+                        <span asp-validation-for="DomainName" class=""></span>
+                    </div>
+                    <div class="form-element">
+                        <label asp-for="DomainWorkerOuPath">Domain OU for virtual machines</label>
+                        <input asp-for="DomainWorkerOuPath" value="@Model.DomainWorkerOuPath" />
+                        <span asp-validation-for="DomainWorkerOuPath" class=""></span>
+                    </div>
+                    <div class="form-element">
+                        <label asp-for="DomainJoinUsername">Domain user to join virtual machines to domain</label>
+                        <input asp-for="DomainJoinUsername" value="@Model.DomainJoinUsername" />
+                        <span asp-validation-for="DomainJoinUsername" class=""></span>
+                    </div>
+                    <div class="form-element">
+                        <label asp-for="DomainJoinPassword">Domain user password</label>
+                        <input asp-for="DomainJoinPassword" value="@Model.DomainJoinPassword" type="password" />
+                        <span asp-validation-for="DomainJoinPassword" class=""></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {
+        switch (Model.RenderManager)
+        {
+            case RenderManagerType.Deadline:
+                <text>
+                    @await Html.PartialAsync("Environments/Create/DeadlinePartial", Model)
+                </text>
+                break;
+            case RenderManagerType.Qube610:
+            case RenderManagerType.Qube70:
+                <text>
+                    @await Html.PartialAsync("Environments/Create/QubePartial", Model)
+                </text>
+                break;
+            case RenderManagerType.Tractor:
+                <text>
+                    @await Html.PartialAsync("Environments/Create/TractorPartial", Model)
+                </text>
+                break;
+        }
+    }
+    <div class="form-footer">
+        <div class="summary"></div>
+        <div class="button-bar">
+            <a class="button" asp-controller="Environments" asp-action="Step3" asp-route-envId="@Model.EnvironmentName">Previous</a>
+            <input type="submit" class="" value="Done" />
+        </div>
+    </div>
+}
+
+@section Scripts
+{
+    <script>
+        $(document).ready(function () {
+            // Order matters so sub-sections get enabled/disabled as expected.
+            registerCheckboxEnabledFormSection("JoinDomain", "DomainForm");
+            registerCheckboxEnabledFormSection("DeadlineEnvironment_InstallDeadlineClient", "DeadlineInstallationForm");
+            registerCheckboxEnabledFormSection("DeadlineEnvironment_RunAsService", "DeadlineServiceForm");
+            registerCheckboxEnabledFormSection("DeadlineEnvironment_UseDeadlineDatabaseCertificate", "DeadlineDatabaseCertForm");
+
+            if ('@Model.Error' !== '')
+            {
+                toastr.options.timeOut = 0;
+                toastr.options.extendedTimeOut = 0;
+                toastr.options.closeButton = true;
+                toastr.options.positionClass = "toast-top-center";
+                toastr.warning('@Model.ErrorMessage', '@Model.Error').css("width", "600px");
+            }
+        });
+    </script>
+}
