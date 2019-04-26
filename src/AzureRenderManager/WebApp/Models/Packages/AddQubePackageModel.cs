@@ -10,21 +10,21 @@ namespace WebApp.Models.Packages
 {
     public class AddQubePackageModel
     {
-        [Required(ErrorMessage = "Package name is a required field")]
-        [RegularExpression(Validation.RegularExpressions.PackageName, ErrorMessage = Validation.Errors.Regex.PackageName)]
-        public string PackageName { get; set; }
+        //[Required(ErrorMessage = "Package name is a required field")]
+        //[RegularExpression(Validation.RegularExpressions.PackageName, ErrorMessage = Validation.Errors.Regex.PackageName)]
+        //public string PackageName { get; set; }
 
         public string InstallCommandLine { get; set; }
 
         public IFormFile QbConf { get; set; }
 
-        [Required]
+        //[Required]
         public IFormFile PythonInstaller { get; set; }
 
-        [Required]
+        //[Required]
         public IFormFile QubeCoreMsi { get; set; }
 
-        [Required]
+        //[Required]
         public IFormFile QubeWorkerMsi { get; set; }
 
         public IEnumerable<IFormFile> QubeJobTypeMsis { get; set; }

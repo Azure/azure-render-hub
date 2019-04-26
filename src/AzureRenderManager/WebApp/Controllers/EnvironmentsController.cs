@@ -134,7 +134,7 @@ namespace WebApp.Controllers
         }
 
         [HttpGet]
-        [Route("Environments/Delete/{envId}")]
+        [Route("Environments/{envId}/Delete")]
         public async Task<ActionResult> Delete(string envId)
         {
             var environment = await _environmentCoordinator.GetEnvironment(envId);
@@ -178,6 +178,7 @@ namespace WebApp.Controllers
         /// <param name="model"></param>
         /// <returns></returns>
         [HttpPost]
+        [Route("Environments/{envId}/Delete")]
         public async Task<ActionResult> Delete(DeleteEnvironmentModel model)
         {
             if (model.EnvironmentName.Equals(model.Confirmation, StringComparison.OrdinalIgnoreCase) == false)

@@ -131,7 +131,7 @@
      */
     function performDelete(controller, action, id) {
         if (controller.toLowerCase() !== "environments") {
-            doDelete(id, `/${controller}/${id}/${action}`, `/${controller}/${id}/Overview`);
+            doDelete(id, `/${controller}/${id}/${action}`, `/${controller}`);
         } else {
             window.location.replace(`/${controller}/${id}/${action}`);
         }
