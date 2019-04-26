@@ -41,9 +41,9 @@
                 <div class="section-bar"></div>
                 <div class="section-content">
                     <div class="form-element">
-                        <label asp-for="QubePackage.PackageName">Package Name</label>
-                        <input asp-for="QubePackage.PackageName" placeholder="e.g. Qube 7.0" value="@Model.PackageName"/>
-                        <span asp-validation-for="QubePackage.PackageName" class=""></span>
+                        <label asp-for="PackageName">Package Name</label>
+                        <input asp-for="PackageName" placeholder="e.g. Qube 7.0" value="@Model.PackageName"/>
+                        <span asp-validation-for="PackageName" class=""></span>
                     </div>
                     <div class="form-element">
                         <label asp-for="QubePackage.PythonInstaller">Python Installer</label>
@@ -97,8 +97,8 @@
                 <div class="section-bar"></div>
                 <div class="section-content">
                     <div class="form-element">
-                        <label asp-for="QubePackage.PackageName">Package Name</label>
-                        <input asp-for="QubePackage.PackageName" placeholder="e.g. Qube 6.10"/>
+                        <label asp-for="PackageName">Package Name</label>
+                        <input asp-for="PackageName" placeholder="e.g. Qube 6.10"/>
                         <span asp-validation-for="PackageName" class=""></span>
                     </div>
                     <div class="form-element">
@@ -153,9 +153,9 @@
                 <div class="section-bar"></div>
                 <div class="section-content">
                     <div class="form-element">
-                        <label asp-for="GeneralPackage.PackageName">Package Name</label>
-                        <input asp-for="GeneralPackage.PackageName" placeholder="e.g. Deadline 10.0.12" value="Deadline10" />
-                        <span asp-validation-for="GeneralPackage.PackageName" class=""></span>
+                        <label asp-for="PackageName">Package Name</label>
+                        <input asp-for="PackageName" placeholder="e.g. Deadline 10.0.12" value="Deadline10" />
+                        <span asp-validation-for="PackageName" class=""></span>
                     </div>
                     <div class="form-element">
                         <label asp-for="GeneralPackage.Files">Deadline Client Installer (.exe)</label>
@@ -189,9 +189,9 @@
                 <div class="section-bar"></div>
                 <div class="section-content">
                     <div class="form-element">
-                        <label asp-for="GeneralPackage.PackageName">Package Name</label>
-                        <input asp-for="GeneralPackage.PackageName" placeholder="e.g. NVIDIA 398.75" value="NVIDIA-GPU"/>
-                        <span asp-validation-for="GeneralPackage.PackageName" class=""></span>
+                        <label asp-for="PackageName">Package Name</label>
+                        <input asp-for="PackageName" placeholder="e.g. NVIDIA 398.75" value="NVIDIA-GPU"/>
+                        <span asp-validation-for="PackageName" class=""></span>
                     </div>
                     <div class="form-element">
                         <label asp-for="GeneralPackage.Files">GPU Driver (.zip)</label>
@@ -233,9 +233,9 @@
                 <div class="section-bar"></div>
                 <div class="section-content">
                     <div class="form-element">
-                        <label asp-for="GeneralPackage.PackageName">Package Name</label>
-                        <input asp-for="GeneralPackage.PackageName" placeholder="e.g. Redshift" />
-                        <span asp-validation-for="GeneralPackage.PackageName" class=""></span>
+                        <label asp-for="PackageName">Package Name</label>
+                        <input asp-for="PackageName" placeholder="e.g. Redshift" />
+                        <span asp-validation-for="PackageName" class=""></span>
                     </div>
                     <div class="form-element">
                         <label asp-for="GeneralPackage.Files">Package Files</label>
@@ -261,16 +261,36 @@
 @section Scripts
 {
 <script>
-    $("#PackageTypes").change(function () {
-        // Disable all
-        $('#PackageTypes > option').each(function() {
-            var sectionToDisable = $(this).val();
-            $('#' + sectionToDisable).hide();
+    $(document).ready(function () {
+
+        if ('@Model.Type' !== '') {
+            var type = '@Model.Type'.toLowerCase();
+            $("#PackageTypes").val(type);
+        }
+
+        $("#PackageTypes").change(function () {
+            // Disable all
+            $('#PackageTypes > option').each(function () {
+                var sectionToDisable = $(this).val();
+                var divId = '#' + sectionToDisable;
+                $(divId).hide();
+                $(divId + " :input").attr("readonly", "readonly");
+                $(divId + " select").attr("disabled", "disabled");
+                $(divId + " :input[type='file']").attr("disabled", "disabled");
+            });
+
+            var c = $("#PackageTypes option:selected").val();
+            var divId = '#' + c;
+            console.log(c);
+
+            $(divId + " :input").removeAttr("readonly");
+            $(divId + " select").removeAttr("disabled");
+            $(divId + " :input[type='file']").removeAttr("disabled");
+            $(divId).show();
         });
 
-        var c = $("#PackageTypes option:selected").val();
-        console.log(c);
-        $('#' + c).show();
+        $("#PackageTypes").change();
     });
+
 </script>
 }

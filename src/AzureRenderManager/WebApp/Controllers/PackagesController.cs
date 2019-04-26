@@ -125,52 +125,58 @@ namespace WebApp.Controllers
         [RequestSizeLimit(Constants.MaxRequestSizeLimit)]
         public async Task<ActionResult> AddQube610(AddPackageModel model)
         {
-            return await AddQube(model.QubePackage, InstallationPackageType.Qube610);
+            return await AddQube(model.PackageName, model.QubePackage, InstallationPackageType.Qube610);
         }
 
         [HttpPost]
         [RequestSizeLimit(Constants.MaxRequestSizeLimit)]
         public async Task<ActionResult> AddQube70(AddPackageModel model)
         {
-            return await AddQube(model.QubePackage, InstallationPackageType.Qube70);
+            return await AddQube(model.PackageName, model.QubePackage, InstallationPackageType.Qube70);
         }
 
         [HttpPost]
         [RequestSizeLimit(Constants.MaxRequestSizeLimit)]
         public async Task<ActionResult> AddDeadline10(AddPackageModel model)
         {
-            return await AddGeneralPackageImpl(model.GeneralPackage, InstallationPackageType.Deadline10);
+            return await AddGeneralPackageImpl(model.PackageName, model.GeneralPackage, InstallationPackageType.Deadline10);
         }
 
         [HttpPost]
         [RequestSizeLimit(Constants.MaxRequestSizeLimit)]
         public async Task<ActionResult> AddGpu(AddPackageModel model)
         {
-            return await AddGeneralPackageImpl(model.GeneralPackage, InstallationPackageType.Gpu);
+            return await AddGeneralPackageImpl(model.PackageName, model.GeneralPackage, InstallationPackageType.Gpu);
         }
 
         [HttpPost]
         [RequestSizeLimit(Constants.MaxRequestSizeLimit)]
         public async Task<ActionResult> AddGeneral(AddPackageModel model)
         {
-            return await AddGeneralPackageImpl(model.GeneralPackage, InstallationPackageType.General);
+            return await AddGeneralPackageImpl(model.PackageName, model.GeneralPackage, InstallationPackageType.General);
         }
 
-        private async Task<ActionResult> AddGeneralPackageImpl(AddGeneralPackageModel model, InstallationPackageType type)
+        private async Task<ActionResult> AddGeneralPackageImpl(string packageName, AddGeneralPackageModel model, InstallationPackageType type)
         {
+            if (model.Files == null || !model.Files.Any())
+            {
+                ModelState.AddModelError("GeneralPackage.Files", $"At least one file must be specified.");
+            }
+
             if (!ModelState.IsValid)
             {
                 return View("Add", new AddPackageModel
                 {
-                    PackageName = model.PackageName,
+                    PackageName = packageName,
                     GeneralPackage = model,
+                    Type = type,
                 });
             }
 
             try
             {
                 await CreatePackage(
-                    model.PackageName,
+                    packageName,
                     type,
                     model.Files,
                     model.InstallCommandLine);
@@ -180,22 +186,39 @@ namespace WebApp.Controllers
                 ModelState.AddModelError("", $"Failed to completely create package with error: {ex}");
                 return View("Add", new AddPackageModel
                 {
-                    PackageName = model.PackageName,
+                    PackageName = packageName,
                     GeneralPackage = model,
+                    Type = type,
                 });
             }
 
-            return RedirectToAction("Details", new { pkgId = model.PackageName });
+            return RedirectToAction("Details", new { pkgId = packageName });
         }
 
-        private async Task<ActionResult> AddQube(AddQubePackageModel model, InstallationPackageType type)
+        private async Task<ActionResult> AddQube(string packageName, AddQubePackageModel model, InstallationPackageType type)
         {
+            if (model.PythonInstaller == null)
+            {
+                ModelState.AddModelError("QubePackage.PythonInstaller", $"Python installer must be specified.");
+            }
+
+            if (model.QubeCoreMsi == null)
+            {
+                ModelState.AddModelError("QubePackage.QubeCoreMsi", $"Qube Core installer must be specified.");
+            }
+
+            if (model.PythonInstaller == null)
+            {
+                ModelState.AddModelError("QubePackage.QubeWorkerMsi", $"Qube Worker installer must be specified.");
+            }
+
             if (!ModelState.IsValid)
             {
                 return View("Add", new AddPackageModel
                 {
-                    PackageName = model.PackageName,
+                    PackageName = packageName,
                     QubePackage = model,
+                    Type = type,
                 });
             }
 
@@ -212,7 +235,7 @@ namespace WebApp.Controllers
                 files.AddRange(model.QubeJobTypeMsis);
 
                 await CreatePackage(
-                    model.PackageName,
+                    packageName,
                     type,
                     files,
                     model.InstallCommandLine);
@@ -222,12 +245,13 @@ namespace WebApp.Controllers
                 ModelState.AddModelError("", $"Failed to completely create package with error: {ex}");
                 return View("Add", new AddPackageModel
                 {
-                    PackageName = model.PackageName,
+                    PackageName = packageName,
                     QubePackage = model,
+                    Type = type,
                 });
             }
 
-            return RedirectToAction("Details", new { pkgId = model.PackageName });
+            return RedirectToAction("Details", new { pkgId = packageName });
         }
 
         private async Task CreatePackage(
