@@ -1,4 +1,5 @@
-﻿@model WebApp.Models.Packages.ViewPackageModel
+﻿@using WebApp.Code.Extensions
+@model WebApp.Models.Packages.ViewPackageModel
 @{
     ViewBag.Title = Model.PackageName;
 }
@@ -36,11 +37,13 @@
                 <label asp-for="Container">Container Name</label>
                 <p>@Model.Container</p>
             </div>
-            <div class="form-element">
-                <label asp-for="Container">Install Command</label>
-                <p>@Model.InstallCommandLine</p>
-            </div>
-
+            @if (Model.Type.HasInstallationCommand())
+            {
+                <div class="form-element">
+                    <label asp-for="Container">Install Command</label>
+                    <p>@Model.InstallCommandLine</p>
+                </div>
+            }
             <div id="general" style="display: none;">
                 <div class="form-element">
                     <label asp-for="Container">Files</label>
@@ -76,7 +79,10 @@
 </div>
 <div class="form-footer">
     <div class="button-bar">
-        <a class="button" asp-controller="Packages" asp-action="Edit" asp-route-pkgId="@Model.PackageName">Edit Package <i class="fa fa-plus"></i></a>
+        @if (Model.Type.HasInstallationCommand())
+        {
+            <a class="button" asp-controller="Packages" asp-action="Edit" asp-route-pkgId="@Model.PackageName">Edit Package <i class="fa fa-plus"></i></a>
+        }
         <button type="button" onclick="performDelete('RenderManagerPackages', 'Delete', '@(Model.PackageName)')">Delete Package <i class="fa fa-trash"></i></button>
     </div>
 </div>

@@ -17,7 +17,7 @@ namespace WebApp.Models.Packages
                 PackageName = package.PackageName;
                 InstallCommandLine = package.PackageInstallCommand;
                 Container = package.Container;
-                Type = package.Type.ToString();
+                Type = package.Type;
 
                 switch (package.Type)
                 {
@@ -53,7 +53,7 @@ namespace WebApp.Models.Packages
 
         public string Container { get; set; }
 
-        public string Type { get; set; }
+        public InstallationPackageType Type { get; set; }
 
         public string InstallCommandLine { get; set; }
 
