@@ -717,14 +717,20 @@ namespace WebApp.Controllers
                 environment.RenderManagerConfig.Deadline = new DeadlineConfig();
             }
 
-            // Deadline install config
-            environment.RenderManagerConfig.Deadline.LicenseMode = model.InstallDeadlineClient ? model.LicenseMode : null;
-            environment.RenderManagerConfig.Deadline.LicenseServer = model.InstallDeadlineClient ? model.LicenseServer : null;
-            environment.RenderManagerConfig.Deadline.DeadlineRegion = model.InstallDeadlineClient ? model.DeadlineRegion : null;
+            // Deadline repo config
+            environment.RenderManagerConfig.Deadline.WindowsRepositoryPath = model.WindowsDeadlineRepositoryShare;
+            environment.RenderManagerConfig.Deadline.RepositoryUser = model.RepositoryUser;
+            environment.RenderManagerConfig.Deadline.RepositoryPassword = model.RepositoryPassword;
+            environment.RenderManagerConfig.Deadline.ExcludeFromLimitGroups = model.ExcludeFromLimitGroups;
             environment.RenderManagerConfig.Deadline.ExcludeFromLimitGroups = model.InstallDeadlineClient ?
                 string.IsNullOrWhiteSpace(model.ExcludeFromLimitGroups) ?
                     null :
                     model.ExcludeFromLimitGroups.Replace(" ", "") : null;
+
+            // Deadline install config
+            environment.RenderManagerConfig.Deadline.LicenseMode = model.InstallDeadlineClient ? model.LicenseMode : null;
+            environment.RenderManagerConfig.Deadline.LicenseServer = model.InstallDeadlineClient ? model.LicenseServer : null;
+            environment.RenderManagerConfig.Deadline.DeadlineRegion = model.InstallDeadlineClient ? model.DeadlineRegion : null;
 
             // Deadline service config
             environment.RenderManagerConfig.Deadline.RunAsService = model.RunAsService;
