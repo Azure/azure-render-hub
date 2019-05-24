@@ -104,7 +104,12 @@ namespace WebApp
 
             // Add Application Insights integration:
             services.AddApplicationInsightsTelemetry(Configuration);
-            services.AddLogging(c => c.AddApplicationInsights());
+            services.AddLogging(builder =>
+            {
+                builder.AddFilter<Microsoft.Extensions.Logging.ApplicationInsights.ApplicationInsightsLoggerProvider>(
+                    "", Microsoft.Extensions.Logging.LogLevel.Trace);
+                builder.AddApplicationInsights();
+            });
 
             services.AddSingleton(
                 p =>
