@@ -16,7 +16,7 @@ using WebApp.Code;
 using WebApp.Code.Contract;
 using WebApp.Config.Pools;
 using WebApp.Operations;
-
+using WebApp.Util;
 using ImageReference = Microsoft.Azure.Batch.ImageReference;
 
 namespace WebApp.Config.Coordinators
@@ -168,8 +168,16 @@ namespace WebApp.Config.Coordinators
                 while (await fetched.MoveNextAsync())
                 {
                     var id = fetched.Current.Id;
-                    skus.Add(id);
-                    images.AddRange(fetched.Current.VerifiedImageReferences.Select(ir => (id, ir)));
+
+                    var filteredImages = fetched.Current.VerifiedImageReferences
+                        .Where(MarketplaceImageUtils.IsAllowedMarketplaceImage)
+                        .Select(ir => (id, ir));
+
+                    if (filteredImages.Any())
+                    {
+                        skus.Add(id);
+                        images.AddRange(filteredImages);
+                    }
                 }
             }
         }

@@ -20,7 +20,7 @@ using WebApp.Config;
 using WebApp.Config.Pools;
 using WebApp.Models.Pools;
 using WebApp.Operations;
-
+using WebApp.Util;
 
 namespace WebApp.Controllers
 {
@@ -408,9 +408,7 @@ namespace WebApp.Controllers
                         throw new InvalidOperationException("Custom image passed as official image");
                     }
 
-                    var name = $"{ir.Offer}: {ir.Sku} {(ir.Version == "latest" ? "" : $"({ir.Version})")}";
-                    var value = string.Join("|", sku, ir.Publisher, ir.Offer, ir.Sku, ir.Version);
-                    yield return new SelectListItem(name, value) { Group = slig };
+                    yield return MarketplaceImageUtils.GetSelectListItemForImage(ir, sku, slig);
                 }
             }
         }
