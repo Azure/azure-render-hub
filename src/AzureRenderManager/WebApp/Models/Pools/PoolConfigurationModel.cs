@@ -40,10 +40,6 @@ namespace WebApp.Models.Pools
 
         public List<SelectListItem> CustomImageReferences { get; } = new List<SelectListItem>();
 
-        public string BatchAgentSku { get; set; }
-
-        public List<SelectListItem> BatchAgentSkus { get; } = new List<SelectListItem>();
-
         public bool MaxAppLicense { get; set; }
 
         public bool MayaAppLicense { get; set; }

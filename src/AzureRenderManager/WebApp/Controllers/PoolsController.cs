@@ -383,15 +383,9 @@ namespace WebApp.Controllers
                 ModelState.AddModelError(nameof(PoolConfigurationModel.ImageReference), Validation.Errors.Custom.ImageRefOrCustom);
                 ModelState.AddModelError(nameof(PoolConfigurationModel.CustomImageReference), Validation.Errors.Custom.ImageRefOrCustom);
             }
-
-            if (string.IsNullOrWhiteSpace(poolConfiguration.CustomImageReference) != string.IsNullOrWhiteSpace(poolConfiguration.BatchAgentSku))
-            {
-                ModelState.AddModelError(nameof(PoolConfigurationModel.CustomImageReference), Validation.Errors.Custom.CustomAndSku);
-                ModelState.AddModelError(nameof(PoolConfigurationModel.BatchAgentSku), Validation.Errors.Custom.CustomAndSku);
-            }
         }
 
-        private static IEnumerable<SelectListItem> MapOfficialImageReferencesToItems(IEnumerable<(string sku, Microsoft.Azure.Batch.ImageReference image)> inputs)
+        private static IEnumerable<SelectListItem> MapOfficialImageReferencesToItems(IEnumerable<(string sku, PoolImageReference image)> inputs)
         {
             yield return new SelectListItem("Choose one...", "");
 
@@ -403,31 +397,28 @@ namespace WebApp.Controllers
                 foreach (var x in group)
                 {
                     var (sku, ir) = x;
-                    if (ir.VirtualMachineImageId != null)
+                    if (ir.CustomImageResourceId != null)
                     {
                         throw new InvalidOperationException("Custom image passed as official image");
                     }
 
-                    yield return MarketplaceImageUtils.GetSelectListItemForImage(ir, sku, slig);
+                    yield return new SelectListItem(ir.Name, ir.Value) { Group = slig };
                 }
             }
         }
 
-        private static IEnumerable<SelectListItem> MapCustomImageReferencesToItems(IEnumerable<Microsoft.Azure.Batch.ImageReference> inputs)
+        private static IEnumerable<SelectListItem> MapCustomImageReferencesToItems(IEnumerable<PoolImageReference> inputs)
         {
             yield return new SelectListItem("Choose one...", "");
 
             foreach (var image in inputs)
             {
-                if (image.VirtualMachineImageId == null)
+                if (image.CustomImageResourceId == null)
                 {
                     throw new InvalidOperationException("Official image passed as custom image");
                 }
 
-                var fullId = image.VirtualMachineImageId;
-                var name = fullId.Substring(fullId.LastIndexOf('/') + 1);
-
-                yield return new SelectListItem(name, fullId);
+                yield return new SelectListItem(image.Name, image.Value);
             }
         }
 
@@ -483,8 +474,6 @@ namespace WebApp.Controllers
 
             result.OfficialImageReferences.AddRange(MapOfficialImageReferencesToItems(imageRefs.OfficialImages));
             result.CustomImageReferences.AddRange(MapCustomImageReferencesToItems(imageRefs.CustomImages));
-            result.BatchAgentSkus.Add(new SelectListItem("Choose one...", ""));
-            result.BatchAgentSkus.AddRange(imageRefs.SKUs.Select(sku => new SelectListItem(sku, sku)));
             result.AutoScalePolicyItems.AddRange(
                 Enum.GetValues(typeof(AutoScalePolicy)).Cast<AutoScalePolicy>()
                     .Select(p => new SelectListItem(p.GetDescription(), p.ToString())));
@@ -498,21 +487,6 @@ namespace WebApp.Controllers
             InstallationPackage gpuPackage,
             List<InstallationPackage> generalPackages)
         {
-            ImageReference imageReference;
-            string nodeAgentSku;
-
-            if (!string.IsNullOrWhiteSpace(poolConfiguration.ImageReference))
-            {
-                var imageReferenceParts = poolConfiguration.ImageReference.Split('|', StringSplitOptions.RemoveEmptyEntries);
-                imageReference = new ImageReference(imageReferenceParts[1], imageReferenceParts[2], imageReferenceParts[3], imageReferenceParts[4]);
-                nodeAgentSku = imageReferenceParts[0];
-            }
-            else
-            {
-                imageReference = new ImageReference { Id = poolConfiguration.CustomImageReference };
-                nodeAgentSku = poolConfiguration.BatchAgentSku;
-            }
-
             var metadata = new List<MetadataItem>();
 
             if (poolConfiguration.SelectedRenderManagerPackageId != NoPackageSelected)
@@ -552,13 +526,16 @@ namespace WebApp.Controllers
                 targetDedicatedNodes: poolConfiguration.DedicatedNodes,
                 targetLowPriorityNodes: poolConfiguration.LowPriorityNodes));
 
+            PoolImageReference imageReference = GetPoolImageReference(poolConfiguration);
+            var operatingSystem = imageReference.Os;
+
             var deploymentConfiguration = new DeploymentConfiguration
             {
                 VirtualMachineConfiguration =
                     new VirtualMachineConfiguration
                     {
-                        ImageReference = imageReference,
-                        NodeAgentSkuId = nodeAgentSku,
+                        ImageReference = ToBatchImageReference(imageReference),
+                        NodeAgentSkuId = imageReference.NodeAgentSku,
                     }
             };
 
@@ -603,6 +580,8 @@ namespace WebApp.Controllers
                 }
             }
 
+            var isWindows = imageReference.Os == Models.Pools.OperatingSystem.Windows;
+
             StartTask startTask = null;
             switch (environment.RenderManager)
             {
@@ -613,7 +592,7 @@ namespace WebApp.Controllers
                         renderManagerPackage,
                         gpuPackage,
                         generalPackages,
-                        true,
+                        isWindows,
                         poolConfiguration.UseDeadlineGroups);
                     break;
                 case RenderManagerType.Qube610:
@@ -624,7 +603,7 @@ namespace WebApp.Controllers
                         renderManagerPackage,
                         gpuPackage,
                         generalPackages,
-                        true);
+                        isWindows);
                     break;
                 case RenderManagerType.Tractor:
                     // TODO
@@ -662,6 +641,25 @@ namespace WebApp.Controllers
                 selectedPackages.AddRange(selectedGeneralPackageIds.Where(p => p != NoPackageSelected));
             }
             return selectedPackages;
+        }
+
+        private PoolImageReference GetPoolImageReference(PoolConfigurationModel poolConfiguration)
+        {
+            if (!string.IsNullOrWhiteSpace(poolConfiguration.ImageReference))
+            {
+                return new PoolImageReference(poolConfiguration.ImageReference);
+            }
+            return new PoolImageReference(poolConfiguration.CustomImageReference);
+        }
+
+        private ImageReference ToBatchImageReference(PoolImageReference imageReference)
+        {
+            return new ImageReference(
+                imageReference.Publisher, 
+                imageReference.Offer, 
+                imageReference.Sku, 
+                imageReference.Version, 
+                imageReference.CustomImageResourceId);
         }
     }
 }

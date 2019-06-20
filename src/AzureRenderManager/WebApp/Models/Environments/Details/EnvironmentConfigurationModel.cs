@@ -26,8 +26,12 @@ namespace WebApp.Models.Environments.Details
 
                 if (environment.AutoScaleConfiguration != null)
                 {
-                    MaxIdleCpuPercent = environment.AutoScaleConfiguration.MaxIdleCpuPercent;
-                    MaxIdleGpuPercent = environment.AutoScaleConfiguration.MaxIdleGpuPercent;
+                    MaxIdleCpuPercent = environment.AutoScaleConfiguration.MaxIdleCpuPercent == 0 
+                        ? MaxIdleCpuPercent 
+                        : environment.AutoScaleConfiguration.MaxIdleCpuPercent;
+                    MaxIdleGpuPercent = environment.AutoScaleConfiguration.MaxIdleGpuPercent == 0 
+                        ? MaxIdleGpuPercent 
+                        : environment.AutoScaleConfiguration.MaxIdleGpuPercent;
 
                     if (environment.AutoScaleConfiguration.SpecificProcesses != null)
                     {
