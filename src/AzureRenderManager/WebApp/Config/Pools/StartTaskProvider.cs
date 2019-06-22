@@ -63,7 +63,7 @@ namespace WebApp.Config.Pools
             var startTask = new StartTask(
                 "",
                 resourceFiles,
-                GetEnvironmentSettings(environment),
+                GetEnvironmentSettings(environment, isWindows),
                 new UserIdentity(
                     autoUser: new AutoUserSpecification(AutoUserScope.Pool, ElevationLevel.Admin)),
                 3, // retries
@@ -110,7 +110,7 @@ namespace WebApp.Config.Pools
             var startTask = new StartTask(
                 "",
                 resourceFiles,
-                GetEnvironmentSettings(environment),
+                GetEnvironmentSettings(environment, isWindows),
                 new UserIdentity(
                     autoUser: new AutoUserSpecification(AutoUserScope.Pool, ElevationLevel.Admin)),
                 3, // retries
@@ -129,8 +129,15 @@ namespace WebApp.Config.Pools
                 useGroups);
 
             // Wrap all the start task command
-            startTask.CommandLine = $"powershell.exe -ExecutionPolicy RemoteSigned -NoProfile \"$ErrorActionPreference='Stop'; {startTask.CommandLine}\"";
-
+            if (isWindows)
+            {
+                startTask.CommandLine = $"powershell.exe -ExecutionPolicy RemoteSigned -NoProfile \"$ErrorActionPreference='Stop'; {startTask.CommandLine}\"";
+            }
+            else
+            {
+                startTask.CommandLine = $"/bin/bash -c 'set -e; set -o pipefail; {startTask.CommandLine}'";
+            }
+            
             return startTask;
         }
 
@@ -155,44 +162,55 @@ namespace WebApp.Config.Pools
             var installScriptResourceFile = new ResourceFile(httpUrl: startTaskScriptUrl, filePath: filename);
             resourceFiles.Add(installScriptResourceFile);
 
-            commandLine += $".\\{installScriptResourceFile.FilePath}";
+            if (isWindows)
+            {
+                commandLine += $".\\{installScriptResourceFile.FilePath} ";
+            }
+            else
+            {
+                commandLine += $"./{installScriptResourceFile.FilePath} ";
+            }
 
             if (deadlinePackage != null && !string.IsNullOrEmpty(deadlinePackage.Container))
             {
                 resourceFiles.Add(GetContainerResourceFile(deadlinePackage.Container, deadlinePackage.PackageName));
-                commandLine += $" -installerPath {deadlinePackage.PackageName}";
+                commandLine += GetParameterSet(isWindows, "installerPath", deadlinePackage.PackageName);
             }
 
-            if (environment.Domain != null && environment.Domain.JoinDomain)
+            if (isWindows & environment.Domain != null && environment.Domain.JoinDomain)
             {
-                commandLine += " -domainJoin";
-                commandLine += $" -domainName {environment.Domain.DomainName}";
-                commandLine += $" -domainJoinUserName {environment.Domain.DomainJoinUsername}";
+                commandLine += GetParameterSet(isWindows, "domainJoin");
+                commandLine += GetParameterSet(isWindows, "domainName", environment.Domain.DomainName);
+                commandLine += GetParameterSet(isWindows, "domainJoinUserName", environment.Domain.DomainJoinUsername);
 
                 if (!string.IsNullOrWhiteSpace(environment.Domain.DomainWorkerOuPath))
                 {
-                    commandLine += $" -domainOuPath '{environment.Domain.DomainWorkerOuPath}'";
+                    commandLine += GetParameterSet(isWindows, "domainOuPath", environment.Domain.DomainWorkerOuPath);
                 }
             }
 
             if (environment.KeyVaultServicePrincipal != null)
             {
-                commandLine += $" -tenantId {environment.KeyVaultServicePrincipal.TenantId}";
-                commandLine += $" -applicationId {environment.KeyVaultServicePrincipal.ApplicationId}";
-                commandLine += $" -keyVaultCertificateThumbprint {environment.KeyVaultServicePrincipal.Thumbprint}";
-                commandLine += $" -keyVaultName {environment.KeyVault.Name}";
+                commandLine += GetParameterSet(isWindows, "tenantId", environment.KeyVaultServicePrincipal.TenantId.ToString());
+                commandLine += GetParameterSet(isWindows, "applicationId", environment.KeyVaultServicePrincipal.ApplicationId.ToString());
+                commandLine += GetParameterSet(isWindows, "keyVaultCertificateThumbprint", environment.KeyVaultServicePrincipal.Thumbprint);
+                commandLine += GetParameterSet(isWindows, "keyVaultName", environment.KeyVault.Name);
             }
 
-            commandLine += $" -deadlineRepositoryPath {deadlineConfig.WindowsRepositoryPath}";
+            var repoPath = isWindows ? deadlineConfig.WindowsRepositoryPath : deadlineConfig.LinuxRepositoryPath;
+            if (!string.IsNullOrWhiteSpace(repoPath))
+            {
+                commandLine += GetParameterSet(isWindows, "deadlineRepositoryPath", deadlineConfig.WindowsRepositoryPath);
+            }
 
             if (!string.IsNullOrEmpty(deadlineConfig.RepositoryUser))
             {
-                commandLine += $" -deadlineRepositoryUserName {deadlineConfig.RepositoryUser}";
+                commandLine += GetParameterSet(isWindows, "deadlineRepositoryUserName", deadlineConfig.RepositoryUser);
             }
 
             if (!string.IsNullOrEmpty(deadlineConfig.ServiceUser))
             {
-                commandLine += $" -deadlineServiceUserName {deadlineConfig.ServiceUser}";
+                commandLine += GetParameterSet(isWindows, "deadlineServiceUserName", deadlineConfig.ServiceUser);
             }
             else
             {
@@ -202,36 +220,49 @@ namespace WebApp.Config.Pools
                 startTask.WaitForSuccess = false;
             }
 
-            commandLine += $" -deadlineLicenseMode {deadlineConfig.LicenseMode.ToString()}";
-
+            if (deadlineConfig.LicenseMode != null)
+            {
+                commandLine += GetParameterSet(isWindows, "deadlineLicenseMode", deadlineConfig.LicenseMode.ToString());
+            }
+            
             if (!string.IsNullOrEmpty(deadlineConfig.DeadlineRegion))
             {
-                commandLine += $" -deadlineRegion {deadlineConfig.DeadlineRegion}";
+                commandLine += GetParameterSet(isWindows, "deadlineRegion", deadlineConfig.DeadlineRegion);
             }
 
             if (!string.IsNullOrEmpty(deadlineConfig.LicenseServer))
             {
-                commandLine += $" -deadlineLicenseServer {deadlineConfig.LicenseServer}";
+                commandLine += GetParameterSet(isWindows, "deadlineLicenseServer", deadlineConfig.LicenseServer);
             }
 
-            if (useGroups)
-            {
-                commandLine += $" -deadlineGroups {poolName}";
-            }
-            else
-            {
-                commandLine += $" -deadlinePools {poolName}";
-            }
+            commandLine += GetParameterSet(isWindows, useGroups ? "deadlineGroups" : "deadlinePools", poolName);
 
             if (!string.IsNullOrWhiteSpace(deadlineConfig.ExcludeFromLimitGroups))
             {
-                commandLine += $" -excludeFromLimitGroups '{deadlineConfig.ExcludeFromLimitGroups}'";
+                commandLine += GetParameterSet(isWindows, "excludeFromLimitGroups", deadlineConfig.ExcludeFromLimitGroups);
             }
 
-            commandLine += ";";
+            commandLine += "; ";
+
+            if (!isWindows)
+            {
+                commandLine += "wait";
+            }
 
             startTask.CommandLine = commandLine;
             startTask.ResourceFiles = resourceFiles;
+        }
+
+        private string GetParameterSet(bool isWindows, string parameterName, string parameterValue = null)
+        {
+            var param = $"{parameterName}";
+            if (parameterValue != null)
+            {
+                param += $" '{parameterValue}'";
+            }
+
+            // Leave the trailing space below!
+            return isWindows ? $"-{param}" : $"--{param} ";
         }
 
         private async Task AppendQubeSetupToStartTask(
@@ -379,7 +410,7 @@ namespace WebApp.Config.Pools
             return new ResourceFile(httpUrl: JoinDomainScript, filePath: filename);
         }
 
-        private List<EnvironmentSetting> GetEnvironmentSettings(RenderingEnvironment environment)
+        private List<EnvironmentSetting> GetEnvironmentSettings(RenderingEnvironment environment, bool isWindows)
         {
             var envSettings = new List<EnvironmentSetting>();
 
@@ -387,18 +418,23 @@ namespace WebApp.Config.Pools
             {
                 envSettings.Add(new EnvironmentSetting("APP_INSIGHTS_APP_ID", environment.ApplicationInsightsAccount.ApplicationId));
                 envSettings.Add(new EnvironmentSetting("APP_INSIGHTS_INSTRUMENTATION_KEY", environment.ApplicationInsightsAccount.InstrumentationKey));
-                envSettings.Add(new EnvironmentSetting("BATCH_INSIGHTS_DOWNLOAD_URL", _configuration["BatchInsightsUrl"]));
-            }
 
-            var processesToWatch = $"{_configuration["BatchInsightsProcessesToWatch"]}";
-            if (environment.AutoScaleConfiguration != null &&
-                environment.AutoScaleConfiguration.SpecificProcesses != null &&
-                environment.AutoScaleConfiguration.SpecificProcesses.Count > 0)
-            {
-                processesToWatch += $",{string.Join(',', environment.AutoScaleConfiguration.SpecificProcesses)}";
-            }
+                var batchInsightsUrl = isWindows ? _configuration["BatchInsightsWindowsUrl"] : _configuration["BatchInsightsLinuxUrl"];
+                envSettings.Add(new EnvironmentSetting("BATCH_INSIGHTS_DOWNLOAD_URL", batchInsightsUrl));
 
-            envSettings.Add(new EnvironmentSetting("AZ_BATCH_MONITOR_PROCESSES", processesToWatch));
+                var processesToWatch = isWindows ? _configuration["BatchInsightsWindowsProcessesToWatch"] : _configuration["BatchInsightsLinuxProcessesToWatch"];
+                if (environment.AutoScaleConfiguration != null &&
+                    environment.AutoScaleConfiguration.SpecificProcesses != null &&
+                    environment.AutoScaleConfiguration.SpecificProcesses.Count > 0)
+                {
+                    processesToWatch += $",{string.Join(',', environment.AutoScaleConfiguration.SpecificProcesses)}";
+                }
+
+                if (!string.IsNullOrWhiteSpace(processesToWatch))
+                {
+                    envSettings.Add(new EnvironmentSetting("AZ_BATCH_MONITOR_PROCESSES", processesToWatch));
+                }
+            }
 
             return envSettings;
         }

@@ -5,6 +5,8 @@
         "webSiteName": {
             "defaultValue": "RenderFarmManager",
             "type": "String",
+            "minLength": "4",
+            "maxLength": "20",
             "metadata": {
                 "description": "The name of the web app that you wish to create."
             }

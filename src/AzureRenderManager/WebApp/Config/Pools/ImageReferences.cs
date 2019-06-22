@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 using System.Collections.Generic;
-using Microsoft.Azure.Batch;
+using WebApp.Models.Pools;
 
 namespace WebApp.Config.Pools
 {
@@ -9,8 +9,8 @@ namespace WebApp.Config.Pools
     {
         public List<string> SKUs { get; } = new List<string>();
 
-        public List<ImageReference> CustomImages { get; } = new List<ImageReference>();
+        public List<PoolImageReference> CustomImages { get; } = new List<PoolImageReference>();
 
-        public List<(string sku, ImageReference image)> OfficialImages { get; } = new List<(string sku, ImageReference image)>();
+        public List<(string sku, PoolImageReference image)> OfficialImages { get; } = new List<(string sku, PoolImageReference image)>();
     }
 }
