@@ -10,13 +10,13 @@ namespace WebApp.Models.Packages
 {
     public class AddGeneralPackageModel
     {
-        [Required(ErrorMessage = "Package name is a required field")]
-        [RegularExpression(Validation.RegularExpressions.PackageName, ErrorMessage = Validation.Errors.Regex.PackageName)]
-        public string PackageName { get; set; }
+        //[Required(ErrorMessage = "Package name is a required field")]
+        //[RegularExpression(Validation.RegularExpressions.PackageName, ErrorMessage = Validation.Errors.Regex.PackageName)]
+        //public string PackageName { get; set; }
 
         public string InstallCommandLine { get; set; }
 
-        [Required]
+        //[Required]
         public IEnumerable<IFormFile> Files { get; set; }
     }
 }

@@ -260,9 +260,19 @@ namespace WebApp.Controllers.Api
             var accessToken = await GetAccessToken();
             var token = new TokenCredentials(accessToken);
             var keyVaultClient = new KeyVaultManagementClient(token) { SubscriptionId = subscriptionId };
-            var vaults = await keyVaultClient.Vaults.ListBySubscriptionWithHttpMessagesAsync();
 
-            var ordered = vaults.Body.OrderBy(kv => kv.Name).ToList();
+            var vaults = new List<Vault>();
+
+            var vaultsResponse = await keyVaultClient.Vaults.ListBySubscriptionAsync();
+            vaults.AddRange(vaultsResponse);
+
+            while (!string.IsNullOrEmpty(vaultsResponse.NextPageLink))
+            {
+                vaultsResponse = await keyVaultClient.Vaults.ListBySubscriptionNextAsync(vaultsResponse.NextPageLink);
+                vaults.AddRange(vaultsResponse);
+            }
+
+            var ordered = vaults.OrderBy(kv => kv.Name).ToList();
             return HttpContext.Session.Set(cacheKey, ordered);
         }
     }

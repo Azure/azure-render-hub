@@ -15,8 +15,9 @@ using TaskTupleAwaiter;
 using WebApp.Code;
 using WebApp.Code.Contract;
 using WebApp.Config.Pools;
+using WebApp.Models.Pools;
 using WebApp.Operations;
-
+using WebApp.Util;
 using ImageReference = Microsoft.Azure.Batch.ImageReference;
 
 namespace WebApp.Config.Coordinators
@@ -160,31 +161,49 @@ namespace WebApp.Config.Coordinators
             // return pool.Metadata != null && pool.Metadata.Any(mi => mi.Name == MetadataKeys.Package);
         }
 
-        private async Task GetOfficialImageReferences(RenderingEnvironment environment, List<string> skus, List<(string sku, ImageReference image)> images)
+        private async Task GetOfficialImageReferences(RenderingEnvironment environment, List<string> nodeAgentSkus, List<(string sku, PoolImageReference image)> images)
         {
             using (var client = _batchClient.CreateBatchClient(environment))
             {
                 var fetched = client.PoolOperations.ListNodeAgentSkus().GetPagedEnumerator();
                 while (await fetched.MoveNextAsync())
                 {
-                    var id = fetched.Current.Id;
-                    skus.Add(id);
-                    images.AddRange(fetched.Current.VerifiedImageReferences.Select(ir => (id, ir)));
+                    var nodeAgentSku = fetched.Current.Id;
+
+                    var filteredImages = fetched.Current.VerifiedImageReferences
+                        .Where(MarketplaceImageUtils.IsAllowedMarketplaceImage)
+                        .Select(ir => (nodeAgentSku, new PoolImageReference(ir, GetOperatingSystemFromNodeAgentSku(nodeAgentSku))));
+
+                    if (filteredImages.Any())
+                    {
+                        nodeAgentSkus.Add(nodeAgentSku);
+                        images.AddRange(filteredImages);
+                    }
                 }
             }
         }
 
-        private async Task GetCustomImageReferences(RenderingEnvironment environment, List<ImageReference> images)
+        private static string GetOperatingSystemFromNodeAgentSku(string nodeAgentSku)
+        {
+            if (string.IsNullOrWhiteSpace(nodeAgentSku) || 
+                nodeAgentSku.Equals("batch.node.windows amd64", StringComparison.InvariantCultureIgnoreCase))
+            {
+                return "Windows";
+            }
+            return "Linux";
+        }
+
+        private async Task GetCustomImageReferences(RenderingEnvironment environment, List<PoolImageReference> images)
         {
             using (var client = await _managementClient.CreateComputeManagementClient(environment.SubscriptionId))
             {
                 var imageResults = await client.Images.ListAsync();
-                images.AddRange(imageResults.Select(img => new ImageReference(img.Id)));
+                images.AddRange(imageResults.Select(img => new PoolImageReference(img)));
 
                 while (imageResults.NextPageLink != null)
                 {
                     imageResults = await client.Images.ListNextAsync(imageResults.NextPageLink);
-                    images.AddRange(imageResults.Select(img => new ImageReference(img.Id)));
+                    images.AddRange(imageResults.Select(img => new PoolImageReference(img)));
                 }
             }
         }

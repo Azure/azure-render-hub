@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.Azure.Batch;
 using Microsoft.Azure.Batch.Common;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using WebApp.Code;
 using WebApp.Code.Contract;
 using WebApp.Code.Extensions;
@@ -21,14 +22,17 @@ namespace WebApp.BackgroundHosts.AutoScale
         private readonly IEnvironmentCoordinator _environments;
         private readonly BatchClientMsiProvider _batchClientAccessor;
         private readonly IActiveNodeProvider _activeNodeProvider;
+        readonly ILogger<AutoScaleHost> _logger;
 
         public AutoScaleHost(IEnvironmentCoordinator environments,
             BatchClientMsiProvider batchClientAccessor,
-            IActiveNodeProvider activeNodeProvider)
+            IActiveNodeProvider activeNodeProvider,
+            ILogger<AutoScaleHost> logger)
         {
             _environments = environments;
             _batchClientAccessor = batchClientAccessor;
             _activeNodeProvider = activeNodeProvider;
+            _logger = logger;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -42,9 +46,9 @@ namespace WebApp.BackgroundHosts.AutoScale
                     var environments = await _environments.ListEnvironments();
                     await Task.WhenAll(environments.Select(async e => await AutoScaleEnvironment(await _environments.GetEnvironment(e))));
                 }
-                catch (Exception e)
+                catch (Exception ex)
                 {
-                    Console.WriteLine(e);
+                    _logger.LogError(ex, $"Unexpected error in {nameof(AutoScaleHost)} main loop");
                 }
 
                 await Task.Delay(interval, stoppingToken);
@@ -90,7 +94,7 @@ namespace WebApp.BackgroundHosts.AutoScale
                     if (pool.State.Value != PoolState.Active ||
                         pool.AllocationState.Value != AllocationState.Steady)
                     {
-                        Console.WriteLine($"Autoscale for Env {environment.Name} and Pool {pool.Id}: Skipping pool State {pool.State.Value}, AllocationState {pool.AllocationState.Value}");
+                        _logger.LogInformation($"Autoscale for Env {environment.Name} and Pool {pool.Id}: Skipping pool State {pool.State.Value}, AllocationState {pool.AllocationState.Value}");
                         continue;
                     }
 
@@ -100,7 +104,7 @@ namespace WebApp.BackgroundHosts.AutoScale
                     var minDedicated = pool.GetAutoScaleMinimumDedicatedNodes();
                     var minLowPriority = pool.GetAutoScaleMinimumLowPriorityNodes();
 
-                    Console.WriteLine($"Autoscale for Env {environment.Name} and Pool {pool.Id}: " +
+                    _logger.LogInformation($"Autoscale for Env {environment.Name} and Pool {pool.Id}: " +
                                       $"policy {policy}, " +
                                       $"timeout {timeout}, " +
                                       $"currentDedicated {pool.CurrentDedicatedComputeNodes.Value}, " +
@@ -115,11 +119,11 @@ namespace WebApp.BackgroundHosts.AutoScale
                     var poolNodeCpuAndProcessEvents =
                         activeNodes.Where(an => an.PoolName == pool.Id && an.LastActive > idleTimeCutoff).ToList();
 
-                    Console.WriteLine($"Autoscale for Env {environment.Name} and Pool {pool.Id}: " +
+                    _logger.LogInformation($"Autoscale for Env {environment.Name} and Pool {pool.Id}: " +
                                       $"Nodes with process events " +
                                       $"{poolNodeCpuAndProcessEvents.Where(e => e.TrackedProcess).Select(e => e.ComputeNodeName).Distinct().Count()}");
 
-                    Console.WriteLine($"Autoscale for Env {environment.Name} and Pool {pool.Id}: " +
+                    _logger.LogInformation($"Autoscale for Env {environment.Name} and Pool {pool.Id}: " +
                                       $"Nodes with CPU events " +
                                       $"{poolNodeCpuAndProcessEvents.Where(e => !e.TrackedProcess).Select(e => e.ComputeNodeName).Distinct().Count()}");
 
@@ -130,7 +134,7 @@ namespace WebApp.BackgroundHosts.AutoScale
                         .Where(n => poolNodeCpuAndProcessEvents.Any(pn => n.Id == pn.ComputeNodeName))
                         .ToList();
 
-                    Console.WriteLine($"Autoscale for Env {environment.Name} and Pool {pool.Id}: " +
+                    _logger.LogInformation($"Autoscale for Env {environment.Name} and Pool {pool.Id}: " +
                                       $"Eligible nodes " +
                                       $"{eligibleNodes.Count}");
 
@@ -171,7 +175,7 @@ namespace WebApp.BackgroundHosts.AutoScale
                     // Remove the idle nodes
                     if (idleNodesToShutdown.Any())
                     {
-                        Console.WriteLine($"Autoscale for Env {environment.Name} and Pool {pool.Id}: " +
+                        _logger.LogInformation($"Autoscale for Env {environment.Name} and Pool {pool.Id}: " +
                                           $"All Selected Idle nodes " +
                                           $"{idleNodesToShutdown.Count}");
 
@@ -186,7 +190,7 @@ namespace WebApp.BackgroundHosts.AutoScale
                             ? 0
                             : pool.CurrentLowPriorityComputeNodes.Value - minLowPriority;
 
-                        Console.WriteLine($"Autoscale for Env {environment.Name} and Pool {pool.Id}: " +
+                        _logger.LogInformation($"Autoscale for Env {environment.Name} and Pool {pool.Id}: " +
                                           $"Max nodes to remove: " +
                                           $"maxDedicatedToRemove {maxDedicatedToRemove}, " +
                                           $"maxLowPriorityToRemove {maxLowPriorityToRemove}");
@@ -195,7 +199,7 @@ namespace WebApp.BackgroundHosts.AutoScale
                         safeNodesToRemove.AddRange(dedicatedNodesToShutdown.Take(maxDedicatedToRemove));
                         safeNodesToRemove.AddRange(lowPriorityNodesToShutdown.Take(maxLowPriorityToRemove));
 
-                        Console.WriteLine($"Autoscale for Env {environment.Name} and Pool {pool.Id}: " +
+                        _logger.LogInformation($"Autoscale for Env {environment.Name} and Pool {pool.Id}: " +
                                           $"Removing nodes: " +
                                           $"{safeNodesToRemove.Count}");
 
@@ -207,7 +211,7 @@ namespace WebApp.BackgroundHosts.AutoScale
                             }
                             catch (Exception e)
                             {
-                                Console.WriteLine(e);
+                                _logger.LogError(e, $"Error removing nodes from pool {pool.Id} in environment {environment.Name}");
                             }
                         }
                     }
@@ -215,8 +219,7 @@ namespace WebApp.BackgroundHosts.AutoScale
             }
             catch (Exception e)
             {
-                // TODO log
-                Console.WriteLine(e);
+                _logger.LogError(e, $"Error executing auto scale for environment {environment.Name}");
             }
             finally
             {

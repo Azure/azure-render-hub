@@ -96,11 +96,7 @@
                         <label asp-for="CustomImageReference">Custom image reference</label>
                         <select asp-for="CustomImageReference" asp-items="Model.CustomImageReferences"></select>
                         <span asp-validation-for="CustomImageReference" class=""></span>
-                    </div>
-                    <div class="form-element">
-                        <label asp-for="BatchAgentSku">Batch agent SKU</label>
-                        <select asp-for="BatchAgentSku" asp-items="Model.BatchAgentSkus"></select>
-                        <span asp-validation-for="BatchAgentSku" class=""></span>
+                        <small>Note that CentOS 7.3+ is supported for Linux images.</small>
                     </div>
                 </div>
             </div>
