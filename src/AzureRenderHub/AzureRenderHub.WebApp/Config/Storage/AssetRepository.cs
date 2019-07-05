@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Collections.Generic;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using WebApp.Models;
@@ -31,15 +32,11 @@ namespace WebApp.Config.Storage
 
         public string DeploymentName { get; set; }
 
+        public string DeploymentResourceId => $"https://ms.portal.azure.com/#blade/HubsExtension/DeploymentDetailsBlade/overview/id/%2Fsubscriptions%2F82acd5bb-4206-47d4-9c12-a65db028483d%2FresourceGroups%2FAvere-christis-3%2Fproviders%2FMicrosoft.Resources%2Fdeployments%2FAvere-dd55fa6e-184e-4130-acf0-1772c3af298d";
+
+        public string DeploymentLink => $"https://ms.portal.azure.com/#blade/HubsExtension/DeploymentDetailsBlade/overview/id/%2Fsubscriptions%2F82acd5bb-4206-47d4-9c12-a65db028483d%2FresourceGroups%2FAvere-christis-3%2Fproviders%2FMicrosoft.Resources%2Fdeployments%2FAvere-dd55fa6e-184e-4130-acf0-1772c3af298d";
+
         public bool InProgress { get; set; }
-
-        // from ISubMenuItem
-
-        public virtual string Id => Name;
-
-        public virtual string DisplayName => Name;
-
-        public bool Enabled => !InProgress;
 
         /// <summary>
         /// TODO: Don't really like the domain model knowing about the view model, so
@@ -48,6 +45,18 @@ namespace WebApp.Config.Storage
         /// </summary>
         /// <param name="model"></param>
         public abstract void UpdateFromModel(AddAssetRepoBaseModel model);
+
+        public abstract string GetTemplateName();
+
+        public abstract Dictionary<string, object> GetTemplateParameters();
+
+        // from ISubMenuItem
+        public virtual string Id => Name;
+
+        public virtual string DisplayName => Name;
+
+        public bool Enabled => !InProgress;
+        // end ISubMenuItem
     }
 
     public enum ProvisioningState

@@ -82,6 +82,13 @@ namespace WebApp.Controllers
                 return RedirectToAction("Index");
             }
 
+            var state = await _assetRepoCoordinator.UpdateRepositoryFromDeploymentAsync(repo, _managementClientProvider);
+
+            if (repo.ProvisioningState != state)
+            {
+                repo = await _assetRepoCoordinator.GetRepository(repoId);
+            }
+
             if (repo.ProvisioningState == ProvisioningState.Succeeded)
             {
                 return RedirectToAction("Overview", new { repoId });
@@ -290,6 +297,13 @@ namespace WebApp.Controllers
                         ErrorMessage = errorMessage
                     });
 
+                case AvereCluster avere:
+                    return View("Create/Step2Avere", new AddAvereClusterModel(avere)
+                    {
+                        Error = error,
+                        ErrorMessage = errorMessage
+                    });
+
                 default:
                     throw new NotSupportedException("Unknown type of repository");
             }
@@ -340,6 +354,31 @@ namespace WebApp.Controllers
         [HttpPost]
         public async Task<ActionResult> Step2Avere(AddAvereClusterModel model)
         {
+            if (model.UseControllerPasswordCredential && string.IsNullOrWhiteSpace(model.ControllerPassword))
+            {
+                ModelState.AddModelError(nameof(AddAvereClusterModel.ControllerPassword), 
+                    "A controller password must be specified.");
+            }
+
+            if (!model.UseControllerPasswordCredential && string.IsNullOrWhiteSpace(model.ControllerSshKey))
+            {
+                ModelState.AddModelError(nameof(AddAvereClusterModel.ControllerSshKey),
+                    "A controller SSH key must be specified.");
+            }
+
+            var allowedVMSizes = new [] { "standard_e8s_v3", "standard_e16s_v3", "standard_e32s_v3" };
+            if (!allowedVMSizes.Contains(model.VMSize.ToLowerInvariant()))
+            {
+                ModelState.AddModelError(nameof(AddAvereClusterModel.VMSize),
+                    $"The Avere vFXT VM size must be one of {string.Join(',', allowedVMSizes)}");
+            }
+
+            if (model.CacheSizeInGB != 1024 && model.CacheSizeInGB != 4096)
+            {
+                ModelState.AddModelError(nameof(AddAvereClusterModel.CacheSizeInGB),
+                    $"The Avere vFXT cache size must be either 1024 or 4096.");
+            }
+
             if (!ModelState.IsValid)
             {
                 return View("Create/Step2Avere", model);
@@ -452,6 +491,8 @@ namespace WebApp.Controllers
                     {
                         PowerStatus = await GetVirtualMachineStatus(nfs.SubscriptionId.ToString(), nfs.ResourceGroupName, nfs.VmName),
                     };
+                case AvereCluster avere:
+                    return new AvereClusterOverviewModel(avere);
                 default:
                     throw new NotSupportedException("Unknown type of repository");
             }

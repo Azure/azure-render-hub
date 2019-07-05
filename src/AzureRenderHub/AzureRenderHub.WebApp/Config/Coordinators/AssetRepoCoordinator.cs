@@ -105,7 +105,8 @@ namespace WebApp.Config.Coordinators
                     AzureResourceProvider.ContributorRole,
                     _identityProvider.GetPortalManagedServiceIdentity());
 
-                repository.DeploymentName = "FileServerDeployment";
+                repository.DeploymentName = $"{repository.Name}-{Guid.NewGuid()}";
+
                 await UpdateRepository(repository);
 
                 await DeployFileServer(repository as NfsFileServer);
@@ -117,11 +118,21 @@ namespace WebApp.Config.Coordinators
             var deployment = await GetDeploymentAsync(repository);
             if (deployment == null)
             {
-                return ProvisioningState.Failed;
+                case NfsFileServer fileServer:
+                    return await UpdateFileServerFromDeploymentAsync(fileServer, managementClientProvider);
+                case AvereCluster avere:
+                    return await UpdateAvereFromDeploymentAsync(avere, managementClientProvider);
+                default:
+                    throw new NotSupportedException("Unknown type of repository");
             }
+        }
 
-            var fileServer = repository as NfsFileServer;
-            if (fileServer == null)
+        public async Task<ProvisioningState> UpdateFileServerFromDeploymentAsync(
+            NfsFileServer fileServer,
+            IManagementClientProvider managementClientProvider)
+        {
+            var deployment = await GetDeploymentAsync(fileServer, managementClientProvider);
+            if (deployment == null)
             {
                 return ProvisioningState.Failed;
             }
@@ -146,6 +157,34 @@ namespace WebApp.Config.Coordinators
             return deploymentState;
         }
 
+        public async Task<ProvisioningState> UpdateAvereFromDeploymentAsync(
+            AvereCluster avereCluster,
+            IManagementClientProvider managementClientProvider)
+        {
+            ProvisioningState provisioningState;
+
+            var deployment = await GetDeploymentAsync(avereCluster, managementClientProvider);
+            if (deployment == null)
+            {
+                provisioningState = ProvisioningState.Failed;
+            }
+            else
+            {
+                Enum.TryParse<ProvisioningState>(deployment.Properties.ProvisioningState, out provisioningState);
+                if (provisioningState == ProvisioningState.Succeeded)
+                {
+                    avereCluster.ProvisioningState = provisioningState;
+                    //avereCluster.ManagementIP = privateIp;
+                    //avereCluster.ShareIPs = publicIp;
+                }
+            }
+
+            avereCluster.ProvisioningState = provisioningState;
+
+            await UpdateRepository(avereCluster);
+
+            return provisioningState;
+        }
 
         public async Task BeginDeleteRepositoryAsync(AssetRepository repository)
         {
@@ -310,13 +349,13 @@ namespace WebApp.Config.Coordinators
                     await client.ResourceGroups.CreateOrUpdateAsync(repository.ResourceGroupName,
                         new ResourceGroup { Location = repository.Subnet.Location });
 
-                    var templateParams = GetTemplateParameters(repository);
+                    var templateParams = repository.GetTemplateParameters();
 
                     var properties = new Deployment
                     {
                         Properties = new DeploymentProperties
                         {
-                            Template = await _templateProvider.GetTemplate("linux-file-server.json"),
+                            Template = await _templateProvider.GetTemplate(repository.GetTemplateName()),
                             Parameters = _templateProvider.GetParameters(templateParams),
                             Mode = DeploymentMode.Incremental
                         }
@@ -330,16 +369,16 @@ namespace WebApp.Config.Coordinators
 
                     // Queue a request for the background host to monitor the deployment
                     // and update the state and IP address when it's done.
-                    await _deploymentQueue.Add(new ActiveDeployment
-                    {
-                        FileServerName = repository.Name,
-                        StartTime = DateTime.UtcNow,
-                    });
+                    //await _deploymentQueue.Add(new ActiveDeployment
+                    //{
+                    //    FileServerName = repository.Name,
+                    //    StartTime = DateTime.UtcNow,
+                    //});
 
-                    repository.ProvisioningState = ProvisioningState.Running;
-                    repository.InProgress = false;
+                    //repository.ProvisioningState = ProvisioningState.Running;
+                    //repository.InProgress = false;
 
-                    await UpdateRepository(repository);
+                    //await UpdateRepository(repository);
                 }
             }
             catch (CloudException ex)
@@ -348,22 +387,6 @@ namespace WebApp.Config.Coordinators
                 _logger.LogError(ex, $"Failed to deploy NFS server: {ex.Message}.");
                 throw;
             }
-        }
-
-        private Dictionary<string, object> GetTemplateParameters(NfsFileServer repository)
-        {
-            var fileShare = repository.FileShares.FirstOrDefault();
-            return new Dictionary<string, object>
-            {
-                {"environmentTag", repository.EnvironmentName ?? "Global"},
-                {"vmName", repository.VmName},
-                {"adminUserName", repository.Username},
-                {"adminPassword", repository.Password},
-                {"vmSize", repository.VmSize},
-                {"subnetResourceId", repository.Subnet.ResourceId},
-                {"sharesToExport", fileShare?.Name ?? ""},
-                {"subnetAddressPrefix", string.Join(",", repository.AllowedNetworks)},
-            };
         }
 
         private static async Task IgnoreNotFound(Func<Task> action)

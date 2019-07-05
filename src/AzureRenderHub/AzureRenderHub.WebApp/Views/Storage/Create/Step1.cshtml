@@ -40,8 +40,8 @@
                 <div class="form-element">
                     <label asp-for="RepositoryType">Storage Repository Type</label>
                     <select asp-for="RepositoryType" name="RepositoryType">
-                        <option value="NfsFileServer" selected>File Server</option>
-                        <option value="AvereCluster" disabled="disabled">Avere Cluster - Coming Soon</option>
+                        <option value="NfsFileServer" >File Server</option>
+                        <option value="AvereCluster" selected>Avere vFXT Cache</option>
                     </select>
                     <span asp-validation-for="RepositoryType" class=""></span>
                 </div>

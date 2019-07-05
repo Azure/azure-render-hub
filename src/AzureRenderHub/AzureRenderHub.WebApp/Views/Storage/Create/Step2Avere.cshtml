@@ -4,8 +4,8 @@
 }
 
 @section Breadcrumb
-{
-<a asp-controller="Storage" asp-action="Index">Storage Repositories</a> &gt;
+    {
+    <a asp-controller="Storage" asp-action="Index">Storage Repositories</a> &gt;
     <span>New</span>
 }
 
@@ -39,7 +39,65 @@
                 <div class="form-element">
                     <label asp-for="NewResourceGroupName">Resource Group</label>
                     <input asp-for="NewResourceGroupName" />
-                    <span asp-validation-for="NewResourceGroupName" class=""></span>
+                    <span asp-validation-for="NewResourceGroupName"></span>
+                </div>
+
+                <div class="form-element">
+                    <label>Controller Credential</label>
+                    <div class="form-check">
+                        <input id="UsePassword" asp-for="UseControllerPasswordCredential" value="true" type="radio">
+                        <label class="form-check-label" for="UsePassword">Password</label>
+                    </div>
+                    <div class="form-check">
+                        <input id="UseSSHKey" asp-for="UseControllerPasswordCredential" value="false" type="radio">
+                        <label class="form-check-label" for="UseSSHKey">SSH Public Key</label>
+                    </div>
+                </div>
+
+                <div id="ControllerPasswordSection" hidden="@(!Model.UseControllerPasswordCredential)">
+                    <div class="form-element">
+                        <label asp-for="ControllerPassword">Password</label>
+                        <input asp-for="ControllerPassword" type="password" />
+                        <span asp-validation-for="ControllerPassword"></span>
+                    </div>
+                </div>
+                <div id="ControllerSSHSection" hidden="@(Model.UseControllerPasswordCredential)">
+                    <div class="form-element">
+                        <label asp-for="ControllerSshKey">SSH Key</label>
+                        <input asp-for="ControllerSshKey" />
+                        <span asp-validation-for="ControllerSshKey"></span>
+                    </div>
+                </div>
+
+                <div class="form-element">
+                    <label asp-for="AdminPassword">Management Admin Password</label>
+                    <input asp-for="AdminPassword" type="password" />
+                    <span asp-validation-for="AdminPassword"></span>
+                </div>
+
+                <div class="form-element">
+                    <label asp-for="NodeCount">Cluster Size (VM Count)</label>
+                    <input asp-for="NodeCount" value="3"/>
+                    <span asp-validation-for="NodeCount"></span>
+                </div>
+
+                <div class="form-element">
+                    <label asp-for="VMSize">VM Size</label>
+                    <select asp-for="VMSize" name="VMSize">
+                        <option value="Standard_E8s_v3" selected>Standard_E8s_v3</option>
+                        <option value="Standard_E16s_v3">Standard_E16s_v3</option>
+                        <option value="Standard_E32s_v3">Standard_E32s_v3</option>
+                    </select>
+                    <span asp-validation-for="VMSize" class=""></span>
+                </div>
+
+                <div class="form-element">
+                    <label asp-for="CacheSizeInGB">Cache Size</label>
+                    <select asp-for="CacheSizeInGB" name="CacheSizeInGB">
+                        <option value="1024" selected>1024</option>
+                        <option value="4096">4096</option>
+                    </select>
+                    <span asp-validation-for="CacheSizeInGB" class=""></span>
                 </div>
             </div>
         </div>
@@ -53,3 +111,21 @@
     </div>
     <p>&nbsp;</p>
 </form>
+
+@section scripts
+    {
+    <script>
+        $(document).ready(function () {
+            $('input[type=radio][name=UseControllerPasswordCredential]').change(function () {
+                var usePassword = this.value;
+                if (usePassword === 'true') {
+                    $('#ControllerSSHSection').hide();
+                    $('#ControllerPasswordSection').show();
+                } else {
+                    $('#ControllerPasswordSection').hide();
+                    $('#ControllerSSHSection').show();
+                }
+            });
+        });
+    </script>
+}
