@@ -191,10 +191,7 @@ namespace WebApp
             services.AddScoped<IPoolCoordinator, PoolCoordinator>();
             services.AddSingleton<IScaleUpRequestStore, ScaleUpRequestStore>();
 
-            // While this does use credentials of the user, the data is not sensitive
-            // and can be shared by multiple users:
             services.AddScoped<IVMSizes, VMSizes>();
-
             services.AddScoped<IPoolUsageProvider, PoolUsageProvider>();
 
             // Deployment background server
