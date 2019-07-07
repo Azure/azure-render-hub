@@ -320,7 +320,7 @@ namespace WebApp.Controllers
             try
             {
                 repository.UpdateFromModel(model);
-                await _assetRepoCoordinator.BeginRepositoryDeploymentAsync(repository, _azureResourceProvider);
+                await _assetRepoCoordinator.BeginRepositoryDeploymentAsync(repository);
             }
             catch (Exception ex)
             {
@@ -364,7 +364,7 @@ namespace WebApp.Controllers
                 // update and save the model before we deploy as we can always retry the create
                 repository.UpdateFromModel(model);
 
-                await _assetRepoCoordinator.BeginRepositoryDeploymentAsync(repository, _azureResourceProvider);
+                await _assetRepoCoordinator.BeginRepositoryDeploymentAsync(repository);
             }
             catch (Exception ex)
             {

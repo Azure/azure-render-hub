@@ -6,18 +6,15 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Blob;
-using Polly;
 using WebApp.AppInsights;
 using WebApp.AppInsights.ActiveNodes;
 using WebApp.AppInsights.PoolUsage;
@@ -139,6 +136,7 @@ namespace WebApp
                 ////    b.WaitAndRetryAsync(
                 ////        new[] { TimeSpan.Zero, TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(5) }));
 
+
             // These are scoped as they use the credentials of the user:
             services.AddScoped<IAzureResourceProvider, AzureResourceProvider>();
             services.AddScoped<AuthorizationManager>();
@@ -150,7 +148,6 @@ namespace WebApp
             });
 
             services.AddSingleton<IIdentityProvider, IdentityProvider>();
-            services.AddSingleton<IManagementClientProvider, ManagementClientMsiProvider>();
             services.AddSingleton<ManagementClientMsiProvider>();
             services.AddSingleton<StartTaskProvider>();
 
@@ -175,7 +172,11 @@ namespace WebApp
 
             // the default IAssetRepoCoordinator implementation uses the user auth
             services.AddScoped<IManagementClientProvider, ManagementClientHttpContextProvider>();
-            services.AddScoped(p => CreateAssetRepoCoordinator(p, p.GetRequiredService<IManagementClientProvider>())); 
+            services.AddScoped(p =>
+                CreateAssetRepoCoordinator(
+                    p,
+                    p.GetRequiredService<IManagementClientProvider>(),
+                    p.GetRequiredService<IAzureResourceProvider>())); 
 
             services.AddSingleton<IPackageCoordinator>(p =>
             {
@@ -201,8 +202,8 @@ namespace WebApp
             services.AddSingleton<ILeaseMaintainer, LeaseMaintainer>();
             services.AddSingleton<IDeploymentQueue, DeploymentQueue>();
             services.AddSingleton<IHostedService>(p => new BackgroundDeploymentHost(
-                // use MSI auth for background services
-                CreateAssetRepoCoordinator(p, p.GetRequiredService<ManagementClientMsiProvider>()),
+                // use MSI auth for background services, do not provide an IAzureResourceProvider implementation
+                CreateAssetRepoCoordinator(p, p.GetRequiredService<ManagementClientMsiProvider>(), null),
                 p.GetRequiredService<IDeploymentQueue>(),
                 p.GetRequiredService<ILeaseMaintainer>(),
                 p.GetRequiredService<ILogger<BackgroundDeploymentHost>>()));
@@ -219,7 +220,10 @@ namespace WebApp
             services.AddSingleton<IHostedService, ScaleUpProcessorHost>();
         }
 
-        private static IAssetRepoCoordinator CreateAssetRepoCoordinator(IServiceProvider p, IManagementClientProvider clientProvider)
+        private static IAssetRepoCoordinator CreateAssetRepoCoordinator(
+            IServiceProvider p,
+            IManagementClientProvider clientProvider,
+            IAzureResourceProvider resourceProvider)
         {
             var cbc = p.GetRequiredService<CloudBlobClient>();
             var cache = p.GetRequiredService<IMemoryCache>();
@@ -231,6 +235,7 @@ namespace WebApp
                 p.GetRequiredService<IIdentityProvider>(),
                 p.GetRequiredService<IDeploymentQueue>(),
                 clientProvider,
+                resourceProvider,
                 p.GetRequiredService<ILogger<AssetRepoCoordinator>>());
         }
 

@@ -6,9 +6,7 @@ using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Security.Cryptography.X509Certificates;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Azure.Management.ApplicationInsights.Management;
@@ -25,10 +23,6 @@ using Microsoft.Azure.Management.ResourceManager;
 using Microsoft.Azure.Management.ResourceManager.Models;
 using Microsoft.Azure.Management.Storage;
 using Microsoft.Azure.Management.Storage.Models;
-using Microsoft.Azure.Services.AppAuthentication;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Graph;
-using Microsoft.Identity.Client;
 using Microsoft.Rest;
 using Microsoft.Rest.Azure;
 using Microsoft.Rest.Azure.OData;
@@ -39,7 +33,6 @@ using WebApp.Config;
 using WebApp.Models.Environments;
 using WebApp.Operations;
 using WebApp.Code.Extensions;
-using WebApp.Code.Graph;
 using WebApp.Authorization;
 
 namespace WebApp.Arm
@@ -68,18 +61,15 @@ namespace WebApp.Arm
                 "microsoft.authorization/roleassignments/write",
             });
         
-        private readonly IConfiguration _configuration;
         private readonly IGraphProvider _graphProvider;
         private readonly IHttpClientFactory _httpClientFactory;
 
         public AzureResourceProvider(
             IHttpContextAccessor contextAccessor,
             IHttpClientFactory httpClientFactory,
-            IConfiguration configuration,
             IGraphProvider graphProvider) : base(contextAccessor)
         {
             _httpClientFactory = httpClientFactory;
-            _configuration = configuration;
             _graphProvider = graphProvider;
         }
 

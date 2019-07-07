@@ -30,6 +30,7 @@ namespace WebApp.Config.Coordinators
         private readonly IIdentityProvider _identityProvider;
         private readonly IDeploymentQueue _deploymentQueue;
         private readonly IManagementClientProvider _clientProvider;
+        private readonly IAzureResourceProvider _azureResourceProvider;
         private readonly ILogger _logger;
 
         public AssetRepoCoordinator(
@@ -38,6 +39,7 @@ namespace WebApp.Config.Coordinators
             IIdentityProvider identityProvider,
             IDeploymentQueue deploymentQueue,
             IManagementClientProvider clientProvider,
+            IAzureResourceProvider azureResourceProvider,
             ILogger<AssetRepoCoordinator> logger)
         {
             _configCoordinator = configCoordinator;
@@ -45,6 +47,7 @@ namespace WebApp.Config.Coordinators
             _identityProvider = identityProvider;
             _deploymentQueue = deploymentQueue;
             _clientProvider = clientProvider;
+            _azureResourceProvider = azureResourceProvider;
             _logger = logger;
         }
 
@@ -86,7 +89,7 @@ namespace WebApp.Config.Coordinators
         //
         // Deployment operations
         //
-        public async Task BeginRepositoryDeploymentAsync(AssetRepository repository, IAzureResourceProvider azureResourceProvider)
+        public async Task BeginRepositoryDeploymentAsync(AssetRepository repository)
         {
             using (var client = await _clientProvider.CreateResourceManagementClient(repository.SubscriptionId))
             {
@@ -96,7 +99,7 @@ namespace WebApp.Config.Coordinators
                         repository.Subnet.Location, // The subnet location pins us to a region
                         tags: AzureResourceProvider.GetEnvironmentTags(repository.EnvironmentName)));
 
-                await azureResourceProvider.AssignRoleToIdentityAsync(
+                await _azureResourceProvider.AssignRoleToIdentityAsync(
                     repository.SubscriptionId,
                     repository.ResourceGroupResourceId,
                     AzureResourceProvider.ContributorRole,
