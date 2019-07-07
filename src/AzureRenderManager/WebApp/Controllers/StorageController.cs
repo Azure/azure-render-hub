@@ -1,28 +1,21 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Management.Compute;
 using Microsoft.Azure.Management.Compute.Models;
 using Microsoft.Azure.Management.Network;
 using Microsoft.Azure.Management.ResourceManager;
-using Microsoft.Azure.Management.ResourceManager.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Rest.Azure;
-using Microsoft.WindowsAzure.Storage.Blob;
 using WebApp.Arm;
-using WebApp.BackgroundHosts.Deployment;
 using WebApp.Code.Attributes;
 using WebApp.Code.Contract;
 using WebApp.Config;
 using WebApp.Config.Storage;
-using WebApp.Identity;
 using WebApp.Models.Storage;
 using WebApp.Models.Storage.Create;
 using WebApp.Models.Storage.Details;
@@ -35,17 +28,13 @@ namespace WebApp.Controllers
     public class StorageController : MenuBaseController
     {
         private readonly IConfiguration _configuration;
-        private readonly IHostingEnvironment _environment;
-        private readonly IDeploymentQueue _deploymentQueue;
         private readonly IManagementClientProvider _managementClientProvider;
         private readonly IAzureResourceProvider _azureResourceProvider;
-        private readonly IIdentityProvider _identityProvider;
 
 
         public StorageController(
             IConfiguration configuration,
             IManagementClientProvider managementClientProvider,
-            CloudBlobClient cloudBlobClient,
             IAssetRepoCoordinator assetRepoCoordinator,
             IEnvironmentCoordinator environmentCoordinator,
             IPackageCoordinator packageCoordinator,
@@ -73,7 +62,7 @@ namespace WebApp.Controllers
                 return NotFound($"Storage configuration with id: '{repoId}' could not be found");
             }
 
-            await _assetRepoCoordinator.BeginDeleteRepositoryAsync(repository, _managementClientProvider);
+            await _assetRepoCoordinator.BeginDeleteRepositoryAsync(repository);
 
             return RedirectToAction("Overview", new { repoId });
         }
@@ -331,7 +320,7 @@ namespace WebApp.Controllers
             try
             {
                 repository.UpdateFromModel(model);
-                await _assetRepoCoordinator.BeginRepositoryDeploymentAsync(repository, _managementClientProvider, _azureResourceProvider);
+                await _assetRepoCoordinator.BeginRepositoryDeploymentAsync(repository, _azureResourceProvider);
             }
             catch (Exception ex)
             {
@@ -375,10 +364,7 @@ namespace WebApp.Controllers
                 // update and save the model before we deploy as we can always retry the create
                 repository.UpdateFromModel(model);
 
-                await _assetRepoCoordinator.BeginRepositoryDeploymentAsync(
-                    repository,
-                    _managementClientProvider,
-                    _azureResourceProvider);
+                await _assetRepoCoordinator.BeginRepositoryDeploymentAsync(repository, _azureResourceProvider);
             }
             catch (Exception ex)
             {

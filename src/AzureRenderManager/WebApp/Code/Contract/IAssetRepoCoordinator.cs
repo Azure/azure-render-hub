@@ -17,13 +17,13 @@ namespace WebApp.Code.Contract
 
         AssetRepository CreateRepository(AddAssetRepoBaseModel model);
 
-        Task BeginRepositoryDeploymentAsync(AssetRepository repository, IManagementClientProvider managementClientProvider, IAzureResourceProvider azureResourceProvider);
+        Task BeginRepositoryDeploymentAsync(AssetRepository repository, IAzureResourceProvider azureResourceProvider);
 
-        Task<ProvisioningState> UpdateRepositoryFromDeploymentAsync(AssetRepository repository, IManagementClientProvider managementClientProvider);
+        Task<ProvisioningState> UpdateRepositoryFromDeploymentAsync(AssetRepository repository);
 
-        Task BeginDeleteRepositoryAsync(AssetRepository repository, IManagementClientProvider managementClientProvider);
+        Task BeginDeleteRepositoryAsync(AssetRepository repository);
 
-        Task DeleteRepositoryResourcesAsync(AssetRepository repository, IManagementClientProvider managementClientProvider);
+        Task DeleteRepositoryResourcesAsync(AssetRepository repository);
 
         Task UpdateRepository(AssetRepository repository, string originalName = null);
 

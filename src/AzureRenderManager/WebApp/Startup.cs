@@ -173,19 +173,9 @@ namespace WebApp
                             cache));
             });
 
-            services.AddSingleton<IAssetRepoCoordinator>(p =>
-            {
-                var cbc = p.GetRequiredService<CloudBlobClient>();
-                var cache = p.GetRequiredService<IMemoryCache>();
-                return new AssetRepoCoordinator(
-                    new CachingConfigRepository<AssetRepository>(
-                        new GenericConfigRepository<AssetRepository>(cbc.GetContainerReference("storage")), 
-                        cache),
-                    p.GetRequiredService<ITemplateProvider>(),
-                    p.GetRequiredService<IIdentityProvider>(),
-                    p.GetRequiredService<IDeploymentQueue>(),
-                    p.GetRequiredService<ILogger<AssetRepoCoordinator>>());
-            });
+            // the default IAssetRepoCoordinator implementation uses the user auth
+            services.AddScoped<IManagementClientProvider, ManagementClientHttpContextProvider>();
+            services.AddScoped(p => CreateAssetRepoCoordinator(p, p.GetRequiredService<IManagementClientProvider>())); 
 
             services.AddSingleton<IPackageCoordinator>(p =>
             {
@@ -197,7 +187,6 @@ namespace WebApp
                         cache));
             });
 
-            services.AddScoped<IManagementClientProvider, ManagementClientHttpContextProvider>();
             services.AddScoped<IPoolCoordinator, PoolCoordinator>();
             services.AddSingleton<IScaleUpRequestStore, ScaleUpRequestStore>();
 
@@ -212,8 +201,8 @@ namespace WebApp
             services.AddSingleton<ILeaseMaintainer, LeaseMaintainer>();
             services.AddSingleton<IDeploymentQueue, DeploymentQueue>();
             services.AddSingleton<IHostedService>(p => new BackgroundDeploymentHost(
-                p.GetRequiredService<IAssetRepoCoordinator>(),
-                p.GetRequiredService<ManagementClientMsiProvider>(),
+                // use MSI auth for background services
+                CreateAssetRepoCoordinator(p, p.GetRequiredService<ManagementClientMsiProvider>()),
                 p.GetRequiredService<IDeploymentQueue>(),
                 p.GetRequiredService<ILeaseMaintainer>(),
                 p.GetRequiredService<ILogger<BackgroundDeploymentHost>>()));
@@ -228,6 +217,21 @@ namespace WebApp
             // more instances then we will need to add some named-lookup system...
             services.AddSingleton<AsyncAutoResetEvent>();
             services.AddSingleton<IHostedService, ScaleUpProcessorHost>();
+        }
+
+        private static IAssetRepoCoordinator CreateAssetRepoCoordinator(IServiceProvider p, IManagementClientProvider clientProvider)
+        {
+            var cbc = p.GetRequiredService<CloudBlobClient>();
+            var cache = p.GetRequiredService<IMemoryCache>();
+            return new AssetRepoCoordinator(
+                new CachingConfigRepository<AssetRepository>(
+                    new GenericConfigRepository<AssetRepository>(cbc.GetContainerReference("storage")),
+                    cache),
+                p.GetRequiredService<ITemplateProvider>(),
+                p.GetRequiredService<IIdentityProvider>(),
+                p.GetRequiredService<IDeploymentQueue>(),
+                clientProvider,
+                p.GetRequiredService<ILogger<AssetRepoCoordinator>>());
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
