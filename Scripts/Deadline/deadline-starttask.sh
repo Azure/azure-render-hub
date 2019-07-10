@@ -100,7 +100,7 @@ if [ -n "$DEADLINE_EXCLUDE_LIMIT_GROUPS" ]; then
 fi
 
 # Set the Pool and Compute Node name in the slave's description and extra data
-/opt/Thinkbox/Deadline10/bin/deadlinecommand SetSlaveSetting `hostname` SetSlaveSetting "Pool: $AZ_BATCH_POOL_ID, ComputeNode: $AZ_BATCH_NODE_ID"
+/opt/Thinkbox/Deadline10/bin/deadlinecommand SetSlaveSetting `hostname` SlaveDescription "Pool: $AZ_BATCH_POOL_ID, ComputeNode: $AZ_BATCH_NODE_ID"
 /opt/Thinkbox/Deadline10/bin/deadlinecommand SetSlaveExtraInfoKeyValue `hostname` PoolName $AZ_BATCH_POOL_ID
 /opt/Thinkbox/Deadline10/bin/deadlinecommand SetSlaveExtraInfoKeyValue `hostname` ComputeNodeName $AZ_BATCH_NODE_ID
 
