@@ -39,7 +39,7 @@ namespace WebApp.Code
             public const string AsciiOnly = "^[a-zA-Z0-9-]+$";
             public const string NumbersOnly = "^[\\d]+$";
             public const string KeyVault = "^[a-zA-Z][A-Za-z0-9]*(?:-[A-Za-z0-9]+)*$";
-            public const string CommaSeparatedList = "^([a-zA-Z0-9]+,?\\s*)*$";
+            public const string CommaSeparatedList = "^([_\\w\\-]+,?\\s*)*$";
 
             public const string EnvironmentName = "^[_\\w\\-]+$";
             public const string PoolName = EnvironmentName;

@@ -52,6 +52,7 @@ namespace WebApp.Config.Pools
 
         public async Task<StartTask> GetQubeStartTask(
             string poolName,
+            IEnumerable<string> additionalGroups,
             RenderingEnvironment environment,
             InstallationPackage qubePackage,
             InstallationPackage gpuPackage,
@@ -78,6 +79,7 @@ namespace WebApp.Config.Pools
             await AppendQubeSetupToStartTask(
                 environment,
                 poolName,
+                additionalGroups,
                 startTask,
                 environment.RenderManagerConfig.Qube,
                 qubePackage,
@@ -91,6 +93,8 @@ namespace WebApp.Config.Pools
 
         public async Task<StartTask> GetDeadlineStartTask(
             string poolName,
+            IEnumerable<string> additionalPools,
+            IEnumerable<string> additionalGroups,
             RenderingEnvironment environment,
             InstallationPackage deadlinePackage,
             InstallationPackage gpuPackage,
@@ -122,6 +126,8 @@ namespace WebApp.Config.Pools
             AppendDeadlineSetupToStartTask(
                 environment,
                 poolName,
+                additionalPools,
+                additionalGroups,
                 startTask,
                 environment.RenderManagerConfig.Deadline,
                 deadlinePackage,
@@ -144,6 +150,8 @@ namespace WebApp.Config.Pools
         private void AppendDeadlineSetupToStartTask(
             RenderingEnvironment environment,
             string poolName,
+            IEnumerable<string> additionalPools,
+            IEnumerable<string> additionalGroups,
             StartTask startTask,
             DeadlineConfig deadlineConfig,
             InstallationPackage deadlinePackage,
@@ -235,7 +243,29 @@ namespace WebApp.Config.Pools
                 commandLine += GetParameterSet(isWindows, "deadlineLicenseServer", deadlineConfig.LicenseServer);
             }
 
-            commandLine += GetParameterSet(isWindows, useGroups ? "deadlineGroups" : "deadlinePools", poolName);
+            var pools = useGroups ? "" : poolName;
+            if (additionalPools != null && additionalPools.Any())
+            {
+                pools += string.IsNullOrEmpty(pools) ? "" : ",";
+                pools += string.Join(',', additionalPools);
+            }
+
+            if (!string.IsNullOrEmpty(pools))
+            {
+                commandLine += GetParameterSet(isWindows, "deadlinePools", pools);
+            }
+
+            var groups = useGroups ? poolName : "";
+            if (additionalGroups != null && additionalGroups.Any())
+            {
+                groups += string.IsNullOrEmpty(groups) ? "" : ",";
+                groups += string.Join(',', additionalGroups);
+            }
+
+            if (!string.IsNullOrEmpty(groups))
+            {
+                commandLine += GetParameterSet(isWindows, "deadlineGroups", groups);
+            }
 
             if (!string.IsNullOrWhiteSpace(deadlineConfig.ExcludeFromLimitGroups))
             {
@@ -268,6 +298,7 @@ namespace WebApp.Config.Pools
         private async Task AppendQubeSetupToStartTask(
             RenderingEnvironment environment,
             string poolName,
+            IEnumerable<string> additionalGroups,
             StartTask startTask,
             QubeConfig qubeConfig,
             InstallationPackage qubePackage,
@@ -285,9 +316,15 @@ namespace WebApp.Config.Pools
             var installScriptResourceFile = new ResourceFile(httpUrl: startTaskScriptUrl, filePath: filename);
             resourceFiles.Add(installScriptResourceFile);
 
+            var workerGroups = $"azure,{poolName}";
+            if (additionalGroups != null && additionalGroups.Any())
+            {
+                workerGroups += $",{string.Join(',', additionalGroups)}";
+            }
+
             commandLine += $".\\{installScriptResourceFile.FilePath} " +
                            $"-qubeSupervisorIp {qubeConfig.SupervisorIp} " +
-                           $"-workerHostGroups 'azure,{poolName}'";
+                           $"-workerHostGroups '{workerGroups}'";
 
             if (qubePackage != null && !string.IsNullOrEmpty(qubePackage.Container))
             {

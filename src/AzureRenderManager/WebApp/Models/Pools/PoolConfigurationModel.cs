@@ -18,6 +18,14 @@ namespace WebApp.Models.Pools
         [RegularExpression(Validation.RegularExpressions.PoolName, ErrorMessage = Validation.Errors.Regex.PoolName)]
         public string PoolName { get; set; }
 
+        [StringLength(64)]
+        [RegularExpression(Validation.RegularExpressions.CommaSeparatedList, ErrorMessage = "Additional groups must be comma delimited.")]
+        public string AdditionalGroups { get; set; }
+
+        [StringLength(64)]
+        [RegularExpression(Validation.RegularExpressions.CommaSeparatedList, ErrorMessage = "Additional pools must be comma delimited.")]
+        public string AdditionalPools { get; set; }
+
         [Required]
         public string SelectedRenderManagerPackageId { get; set; }
 
