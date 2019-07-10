@@ -2,10 +2,6 @@
 
 # Disable history expansion to support passwords with '!'
 set +H
-set -x
-#set -e
-
-env
 
 INSTALLER_PATH="$AZ_BATCH_APP_PACKAGE_deadlineclient"
 TENANT_ID=
@@ -27,8 +23,7 @@ DEADLINE_EXCLUDE_LIMIT_GROUPS=
 OPTS=`getopt -n 'parse-options' -o i:t:a:n:p:r:u:s:m:g:d:y:l:e: --long installerPath:,tenantId:,applicationId:,keyVaultName:,keyVaultCertificateThumbprint:,deadlineRepositoryPath:,deadlineRepositoryUserName:,deadlineLicenseServer:,deadlineLicenseMode:,deadlineRegion:,domainName:,deadlineGroups:,deadlinePools:,excludeFromLimitGroups: -- "$@"`
 if [ $? != 0 ] ; then echo "Failed parsing options." >&2 ; exit 1 ; fi
 
-
-echo "$OPTS"
+echo "Arguments: $@"
 eval set -- "$OPTS"
 
 while true; do
@@ -52,6 +47,18 @@ while true; do
   esac
 done
 
+# Stop the launcher and slave from starting (yet)
+systemctl stop deadline10launcher.service
+
+# When Batch recovers a VM, or a VM is pre-empted, a new
+# VM replaces the old one.  While the compute node Id doesn't
+# change, the hostname does and we want to prevent a new host from
+# registering itself in Deadline.  To do this we'll create a hash
+# of the pool and compute node Id which will be predictable.
+hash=$(echo "$AZ_BATCH_POOL_ID-$AZ_BATCH_NODE_ID" | md5sum)
+newHostname=${hash/  -}
+echo "Updating hostname from `hostname` to $newHostname"
+hostnamectl set-hostname $newHostname
 
 # Set any app licenses system wide.
 if [ -n "$AZ_BATCH_SOFTWARE_ENTITLEMENT_TOKEN" ]; then
@@ -92,8 +99,16 @@ if [ -n "$DEADLINE_EXCLUDE_LIMIT_GROUPS" ]; then
     done
 fi
 
+# Set the Pool and Compute Node name in the slave's description and extra data
+/opt/Thinkbox/Deadline10/bin/deadlinecommand SetSlaveSetting `hostname` SetSlaveSetting "Pool: $AZ_BATCH_POOL_ID, ComputeNode: $AZ_BATCH_NODE_ID"
+/opt/Thinkbox/Deadline10/bin/deadlinecommand SetSlaveExtraInfoKeyValue `hostname` PoolName $AZ_BATCH_POOL_ID
+/opt/Thinkbox/Deadline10/bin/deadlinecommand SetSlaveExtraInfoKeyValue `hostname` ComputeNodeName $AZ_BATCH_NODE_ID
+
+# Restart the Deadline Launcher
+systemctl start deadline10launcher.service
 
 if [ -n "$APP_INSIGHTS_INSTRUMENTATION_KEY" ]; then
-    # Install and setup Application Insights
+    # Install and setup Application Insights for CPU/GPU and process
+    # metrics
     /bin/bash -c 'wget  -O - https://raw.githubusercontent.com/Azure/batch-insights/v1.3.0/scripts/run-linux.sh | bash'
 fi

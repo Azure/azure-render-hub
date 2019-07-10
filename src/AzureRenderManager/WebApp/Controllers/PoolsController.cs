@@ -588,6 +588,8 @@ namespace WebApp.Controllers
                 case RenderManagerType.Deadline:
                     startTask = await _startTaskProvider.GetDeadlineStartTask(
                         poolConfiguration.PoolName,
+                        ParseCommaSeperatedList(poolConfiguration.AdditionalPools),
+                        ParseCommaSeperatedList(poolConfiguration.AdditionalGroups),
                         environment,
                         renderManagerPackage,
                         gpuPackage,
@@ -599,6 +601,7 @@ namespace WebApp.Controllers
                 case RenderManagerType.Qube70:
                     startTask = await _startTaskProvider.GetQubeStartTask(
                         poolConfiguration.PoolName,
+                        ParseCommaSeperatedList(poolConfiguration.AdditionalGroups),
                         environment,
                         renderManagerPackage,
                         gpuPackage,
@@ -631,6 +634,15 @@ namespace WebApp.Controllers
             }
 
             return newPool;
+        }
+
+        private IEnumerable<string> ParseCommaSeperatedList(string list)
+        {
+            if (string.IsNullOrWhiteSpace(list))
+            {
+                return null;
+            }
+            return list.Split(',').ToList();
         }
 
         private List<string> GetSelectedGeneralPackages(IEnumerable<string> selectedGeneralPackageIds)
