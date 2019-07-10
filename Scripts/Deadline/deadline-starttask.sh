@@ -57,7 +57,7 @@ systemctl stop deadline10launcher.service
 # of the pool and compute node Id which will be predictable.
 hash=$(echo "$AZ_BATCH_POOL_ID-$AZ_BATCH_NODE_ID" | md5sum)
 newHostname=${hash/  -}
-echo "Updating hostname from $hostname to $newHostname"
+echo "Updating hostname from `hostname` to $newHostname"
 hostnamectl set-hostname $newHostname
 
 # Set any app licenses system wide.
