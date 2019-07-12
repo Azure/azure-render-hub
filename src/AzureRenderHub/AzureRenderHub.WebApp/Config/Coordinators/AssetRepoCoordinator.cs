@@ -12,6 +12,7 @@ using Microsoft.Azure.Management.ResourceManager;
 using Microsoft.Azure.Management.ResourceManager.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Rest.Azure;
+using Newtonsoft.Json.Linq;
 using WebApp.Arm;
 using WebApp.BackgroundHosts.Deployment;
 using WebApp.Code.Contract;
@@ -174,8 +175,13 @@ namespace WebApp.Config.Coordinators
                 if (provisioningState == ProvisioningState.Succeeded)
                 {
                     avereCluster.ProvisioningState = provisioningState;
-                    //avereCluster.ManagementIP = privateIp;
-                    //avereCluster.ShareIPs = publicIp;
+                    if (deployment.Properties.Outputs != null)
+                    {
+                        var outputs = deployment.Properties.Outputs as JObject;
+                        avereCluster.SshConnectionDetails = (string)outputs["ssh_string"]?["value"];
+                        avereCluster.ManagementIP = (string)outputs["mgmt_ip"]?["value"];
+                        avereCluster.VServerIPRange = (string)outputs["vserver_ips"]?["value"];
+                    }
                 }
             }
 

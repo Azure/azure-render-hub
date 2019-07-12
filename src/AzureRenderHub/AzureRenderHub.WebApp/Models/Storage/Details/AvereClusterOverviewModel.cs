@@ -19,6 +19,9 @@ namespace WebApp.Models.Storage.Details
                 Name = avereCluster.Name;
                 RepositoryType = avereCluster.RepositoryType;
                 SubscriptionId = avereCluster.SubscriptionId;
+                VServerIPRange = avereCluster.VServerIPRange;
+                ManagementIP = avereCluster.ManagementIP;
+                SshConnectionDetails = avereCluster.SshConnectionDetails;
 
                 if (avereCluster.Subnet != null)
                 {
@@ -41,10 +44,10 @@ namespace WebApp.Models.Storage.Details
 
         public override string Description => "Details about the Avere Cluster";
 
-        public string VServerIPs { get; set; }
+        public string VServerIPRange { get; set; }
 
         public string ManagementIP { get; set; }
 
-        public string SSHConnectionDetails { get; set; }
+        public string SshConnectionDetails { get; set; }
     }
 }
