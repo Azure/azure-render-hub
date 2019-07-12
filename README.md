@@ -49,7 +49,7 @@ Click the following link to start a deployment into your existing Azure subscrip
 
 ## Documentation
 
-For more information about the render farm manager see the docs [here](docs/10-environments-overview.md).
+For more information about the render farm manager see the docs [here](docs/README.md).
 
 # Contributing
 
