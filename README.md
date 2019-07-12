@@ -6,32 +6,34 @@ The Azure Render Farm Manager is an Azure Web App to create and manage your clou
 
 The portal Web App can be easily deployed into your existing Azure subscription.
 
-# What the Render Farm Manager Does
+## What the Render Farm Manager Does
 
-1. Create Azure infrastructure to extend your existing render farm
-2. Configures the resources to work togetehr
-3. Provides usage and costs
+* Create Azure infrastructure to extend your existing render farm
+* Configures the resources to work togetehr
+* Provides usage and costs
 
-# What the Render Farm Manager is Not
+## What the Render Farm Manager is Not
 
-1. A Render Manager, Queue Manager or Scheduler
+* A Render Manager, Queue Manager or Scheduler
 
-# What's Supported
+It is a prerequisite that you have an existing Deadline or Qube render farm.
+
+## What's Supported
 
 The Render Farm Manager is currently in Public Preview and therefore a 'work in progress'.  The following scenarios
 are currently supported.
 
-. Deadline 10
-.. Windows with Package Installation
-.. Windows with Custom Image
-.. Linux with Package Installation - Not Supported
-.. Linux with Custom Image
+**Deadline 10**
+* Windows with Package Installation
+* Windows with Custom Image
+* Linux with Package Installation - **Not Supported**
+* Linux with Custom Image
 
-. Qube
-.. Windows with Package Installation
-.. Windows with Custom Image
-.. Linux with Package Installation - Not Supported
-.. Linux with Custom Image - Not Supported
+**Qube**
+* Windows with Package Installation
+* Windows with Custom Image
+* Linux with Package Installation - **Not Supported**
+* Linux with Custom Image - **Not Supported**
 
 The unsupported items are scheduled and will be available shortly.
 
@@ -44,6 +46,10 @@ Click the following link to start a deployment into your existing Azure subscrip
 <a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FAzure%2Fazure-render-farm-manager%2Fmaster%2FTemplates%2FAzureRenderFarmManager.json" target="_blank">
    <img alt="Deploy to Azure" src="http://azuredeploy.net/deploybutton.png"/>
 </a>
+
+## Documentation
+
+For more information about the render farm manager see the docs [here](docs/10-environments-overview.md).
 
 # Contributing
 
