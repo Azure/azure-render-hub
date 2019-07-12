@@ -7,7 +7,7 @@ You can have a single environment, or multiple environments that could represent
 departments or cost centers in your organisation.  For you example, you could have an Environment for you studio in LA and another 
 one for a studio in Vancouver.
 
-![Image of Environment](images/environment.png)
+<img src="images/environment.png" width="400" alt="Environment Diagram">
 
 An Environment consists of the following Azure resources.
 
