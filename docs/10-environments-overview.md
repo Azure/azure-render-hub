@@ -16,7 +16,7 @@ An Environment consists of the following Azure resources.
 This is the Virtual Network with connectivity to your Qube Supervisor or Deadline Repository.  It is also where all your 
 virtual machines will be deployed to ensure they can connect to the Supervisor or Repository.
 
-See [here]() for more information.
+See [here](https://docs.microsoft.com/en-us/azure/virtual-network/virtual-networks-overview) for more information.
 
 **Azure Batch Account**
 
