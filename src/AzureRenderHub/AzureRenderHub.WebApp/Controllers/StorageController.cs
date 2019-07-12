@@ -115,9 +115,23 @@ namespace WebApp.Controllers
                 return RedirectToAction("Deploying", new { repoId });
             }
 
-            var model = await GetOverviewViewModel(repo);
-
-            return View("View/Overview", model);
+            if (repo is NfsFileServer nfs) {
+                var model = new NfsFileServerOverviewModel(nfs)
+                {
+                    PowerStatus = await GetVirtualMachineStatus(nfs.SubscriptionId.ToString(), nfs.ResourceGroupName, nfs.VmName),
+                };
+                return View("View/OverviewFileServer", model);
+            }
+            else if (repo is AvereCluster avere)
+            {
+                var model = new AvereClusterOverviewModel(avere);
+                // TODO: Get Avere status of each cluster node
+                return View("View/OverviewAvere", model);
+            }
+            else
+            {
+                throw new NotSupportedException("Unknown type of repository");
+            }
         }
 
         [HttpGet]

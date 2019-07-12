@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+using System.Collections.Generic;
 using WebApp.Config.Storage;
 
 namespace WebApp.Models.Storage.Details
@@ -39,5 +40,11 @@ namespace WebApp.Models.Storage.Details
         public override string DisplayName => "Avere Cluster";
 
         public override string Description => "Details about the Avere Cluster";
+
+        public string VServerIPs { get; set; }
+
+        public string ManagementIP { get; set; }
+
+        public string SSHConnectionDetails { get; set; }
     }
 }

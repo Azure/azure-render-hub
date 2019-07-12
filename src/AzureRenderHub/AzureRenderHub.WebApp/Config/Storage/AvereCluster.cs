@@ -67,6 +67,12 @@ namespace WebApp.Config.Storage
 
         public int AvereCacheSizeGB { get; set; }
 
+        public string VServerIPs { get; set; }
+
+        public string ManagementIP { get; set; }
+
+        public string SSHConnectionDetails { get; set; }
+
         public override Dictionary<string, object> GetTemplateParameters()
         {
             return new Dictionary<string, object>

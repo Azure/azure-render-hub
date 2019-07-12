@@ -1,0 +1,82 @@
+﻿@using WebApp.Config.Storage
+@using WebApp.Models.Storage.Details
+@model WebApp.Models.Storage.Details.AvereClusterOverviewModel
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContext
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Xsrf
+@functions{
+    public string GetAntiXsrfRequestToken()
+    {
+        return Xsrf.GetAndStoreTokens(HttpContext.HttpContext).RequestToken;
+    }
+}
+@{
+    ViewBag.Title = Model.Name;
+}
+
+@section Breadcrumb
+    {
+    <a asp-controller="Storage" asp-action="Index">Storage Repositories</a> &gt;
+    <a asp-controller="Storage" asp-action="Details" asp-route-repoId="@Model.Name">@Model.Name</a> &gt;
+    <span>Details</span>
+}
+
+@await Html.PartialAsync("Storage/Details/DetailsHeaderPartial", Model, new ViewDataDictionary(ViewData)
+{
+    { "StepName", "details" }
+})
+
+@await Html.PartialAsync("Menu/StorageSubMenu", Model, new ViewDataDictionary(ViewData)
+{
+    { "Step", 1 },
+    { "RepoId", Model.Name },
+    { "Type", "view" }
+})
+
+<div class="storage-details">
+    <div class="form-section">
+        <div class="section-title">
+            <span class="step-index">1.1</span>
+            <div class="step-header">
+                <h3>Connection Details</h3>
+                <p></p>
+            </div>
+        </div>
+        <div class="section-wrapper">
+            <div class="section-bar"></div>
+            <div class="section-content">
+                <div class="form-element">
+                    <label asp-for="PowerStatus">State</label>
+                    <input asp-for="PowerStatus" readonly="readonly" />
+                </div>
+                <div class="form-element">
+                    <label asp-for="ManagementIP">Management IP</label>
+                    <input asp-for="ManagementIP" readonly="readonly" />
+                </div>
+                <div class="form-element">
+                    <label asp-for="SSHConnectionDetails">Controller SSH Details</label>
+                    <input asp-for="SSHConnectionDetails" readonly="readonly" />
+                </div>
+                <div class="form-element">
+                    <label asp-for="VServerIPs">vServer IPs</label>
+                    <input asp-for="VServerIPs" readonly="readonly" />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-footer">
+        <div class="button-bar">
+            @if (Model.PowerStatus == "VM running")
+            {
+            <a class="button" asp-action="PowerOperation" asp-route-repoId="@Model.Name" asp-route-operation="shutdown">Shutdown Cluster <i class="fa fa-stop"></i></a>
+            }
+            else
+            {
+            <a class="button" asp-action="PowerOperation" asp-route-repoId="@Model.Name" asp-route-operation="start">Start Cluster <i class="fa fa-play"></i></a>
+            }
+
+            <a class="button" asp-action="Delete" asp-route-repoId="@Model.Name" onclick="return confirm('Are you sure you want to delete @Model.Name?')">Delete Cluster <i class="fa fa-trash"></i></a>
+        </div>
+    </div>
+</div>
+<p>&nbsp;</p>
