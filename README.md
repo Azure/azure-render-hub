@@ -2,12 +2,42 @@
 
 # Azure Render Farm Manager (Preview)
 
-The Azure Render Farm Manager is an Azure Web App to create and manage your cloud or hybrid render farm with native support for PipelineFx Qube! and Thinkbox Deadline 10.
+The Azure Render Farm Manager is an Azure Web App to create and manage your cloud or hybrid render farm infrastructure.  The Render Famr Manager comes with native support for PipelineFx Qube! (6.10 and 7.0) and Thinkbox Deadline 10.
+
 The portal Web App can be easily deployed into your existing Azure subscription.
 
+# What the Render Farm Manager Does
 
+1. Create Azure infrastructure to extend your existing render farm
+2. Configures the resources to work togetehr
+3. Provides usage and costs
+
+# What the Render Farm Manager is Not
+
+1. A Render Manager, Queue Manager or Scheduler
+
+# What's Supported
+
+The Render Farm Manager is currently in Public Preview and therefore a 'work in progress'.  The following scenarios
+are currently supported.
+
+. Deadline 10
+.. Windows with Package Installation
+.. Windows with Custom Image
+.. Linux with Package Installation - Not Supported
+.. Linux with Custom Image
+
+. Qube
+.. Windows with Package Installation
+.. Windows with Custom Image
+.. Linux with Package Installation - Not Supported
+.. Linux with Custom Image - Not Supported
+
+The unsupported items are scheduled and will be available shortly.
 
 ## Deploying the Portal
+
+For detailed deployment instructions see [here](docs/00-deployment.md).
 
 Click the following link to start a deployment into your existing Azure subscription.  The required input fields are described in detail below.
 
