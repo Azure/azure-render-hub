@@ -110,7 +110,7 @@ namespace WebApp.Config.Coordinators
 
                 await UpdateRepository(repository);
 
-                await DeployFileServer(repository as NfsFileServer);
+                await DeployRepository(repository);
             }
         }
 
@@ -346,7 +346,7 @@ namespace WebApp.Config.Coordinators
             }
         }
 
-        private async Task DeployFileServer(NfsFileServer repository)
+        private async Task DeployRepository(AssetRepository repository)
         {
             try
             {
@@ -372,6 +372,8 @@ namespace WebApp.Config.Coordinators
                         repository.ResourceGroupName,
                         repository.DeploymentName,
                         properties);
+
+                    // TODO re-enable below for background monitoring.
 
                     // Queue a request for the background host to monitor the deployment
                     // and update the state and IP address when it's done.
