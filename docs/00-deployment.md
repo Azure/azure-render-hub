@@ -1,6 +1,6 @@
 # Deploying the Portal
 
-Before you deploy the portal you'll need to create an Azure AD (AAD) application.  You can create the application via the Azure Cloud Shell [here](https://shell.azure.com/powershell).
+Before you deploy the portal you'll need to create an Azure Active Directory (AAD) application.  You can create the application via the Azure Cloud Shell [here](https://shell.azure.com/powershell).
 
 ## Create an Azure AD Application
 
