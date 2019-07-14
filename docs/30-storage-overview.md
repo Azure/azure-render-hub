@@ -19,8 +19,8 @@ For details on deploying a File Server see [here](31-storage-fileserver-deploy.m
 
 # Avere vFXT Cluster
 
-For render farms with hundreds or thousands of virtual machines the Avere vFXT Cache is the recommended option.  The cluster caches input data in memory and is resilient to a node failure.  An Avere vFXT Cluster can scale from 3 to 12 virtual machines, increasing the IOPS and throughput.
+For render farms with hundreds or thousands of virtual machines, the Avere vFXT Cache is the recommended option.  The cluster caches input data in memory and is resilient to a node failure.  An Avere vFXT Cluster can scale from 3 to 12 virtual machines, increasing the IOPS and throughput.
 
-for more information on Avere vFXT see [here](https://azure.microsoft.com/en-au/services/storage/avere-vfxt/).
+For more information on Avere vFXT see [here](https://azure.microsoft.com/en-au/services/storage/avere-vfxt/).
 
 For details on deploying an Avere vFXT Cluster see [here](32-storage-avere-deploy.md).
