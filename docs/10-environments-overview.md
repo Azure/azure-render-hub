@@ -4,8 +4,7 @@ Environments are a core concept of the Render Farm Manager and encapsulate all t
 maintain a render farm in Azure.
 
 You can have a single environment, or multiple environments that could represent different
-departments or cost centers in your organisation.  For you example, you could have an Environment for you studio in LA and another 
-one for a studio in Vancouver.
+departments, cost centers or projects in your organization.  For example, you could have an Environment for your studio in LA and another for a studio in Vancouver.
 
 <img src="images/environment.png" width="400" alt="Environment Diagram">
 
@@ -38,12 +37,11 @@ For more information on Azure Batch Rendering see [here](https://azure.microsoft
 
 **Azure Storage**
 
-By default an Azure Files share is created and can be used for input and output data.  Qube and Deadline each have methods to automatically mount a 
-share on the render nodes.  See the Environment -> Storage tab for details.
+By default an Azure Files share is created and can be used for input and output data.  Qube and Deadline each have methods to automatically mount a share on the render nodes.  See the Environment -> Storage tab for details.
 
 **Key Vault**
 
-A Key Vault service is created for each environment to storage credentials such as domain credentials, database certificates (Deadline) and other sensitive information.
+A Key Vault service is created for each environment to store credentials such as domain credentials, database certificates (Deadline) and other sensitive information.
 
 See [here](https://azure.microsoft.com/en-au/services/key-vault/) for more information.
 
