@@ -2,17 +2,7 @@
 
 # Azure Render Farm Manager (Preview)
 
-The Azure Render Farm Manager is an Azure Web App to create and manage your cloud or hybrid render farm infrastructure.  The Render Farm Manager comes with native support for PipelineFx Qube! (6.10 and 7.0) and Thinkbox Deadline 10. Support for other render farm managers will be added in the future.
-
-The portal Web App can be easily deployed into your existing Azure subscription.
-
-For detailed deployment instructions see [here](docs/00-deployment.md).
-
-Click the following link to start a deployment into your existing Azure subscription.  The required input fields are described in detail below.
-
-<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FAzure%2Fazure-render-farm-manager%2Fmaster%2FTemplates%2FAzureRenderFarmManager.json" target="_blank">
-   <img alt="Deploy to Azure" src="http://azuredeploy.net/deploybutton.png"/>
-</a>
+The Azure Render Farm Manager is an Azure Web App that simplifies the creation and managment of your hybrid or cloud rendering infrastructure.  The Render Farm Manager comes with native support for deploying PipelineFx Qube! (6.10 and 7.0) and Thinkbox Deadline 10. Support for other render farm managers like OpenCue will be added in the future.
 
 ## What the Render Farm Manager Does
 
@@ -44,6 +34,16 @@ are currently supported.
 * Linux with Custom Image - **Not Supported**
 
 The unsupported items are in progress and will be available shortly.
+
+## Deploying
+
+For deployment instructions see [here](docs/00-deployment.md).
+
+Click the following link to start a deployment into your Azure subscription.
+
+<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FAzure%2Fazure-render-farm-manager%2Fmaster%2FTemplates%2FAzureRenderFarmManager.json" target="_blank">
+   <img alt="Deploy to Azure" src="http://azuredeploy.net/deploybutton.png"/>
+</a>
 
 ## Documentation
 
