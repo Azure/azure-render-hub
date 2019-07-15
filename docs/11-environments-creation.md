@@ -34,4 +34,4 @@ On step four you specify any render manager specific information.
 
 For PipelineFx Qube configuration instructions see [here](12-environments-qube.md).
 
-For Thinkbox Deadline 10 configuration instructions see [here](12-environments-deadline.md).
+For Thinkbox Deadline 10 configuration instructions see [here](13-environments-deadline.md).
