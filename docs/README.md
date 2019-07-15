@@ -1,4 +1,4 @@
-# Render Farm Manager Documentation and Guides
+# Documentation and Guides
 
 These docs will guide you through the setup and configuration process of the Render Farm Manager.  
 
@@ -24,3 +24,5 @@ checkout the setup guide [here](https://docs.microsoft.com/en-us/azure/vpn-gatew
 3. [Create a Package](20-packages-overview.md) (Optional)
 
 4. [Create Avere vFXT or File Server](30-storage-overview.md) (Optional)
+
+5. [Create a Custom Image](40-customimages-overview.md)
