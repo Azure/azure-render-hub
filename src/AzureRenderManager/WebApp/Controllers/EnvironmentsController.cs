@@ -777,6 +777,16 @@ namespace WebApp.Controllers
                 return RedirectToAction("Step1", new { envId });
             }
 
+            if (environment.StorageAccount == null)
+            {
+                return View(
+                    "View/NoStorage", 
+                    new EnvironmentStorageConfigModel(environment.RenderManager, null)
+                    {
+                        EnvironmentName = envId
+                    });
+            }
+
             var storageProps = await _azureResourceProvider.GetStorageProperties(
                 environment.StorageAccount.SubscriptionId,
                 environment.StorageAccount.ResourceGroupName,
@@ -786,6 +796,11 @@ namespace WebApp.Controllers
             {
                 EnvironmentName = envId
             };
+
+            if (storageProps.Shares == null || storageProps.Shares.Count == 0)
+            {
+                return View("View/NoStorage", model);
+            }
 
             return View("View/Storage", model);
         }
@@ -1305,11 +1320,15 @@ namespace WebApp.Controllers
                 };
             }
 
-            await _azureResourceProvider.CreateFilesShare(
-                environment.StorageAccount.SubscriptionId,
-                environment.StorageAccount.ResourceGroupName,
-                environment.StorageAccount.Name,
-                model.NewFileShareName);
+            if (model.CreateFilesShare)
+            {
+                await Task.Delay(10000);
+                await _azureResourceProvider.CreateFilesShare(
+                    environment.StorageAccount.SubscriptionId,
+                    environment.StorageAccount.ResourceGroupName,
+                    environment.StorageAccount.Name,
+                    model.NewFileShareName);
+            }
 
             if (!string.IsNullOrEmpty(model.NewBatchAccountName))
             {

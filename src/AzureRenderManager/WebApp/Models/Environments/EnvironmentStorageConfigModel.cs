@@ -16,11 +16,11 @@ namespace WebApp.Models.Environments
         public EnvironmentStorageConfigModel(RenderManagerType renderManagerType, StorageProperties storageProps)
         {
             RenderManagerType = renderManagerType;
-            AccountName = storageProps.AccountName;
-            Uri = storageProps.Uri;
-            PrimaryKey = storageProps.PrimaryKey;
-            SecondaryKey = storageProps.SecondaryKey;
-            FileShares = storageProps.Shares;
+            AccountName = storageProps?.AccountName;
+            Uri = storageProps?.Uri;
+            PrimaryKey = storageProps?.PrimaryKey;
+            SecondaryKey = storageProps?.SecondaryKey;
+            FileShares = storageProps?.Shares;
         }
 
         public RenderManagerType RenderManagerType { get; set; }

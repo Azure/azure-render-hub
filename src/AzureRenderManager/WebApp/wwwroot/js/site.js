@@ -182,17 +182,30 @@ function getDataSet(label, color, data) {
 //
 // Form Helpers
 //
-function registerCheckboxEnabledFormSection(checkboxId, outerDivId) {
+function registerCheckboxEnabledFormSection(masterCheckboxId, checkboxId, outerDivId) {
     var id = '#' + checkboxId;
     var divId = '#' + outerDivId;
 
-    $(id).change(function () {
+    $(id).change(function (e) {
+        console.log(e);
         if ($(id).is(":checked") === true) {
-            $(divId + " :input").removeAttr("readonly");
-            $(divId + " select").removeAttr("disabled");
-            $(divId + " :input[type='file']").removeAttr("disabled");
+
+            // Only enable other inputs when the trigger is a nested checkbox
+            if (e.currentTarget.id !== masterCheckboxId) {
+                $(divId + " select").removeAttr("disabled");
+                $(divId + " :input").removeAttr("readonly");
+                $(divId + " :input[type='file']").removeAttr("disabled");
+            }
+
+            // Always enable the checkboxes and master/top-level components
+            $(divId + " :input[type='checkbox']").removeAttr("disabled");
+            $(".master-component select").removeAttr("disabled");
+            $(".master-component :input").removeAttr("readonly");
+
         } else {
+            console.log("Disabling: " + divId + " :input");
             $(divId + " :input").attr("readonly", "readonly");
+            $(divId + " :input[type='checkbox']").attr("disabled", true);
             $(divId + " select").attr("disabled", "disabled");
             $(divId + " :input[type='file']").attr("disabled", "disabled");
         }

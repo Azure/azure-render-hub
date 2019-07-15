@@ -383,11 +383,11 @@ namespace WebApp.Arm
             var client = new CloudStorageAccount(new StorageCredentials(storageAccountName, keys.Keys.First().Value), true);
             var fileClient = client.CreateCloudFileClient();
             var share = fileClient.GetShareReference(filesShareName);
-
             await share.CreateIfNotExistsAsync();
         }
 
-        public async Task<StorageProperties> GetStorageProperties(Guid subscriptionId,
+        public async Task<StorageProperties> GetStorageProperties(
+            Guid subscriptionId,
             string resourceGroupName,
             string storageAccountName)
         {

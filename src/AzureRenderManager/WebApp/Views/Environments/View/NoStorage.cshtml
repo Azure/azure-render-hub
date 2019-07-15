@@ -1,0 +1,33 @@
+﻿@using WebApp.Config
+@model WebApp.Models.Environments.EnvironmentStorageConfigModel
+@{
+    ViewBag.Title = Model.EnvironmentName;
+}
+
+@section Breadcrumb
+{
+    <a asp-controller="Environments" asp-action="Index">Environments</a> &gt;
+    <a asp-controller="Environments" asp-action="Details" asp-route-envId="@Model.EnvironmentName">@Model.EnvironmentName</a> &gt;
+    <span>Storage</span>
+}
+
+<h2>@Model.EnvironmentName - Storage</h2>
+<p>View the details of the pre-configured Azure Storage account.</p>
+
+@await Html.PartialAsync("Menu/EnvironmentMainMenu", Model, new ViewDataDictionary(ViewData) {{ "Step", "storage" }})
+
+<div class="form-section">
+    <div class="section-title">
+        <span class="step-index">1</span>
+        <div class="step-header">
+            <h3>Azure Storage</h3>
+            <p></p>
+        </div>
+    </div>
+    <div class="section-wrapper">
+        <div class="section-bar"></div>
+        <div class="section-content">
+            <p>You don't have any Azure Files Shares.</p>
+        </div>
+    </div>
+</div>
