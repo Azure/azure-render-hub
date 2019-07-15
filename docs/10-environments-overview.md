@@ -51,3 +51,8 @@ The Render Farm Manager automatically installs the Application Insights agent on
 This information is used to automatically scale down virtual machine pools as nodes become idle.
 
 For more information see [here](https://docs.microsoft.com/en-us/azure/azure-monitor/app/app-insights-overview).
+
+
+# Create an Environment
+
+For instructions on creating a new Environment see [here](11-environments-creation.md)
