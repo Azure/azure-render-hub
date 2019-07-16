@@ -187,7 +187,6 @@ function registerCheckboxEnabledFormSection(masterCheckboxId, checkboxId, outerD
     var divId = '#' + outerDivId;
 
     $(id).change(function (e) {
-        console.log(e);
         if ($(id).is(":checked") === true) {
 
             // Only enable other inputs when the trigger is a nested checkbox
@@ -203,7 +202,6 @@ function registerCheckboxEnabledFormSection(masterCheckboxId, checkboxId, outerD
             $(".master-component :input").removeAttr("readonly");
 
         } else {
-            console.log("Disabling: " + divId + " :input");
             $(divId + " :input").attr("readonly", "readonly");
             $(divId + " :input[type='checkbox']").attr("disabled", true);
             $(divId + " select").attr("disabled", "disabled");

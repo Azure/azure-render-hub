@@ -620,7 +620,7 @@ namespace WebApp.Controllers
 
             if (environment.RenderManager == RenderManagerType.Deadline)
             {
-                ValidateDeadlineForm(model.DeadlineEnvironment);
+                ValidateDeadlineForm(model.DeadlineEnvironment, environment);
             }
 
             if (environment.RenderManager == RenderManagerType.Tractor)
@@ -735,7 +735,19 @@ namespace WebApp.Controllers
             // Deadline service config
             environment.RenderManagerConfig.Deadline.RunAsService = model.RunAsService;
             environment.RenderManagerConfig.Deadline.ServiceUser = model.RunAsService ? model.ServiceUser : null;
-            environment.RenderManagerConfig.Deadline.ServicePassword = model.RunAsService ? model.ServicePassword : null;
+
+            if (model.RunAsService)
+            {
+                // Keep existing password if one isn't specified
+                environment.RenderManagerConfig.Deadline.ServicePassword = 
+                    string.IsNullOrWhiteSpace(model.ServicePassword) 
+                    ? environment.RenderManagerConfig.Deadline.ServicePassword
+                    : model.ServicePassword;
+            }
+            else
+            {
+                environment.RenderManagerConfig.Deadline.ServicePassword = null;
+            }
 
             if (model.UseDeadlineDatabaseCertificate)
             {
@@ -758,8 +770,11 @@ namespace WebApp.Controllers
                     environment.RenderManagerConfig.Deadline.DeadlineDatabaseCertificate = new Certificate();
                 }
 
+                // Only overwrite if the model has a password
                 environment.RenderManagerConfig.Deadline.DeadlineDatabaseCertificate.Password = 
-                    model.DeadlineDatabaseCertificatePassword;
+                    string.IsNullOrWhiteSpace(model.DeadlineDatabaseCertificatePassword) 
+                    ? environment.RenderManagerConfig.Deadline.DeadlineDatabaseCertificate.Password 
+                    : model.DeadlineDatabaseCertificatePassword;
             }
             else
             {
@@ -1160,7 +1175,7 @@ namespace WebApp.Controllers
 
             if (environment.RenderManager == RenderManagerType.Deadline)
             {
-                ValidateDeadlineForm(model.DeadlineEnvironment);
+                ValidateDeadlineForm(model.DeadlineEnvironment, environment);
             }
 
             if (environment.RenderManager == RenderManagerType.Tractor)
@@ -1230,7 +1245,7 @@ namespace WebApp.Controllers
             return RedirectToAction("Overview", new { envId = model.EnvironmentName });
         }
 
-        private void ValidateDeadlineForm(DeadlineEnvironment model)
+        private void ValidateDeadlineForm(DeadlineEnvironment model, RenderingEnvironment environment)
         {
             if (model == null)
             {
@@ -1257,11 +1272,6 @@ namespace WebApp.Controllers
                     ModelState.AddModelError(nameof(DeadlineEnvironment.LicenseServer), $"The Deadline license server cannot be empty when using standard licensing.");
                 }
 
-                if (string.IsNullOrEmpty(model.DeadlineRegion))
-                {
-                    ModelState.AddModelError(nameof(DeadlineEnvironment.DeadlineRegion), $"The Deadline region cannot be empty.");
-                }
-
                 if (model.RunAsService)
                 {
                     if (string.IsNullOrWhiteSpace(model.ServiceUser))
@@ -1269,7 +1279,9 @@ namespace WebApp.Controllers
                         ModelState.AddModelError(nameof(DeadlineEnvironment.ServiceUser), "The service user must be specified when running the Deadline client as a service.");
                     }
 
-                    if (string.IsNullOrWhiteSpace(model.ServicePassword))
+                    // Allow the user to submit without re-entering the existing password
+                    if (string.IsNullOrWhiteSpace(model.ServicePassword) && 
+                        environment.RenderManagerConfig.Deadline.ServicePassword == null)
                     {
                         ModelState.AddModelError(nameof(DeadlineEnvironment.ServicePassword), "The service password must be specified when running the Deadline client as a service.");
                     }
@@ -1277,7 +1289,10 @@ namespace WebApp.Controllers
 
                 if (model.UseDeadlineDatabaseCertificate)
                 {
-                    if (model.DeadlineDatabaseCertificate == null)
+                    // Allow the user to submit without re-entering the existing password
+                    if (model.DeadlineDatabaseCertificate == null && 
+                        (environment.RenderManagerConfig.Deadline.DeadlineDatabaseCertificate == null || 
+                        environment.RenderManagerConfig.Deadline.DeadlineDatabaseCertificate.FileName == null))
                     {
                         ModelState.AddModelError(nameof(DeadlineEnvironment.DeadlineDatabaseCertificate), "Use Deadline Database Certificate was checked, but no certificate was specified.");
                     }
