@@ -125,6 +125,22 @@
                     <a id="newStorageAcc" href="javascript:void(0);" onclick="showHideNew('storageAcc', 'NewStorageAccountName', 'StorageAccSpinner', this);">Create new storage account</a>
                 </div>
                 <div class="form-element">
+                    <label></label>
+                    <div class="form-check">
+                        <input asp-for="CreateFilesShare" type="checkbox">
+                        <label>Create Azure Files Share for Input or Output files</label>
+                    </div>
+                </div>
+                <div id="fileshare" class="form-element">
+                    <label asp-for="NewFileShareName">File Share</label>
+                    <div id="fileShare">
+                        <input asp-for="NewFileShareName" value="scenes" placeholder="File share name" />
+                        <span asp-validation-for="NewFileShareName" class=""></span>
+                    </div>
+                    <small>The Azure Files Share can be mounted by nodes and used to fetch inputs or store outputs.</small>
+                </div>
+
+                <div class="form-element">
                     <label asp-for="SubnetResourceIdLocationAndAddressPrefix">Virtual Network and Subnet</label>
                     <div id="SubnetSpinner">
                         <div class="async-select">
@@ -169,21 +185,6 @@
                     </div>
                     <small>Application Insights is used to capture metrics around virtual machine usage and is utilized by the auto-scaler.</small>
                     <a id="newInsights" href="javascript:void(0);" onclick="showHideNew('appInsights', 'NewApplicationInsightsName', 'InsightsSpinner', this);">Create new App Insights</a>
-                </div>
-                <div class="form-element">
-                    <label></label>
-                    <div class="form-check">
-                        <input asp-for="CreateFilesShare" type="checkbox">
-                        <label>Create Azure Files Share for Input or Output files</label>
-                    </div>
-                </div>
-                <div id="fileshare" class="form-element">
-                    <label asp-for="NewFileShareName">Files Share</label>
-                    <div id="fileShare">
-                        <input asp-for="NewFileShareName" value="scenes" placeholder="File share name" />
-                        <span asp-validation-for="NewFileShareName" class=""></span>
-                    </div>
-                    <small>The Azure Files Share can be mounted by nodes and used to fetch inputs or store outputs.</small>
                 </div>
             </div>
         </div>

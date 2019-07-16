@@ -1053,6 +1053,10 @@ namespace WebApp.Controllers
                 }
             }
 
+            environment.ResourceGroupName = string.IsNullOrEmpty(model.NewResourceGroupName)
+                ? model.ExistingResourceGroupNameAndLocation.Split(";")[0]
+                : model.NewResourceGroupName;
+
             if (!string.IsNullOrEmpty(model.NewKeyVaultName))
             {
                 if (environment.KeyVault != null)
@@ -1419,17 +1423,11 @@ namespace WebApp.Controllers
         {
             try
             {
-                var resourceGroupName = string.IsNullOrEmpty(model.NewResourceGroupName)
-                    ? model.ExistingResourceGroupNameAndLocation.Split(";")[0]
-                    : model.NewResourceGroupName;
-
                 await _azureResourceProvider.CreateResourceGroupAsync(
                     environment.SubscriptionId,
                     environment.LocationName,
-                    resourceGroupName,
+                    environment.ResourceGroupName,
                     environment.Name);
-
-                environment.ResourceGroupName = resourceGroupName;
             }
             catch (CloudException cEx)
             {

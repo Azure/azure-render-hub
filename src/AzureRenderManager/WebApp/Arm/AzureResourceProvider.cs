@@ -42,6 +42,7 @@ using WebApp.Code.Extensions;
 using WebApp.Code.Graph;
 using WebApp.Authorization;
 using Microsoft.Extensions.Logging;
+using System.Diagnostics;
 
 namespace WebApp.Arm
 {
@@ -827,6 +828,23 @@ namespace WebApp.Arm
                 $"Registered provider {resourceProviderNamespace} " +
                 $"in subscription {subscriptionId} " +
                 $"with result {provider.RegistrationState}");
+            await WaitForProviderRegistration(rmClient, resourceProviderNamespace, provider);
+        }
+
+        private async Task WaitForProviderRegistration(ResourceManagementClient rmClient, string resourceProviderNamespace, Provider provider)
+        {
+            var stopwatch = Stopwatch.StartNew();
+            while (!provider.RegistrationState.Equals("Registered", StringComparison.InvariantCultureIgnoreCase))
+            {
+                if (stopwatch.ElapsedMilliseconds > 60000)
+                {
+                    throw new TimeoutException($"Timeout waiting for subscription {rmClient.SubscriptionId} to register provider {resourceProviderNamespace}");
+                }
+
+                await Task.Delay(2000);
+
+                provider = await rmClient.Providers.GetAsync(resourceProviderNamespace);
+            }
         }
     }
 }
