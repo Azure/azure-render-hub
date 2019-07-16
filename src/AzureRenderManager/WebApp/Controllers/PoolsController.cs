@@ -373,7 +373,7 @@ namespace WebApp.Controllers
                 return View(model);
             }
 
-            return RedirectToAction("Overview", new { poolId = model.PoolName });
+            return RedirectToAction("Overview", new { envId, poolId = model.PoolName });
         }
 
         private void ValidateImageRefOrCustomAndSku(PoolConfigurationModel poolConfiguration)
