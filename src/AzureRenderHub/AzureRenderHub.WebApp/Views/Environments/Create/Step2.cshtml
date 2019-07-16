@@ -322,7 +322,7 @@
                     var dropDownItems = $.map(vaults,
                         function(vault) {
                             var disabled = "";
-                            if (vault.location !== location) {
+                            if (location && location !== '' && vault.location !== location) {
                                 disabled = "disabled";
                             } else {
                                 activeCount ++;
