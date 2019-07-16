@@ -374,7 +374,6 @@ namespace WebApp.Config.Coordinators
                         properties);
 
                     // TODO re-enable below for background monitoring.
-
                     // Queue a request for the background host to monitor the deployment
                     // and update the state and IP address when it's done.
                     //await _deploymentQueue.Add(new ActiveDeployment
@@ -383,15 +382,14 @@ namespace WebApp.Config.Coordinators
                     //    StartTime = DateTime.UtcNow,
                     //});
 
-                    //repository.ProvisioningState = ProvisioningState.Running;
-                    //repository.InProgress = false;
+                    repository.ProvisioningState = ProvisioningState.Running;
+                    repository.InProgress = false;
 
-                    //await UpdateRepository(repository);
+                    await UpdateRepository(repository);
                 }
             }
             catch (CloudException ex)
             {
-
                 _logger.LogError(ex, $"Failed to deploy NFS server: {ex.Message}.");
                 throw;
             }
