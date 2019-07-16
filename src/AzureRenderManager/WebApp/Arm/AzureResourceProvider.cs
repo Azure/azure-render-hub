@@ -41,6 +41,7 @@ using WebApp.Operations;
 using WebApp.Code.Extensions;
 using WebApp.Code.Graph;
 using WebApp.Authorization;
+using Microsoft.Extensions.Logging;
 
 namespace WebApp.Arm
 {
@@ -71,16 +72,19 @@ namespace WebApp.Arm
         private readonly IConfiguration _configuration;
         private readonly IGraphProvider _graphProvider;
         private readonly IHttpClientFactory _httpClientFactory;
+        private readonly ILogger _logger;
 
         public AzureResourceProvider(
             IHttpContextAccessor contextAccessor,
             IHttpClientFactory httpClientFactory,
             IConfiguration configuration,
-            IGraphProvider graphProvider) : base(contextAccessor)
+            IGraphProvider graphProvider,
+            ILogger<AzureResourceProvider> logger) : base(contextAccessor)
         {
             _httpClientFactory = httpClientFactory;
             _configuration = configuration;
             _graphProvider = graphProvider;
+            _logger = logger;
         }
 
         public async Task<bool> CanCreateResources(
@@ -210,12 +214,17 @@ namespace WebApp.Arm
             {
                 if (cEx.Response?.StatusCode != HttpStatusCode.NotFound && cEx.Body?.Code != "ResourceGroupNotFound")
                 {
+                    _logger.LogError(cEx,
+                        $"Exception deleting resource group {resourceGroupName} " +
+                        $"in subscription {subscriptionId} " +
+                        $"with request {cEx.RequestId}");
                     throw;
                 }
             }
         }
 
-        public async Task<Microsoft.Azure.Management.KeyVault.Models.CheckNameAvailabilityResult> ValidateKeyVaultName(Guid subscriptionId, string resourceGroupName, string keyVaultName)
+        public async Task<Microsoft.Azure.Management.KeyVault.Models.CheckNameAvailabilityResult> ValidateKeyVaultName(
+            Guid subscriptionId, string resourceGroupName, string keyVaultName)
         {
             var accessToken = await GetAccessToken();
             var token = new TokenCredentials(accessToken);
@@ -236,6 +245,11 @@ namespace WebApp.Arm
                 {
                     if (ce.Body.Code != "NotFound" && ce.Body.Code != "ResourceNotFound")
                     {
+                        _logger.LogError(ce,
+                            $"Exception validating Key Vault {keyVaultName} " +
+                            $"in resource group {resourceGroupName} " +
+                            $"in subscription {subscriptionId} " +
+                            $"with request {ce.RequestId}");
                         throw;
                     }
                 }
@@ -332,6 +346,9 @@ namespace WebApp.Arm
             {
                 if (cEx.Response?.StatusCode != HttpStatusCode.NotFound)
                 {
+                    _logger.LogError(cEx,
+                        $"Exception deleting Key Vault {keyVault.ResourceId} " +
+                        $"with request {cEx.RequestId}");
                     throw;
                 }
             }
@@ -441,6 +458,11 @@ namespace WebApp.Arm
             {
                 if (cEx.Response?.StatusCode != HttpStatusCode.NotFound)
                 {
+                    _logger.LogError(cEx,
+                        $"Exception deleting storage account {storageAccountName} " +
+                        $"in resource group {resourceGroupName} " +
+                        $"in subscription {subscriptionId} " +
+                        $"with request {cEx.RequestId}");
                     throw;
                 }
             }
@@ -490,6 +512,11 @@ namespace WebApp.Arm
             {
                 if (cEx.Response?.StatusCode != HttpStatusCode.NotFound)
                 {
+                    _logger.LogError(cEx,
+                        $"Exception deleting batch account {batchAccountName} " +
+                        $"in resource group {resourceGroupName} " +
+                        $"in subscription {subscriptionId} " +
+                        $"with request {cEx.RequestId}");
                     throw;
                 }
             }
@@ -795,7 +822,11 @@ namespace WebApp.Arm
             var accessToken = await GetAccessToken();
             var token = new TokenCredentials(accessToken);
             var rmClient = new ResourceManagementClient(token, _httpClientFactory.CreateClient(), false) { SubscriptionId = subscriptionId.ToString() };
-            await rmClient.Providers.RegisterAsync(resourceProviderNamespace);
+            var provider = await rmClient.Providers.RegisterAsync(resourceProviderNamespace);
+            _logger.LogInformation(
+                $"Registered provider {resourceProviderNamespace} " +
+                $"in subscription {subscriptionId} " +
+                $"with result {provider.RegistrationState}");
         }
     }
 }
