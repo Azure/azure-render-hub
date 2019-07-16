@@ -1341,7 +1341,6 @@ namespace WebApp.Controllers
 
             if (model.CreateFilesShare)
             {
-                await Task.Delay(10000);
                 await _azureResourceProvider.CreateFilesShare(
                     environment.StorageAccount.SubscriptionId,
                     environment.StorageAccount.ResourceGroupName,

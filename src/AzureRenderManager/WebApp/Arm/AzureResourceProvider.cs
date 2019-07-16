@@ -401,7 +401,41 @@ namespace WebApp.Arm
             var client = new CloudStorageAccount(new StorageCredentials(storageAccountName, keys.Keys.First().Value), true);
             var fileClient = client.CreateCloudFileClient();
             var share = fileClient.GetShareReference(filesShareName);
+
+            await WaitForDns(share.Uri);
+
             await share.CreateIfNotExistsAsync();
+        }
+
+        private async Task WaitForDns(Uri hostname)
+        {
+            var stopwatch = Stopwatch.StartNew();
+
+            while (true)
+            {
+                if (stopwatch.ElapsedMilliseconds > 60000)
+                {
+                    throw new TimeoutException($"Timeout waiting for hostname {hostname} to become resolvable");
+                }
+
+                try
+                {
+                    IPAddress[] addresslist = await Dns.GetHostAddressesAsync(hostname.Host);
+
+                    if (addresslist != null && addresslist.Length > 0)
+                    {
+                        return;
+                    }
+
+                    _logger.LogDebug($"Hostname {hostname} returned no addresses");
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError(e, $"Error resolving hostname {hostname}");
+                }
+
+                await Task.Delay(1000);
+            }
         }
 
         public async Task<StorageProperties> GetStorageProperties(
