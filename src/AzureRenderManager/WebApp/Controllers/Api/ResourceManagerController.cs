@@ -64,91 +64,56 @@ namespace WebApp.Controllers.Api
         [Route("api/subscriptions/{subscriptionId}/batchaccounts/{location?}"), HttpGet]
         public async Task<List<BatchAccount>> GetBatchAccounts(string subscriptionId, string location)
         {
-            var cacheKey = CacheKeys.MakeKey(CacheKeys.AccountList, subscriptionId, location);
-            var cached = HttpContext.Session.Get<List<BatchAccount>>(cacheKey);
-            if (cached != null)
-            {
-                return cached;
-            }
-
             var accessToken = await GetAccessToken();
             var token = new TokenCredentials(accessToken);
             var batchClient = new BatchManagementClient(token) { SubscriptionId = subscriptionId };
             var batchAccounts = await batchClient.BatchAccount.ListAsync();
 
-            var orderedAccounts = batchAccounts
+            return batchAccounts
                 .Where(acc => string.IsNullOrWhiteSpace(location) || acc.Location.Equals(location, StringComparison.OrdinalIgnoreCase))
                 .OrderBy(acc => acc.Name.ToUpperInvariant())
                 .ToList();
-
-            return HttpContext.Session.Set(cacheKey, orderedAccounts);
         }
 
         [Route("api/subscriptions/{subscriptionId}/storageaccounts/{location?}"), HttpGet]
         public async Task<List<StorageAccount>> GetStorageAccounts(string subscriptionId, string location)
         {
-            var cacheKey = CacheKeys.MakeKey(CacheKeys.StorageAccountList, subscriptionId, location);
-            var cached = HttpContext.Session.Get<List<StorageAccount>>(cacheKey);
-            if (cached != null)
-            {
-                return cached;
-            }
-
             var accessToken = await GetAccessToken();
             var token = new TokenCredentials(accessToken);
             var storageClient = new StorageManagementClient(token) { SubscriptionId = subscriptionId };
             var storageAccounts = await storageClient.StorageAccounts.ListAsync();
 
-            var orderedStorage = storageAccounts
+            return storageAccounts
                 .Where(acc => string.IsNullOrWhiteSpace(location) || acc.Location.Equals(location, StringComparison.OrdinalIgnoreCase))
                 .OrderBy(acc => acc.Name)
                 .ToList();
-
-            return HttpContext.Session.Set(cacheKey, orderedStorage);
         }
 
 
         [Route("api/subscriptions/{subscriptionId}/subnets/{location?}"), HttpGet]
         public async Task<List<AzureSubnet>> GetSubnets(string subscriptionId, string location)
         {
-            var cacheKey = CacheKeys.MakeKey(CacheKeys.SubnetList, subscriptionId, location);
-            var cached = HttpContext.Session.Get<List<AzureSubnet>>(cacheKey);
-            if (cached != null)
-            {
-                return cached;
-            }
-
             var accessToken = await GetAccessToken();
             var token = new TokenCredentials(accessToken);
             var networkClient = new NetworkManagementClient(token) { SubscriptionId = subscriptionId };
             var vNets = await networkClient.VirtualNetworks.ListAllAsync();
 
-            var subnets = vNets
+            return vNets
                 .Where(vnet => string.IsNullOrWhiteSpace(location) || vnet.Location.Equals(location, StringComparison.OrdinalIgnoreCase))
                 .SelectMany(vnet => vnet.Subnets.Select(subnet => new AzureSubnet(vnet, subnet)))
                 .OrderBy(subnet => subnet.Name)
                 .ToList();
-
-            return HttpContext.Session.Set(cacheKey, subnets);
         }
 
         [Route("api/subscriptions/{subscriptionId}/applicationinsights"), HttpGet]
         public async Task<List<ApplicationInsightsComponent>> GetApplicationInsights(string subscriptionId)
         {
-            var cacheKey = CacheKeys.MakeKey(CacheKeys.AppInsightsList, subscriptionId);
-            var cached = HttpContext.Session.Get<List<ApplicationInsightsComponent>>(cacheKey);
-            if (cached != null)
-            {
-                return cached;
-            }
-
             var accessToken = await GetAccessToken();
             var token = new TokenCredentials(accessToken);
             var appInsightsClient = new ApplicationInsightsManagementClient(token) { SubscriptionId = subscriptionId };
             var components = await appInsightsClient.Components.ListWithHttpMessagesAsync();
 
-            var insights = components.Body.OrderBy(ins => ins.Name).ToList();
-            return HttpContext.Session.Set(cacheKey, insights);
+            return components.Body.OrderBy(ins => ins.Name).ToList();
         }
 
         [Route("api/subscriptions/{subscriptionId}/resourcegroups"), HttpGet]
@@ -250,13 +215,6 @@ namespace WebApp.Controllers.Api
         [Route("api/subscriptions/{subscriptionId}/keyvaults"), HttpGet]
         public async Task<List<Vault>> GetKeyVaults(string subscriptionId)
         {
-            var cacheKey = CacheKeys.MakeKey(CacheKeys.KeyVaultList, subscriptionId);
-            var cached = HttpContext.Session.Get<List<Vault>>(cacheKey);
-            if (cached != null)
-            {
-                return cached;
-            }
-            
             var accessToken = await GetAccessToken();
             var token = new TokenCredentials(accessToken);
             var keyVaultClient = new KeyVaultManagementClient(token) { SubscriptionId = subscriptionId };
@@ -272,8 +230,7 @@ namespace WebApp.Controllers.Api
                 vaults.AddRange(vaultsResponse);
             }
 
-            var ordered = vaults.OrderBy(kv => kv.Name).ToList();
-            return HttpContext.Session.Set(cacheKey, ordered);
+            return vaults.OrderBy(kv => kv.Name).ToList();
         }
     }
 }

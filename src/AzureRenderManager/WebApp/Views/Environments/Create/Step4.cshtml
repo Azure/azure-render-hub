@@ -104,10 +104,11 @@
     <script>
         $(document).ready(function () {
             // Order matters so sub-sections get enabled/disabled as expected.
-            registerCheckboxEnabledFormSection("JoinDomain", "DomainForm");
-            registerCheckboxEnabledFormSection("DeadlineEnvironment_InstallDeadlineClient", "DeadlineInstallationForm");
-            registerCheckboxEnabledFormSection("DeadlineEnvironment_RunAsService", "DeadlineServiceForm");
-            registerCheckboxEnabledFormSection("DeadlineEnvironment_UseDeadlineDatabaseCertificate", "DeadlineDatabaseCertForm");
+            var masterCheckbox = 'DeadlineEnvironment_InstallDeadlineClient';
+            registerCheckboxEnabledFormSection(masterCheckbox, "JoinDomain", "DomainForm");
+            registerCheckboxEnabledFormSection(masterCheckbox, "DeadlineEnvironment_InstallDeadlineClient", "DeadlineInstallationForm");
+            registerCheckboxEnabledFormSection(masterCheckbox, "DeadlineEnvironment_RunAsService", "DeadlineServiceForm");
+            registerCheckboxEnabledFormSection(masterCheckbox, "DeadlineEnvironment_UseDeadlineDatabaseCertificate", "DeadlineDatabaseCertForm");
 
             if ('@Model.Error' !== '')
             {

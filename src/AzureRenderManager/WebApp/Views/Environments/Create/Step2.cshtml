@@ -64,9 +64,9 @@
                     <small class="form-text text-muted">A resource group is a container that holds related resources for your environment.</small>
                     <a id="newResourceGroup" href="javascript:void(0);" onclick="showHideNew('resourceGroup', 'NewResourceGroupName', 'RGSpinner', this);">Select existing resource group</a>
                 </div>
-                
+
                 <div class="form-element">
-                    <label asp-for="NewKeyVaultName">Azure Key Vault name</label>                
+                    <label asp-for="NewKeyVaultName">Azure Key Vault name</label>
                     <div id="KeyVaultSpinner" style="display: none;">
                         <div class="async-select">
                             <select id="KeyVaults" asp-for="ExistingKeyVaultIdLocationAndUri">
@@ -84,7 +84,7 @@
                     <small class="form-text text-muted">Key Vault is a secure Azure service to store passwords and certificates. Each environment has it's own Key Vault to store secrets like service passwords, domain credentials and user passwords.</small>
                     <a id="newKeyVault" href="javascript:void(0);" onclick="showHideNew('keyVault', 'NewKeyVaultName', 'KeyVaultSpinner', this);">Select existing Key Vault</a>
                 </div>
-                
+
                 <div class="form-element">
                     <label asp-for="BatchAccountResourceIdLocationUrl">Batch account</label>
                     <div id="BatchAccSpinner">
@@ -98,7 +98,7 @@
                         <span id="BatchAccounts-none" class="field-validation-error"></span>
                     </div>
                     <div id="batchAcc" class="newResource" style="display: none;">
-                        <input asp-for="NewBatchAccountName" value="@Model.NewBatchAccountName" placeholder="New Batch account name"/>
+                        <input asp-for="NewBatchAccountName" value="@Model.NewBatchAccountName" placeholder="New Batch account name" />
                         <span asp-validation-for="NewBatchAccountName" class=""></span>
                     </div>
                     <small>Azure Batch is used to provision virtual machines.</small>
@@ -118,22 +118,28 @@
                         <span id="StorageAccounts-none" class="field-validation-error"></span>
                     </div>
                     <div id="storageAcc" class="newResource" style="display: none;">
-                        <input asp-for="NewStorageAccountName" value="@Model.NewStorageAccountName" placeholder="New Storage account name"/>
+                        <input asp-for="NewStorageAccountName" value="@Model.NewStorageAccountName" placeholder="New Storage account name" />
                         <span asp-validation-for="NewStorageAccountName" class=""></span>
                     </div>
                     <small>The Azure Storage account is used to store any required data, or can be mounted by render nodes for input and output files.</small>
                     <a id="newStorageAcc" href="javascript:void(0);" onclick="showHideNew('storageAcc', 'NewStorageAccountName', 'StorageAccSpinner', this);">Create new storage account</a>
                 </div>
-
                 <div class="form-element">
+                    <label></label>
+                    <div class="form-check">
+                        <input asp-for="CreateFilesShare" type="checkbox">
+                        <label>Create Azure Files Share for Input or Output files</label>
+                    </div>
+                </div>
+                <div id="fileshare" class="form-element">
                     <label asp-for="NewFileShareName">File Share</label>
                     <div id="fileShare">
-                        <input asp-for="NewFileShareName" value="share" placeholder="File share name"/>
+                        <input asp-for="NewFileShareName" value="scenes" placeholder="File share name" />
                         <span asp-validation-for="NewFileShareName" class=""></span>
                     </div>
-                    <small>The Azure Files Share can be mounted by nodes and used to fetch inputs or store outputs.</small>
+                    <small>The Azure Files Share is optional and can be mounted by nodes and used to fetch inputs or store outputs.</small>
                 </div>
-                
+
                 <div class="form-element">
                     <label asp-for="SubnetResourceIdLocationAndAddressPrefix">Virtual Network and Subnet</label>
                     <div id="SubnetSpinner">
@@ -147,7 +153,7 @@
                         <span id="Subnets-none" class="field-validation-error"></span>
                     </div>
                     <div id="vNet" class="newResource" style="display: none;">
-                        <input asp-for="NewVnetName" value="@Model.NewVnetName" placeholder="New Virtual Network name"/>
+                        <input asp-for="NewVnetName" value="@Model.NewVnetName" placeholder="New Virtual Network name" />
                         <span asp-validation-for="NewVnetName" class=""></span>
                     </div>
                     <small>Virtual Machines will be deployed to this Subnet ensuring they have access to any cloud or on-premise storage. Ensure that the subnet has sufficient IP addresses for the number of virtual machines you plan to run.</small>
@@ -167,7 +173,7 @@
                         <span id="AppInsights-none" class="field-validation-error"></span>
                     </div>
                     <div id="appInsights" class="newResource" style="display: none;">
-                        <input asp-for="NewApplicationInsightsName" value="@Model.NewApplicationInsightsName" placeholder="New Application Insights account name"/>
+                        <input asp-for="NewApplicationInsightsName" value="@Model.NewApplicationInsightsName" placeholder="New Application Insights account name" />
                         <span asp-validation-for="NewApplicationInsightsName" class=""></span>
                         <label asp-for="NewApplicationInsightsName" style="margin-top: 5px;">Application Insights location</label>
                         <div id="InsightsLocationSpinner" class="async-select">
@@ -630,6 +636,15 @@
                     toastr.info(msg, title).css("width", "600px");
                 }
             });
+
+            $('#CreateFilesShare').change(function () {
+                if ($('#CreateFilesShare').is(":checked") === true) {
+                    $("#fileShare :input").removeAttr("readonly");
+                } else {
+                    $("#fileShare :input").attr("readonly", "readonly");
+                }
+            });
+            $('#CreateFilesShare').change();
         });
     </script>
 }

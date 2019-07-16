@@ -128,5 +128,7 @@ namespace WebApp.Models.Environments.Create
         public string Error { get; set; }
 
         public string ErrorMessage { get; set; }
+
+        public bool CreateFilesShare { get; set; } = false;
     }
 }

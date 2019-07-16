@@ -41,6 +41,8 @@ using WebApp.Operations;
 using WebApp.Code.Extensions;
 using WebApp.Code.Graph;
 using WebApp.Authorization;
+using Microsoft.Extensions.Logging;
+using System.Diagnostics;
 
 namespace WebApp.Arm
 {
@@ -71,16 +73,19 @@ namespace WebApp.Arm
         private readonly IConfiguration _configuration;
         private readonly IGraphProvider _graphProvider;
         private readonly IHttpClientFactory _httpClientFactory;
+        private readonly ILogger _logger;
 
         public AzureResourceProvider(
             IHttpContextAccessor contextAccessor,
             IHttpClientFactory httpClientFactory,
             IConfiguration configuration,
-            IGraphProvider graphProvider) : base(contextAccessor)
+            IGraphProvider graphProvider,
+            ILogger<AzureResourceProvider> logger) : base(contextAccessor)
         {
             _httpClientFactory = httpClientFactory;
             _configuration = configuration;
             _graphProvider = graphProvider;
+            _logger = logger;
         }
 
         public async Task<bool> CanCreateResources(
@@ -210,12 +215,17 @@ namespace WebApp.Arm
             {
                 if (cEx.Response?.StatusCode != HttpStatusCode.NotFound && cEx.Body?.Code != "ResourceGroupNotFound")
                 {
+                    _logger.LogError(cEx,
+                        $"Exception deleting resource group {resourceGroupName} " +
+                        $"in subscription {subscriptionId} " +
+                        $"with request {cEx.RequestId}");
                     throw;
                 }
             }
         }
 
-        public async Task<Microsoft.Azure.Management.KeyVault.Models.CheckNameAvailabilityResult> ValidateKeyVaultName(Guid subscriptionId, string resourceGroupName, string keyVaultName)
+        public async Task<Microsoft.Azure.Management.KeyVault.Models.CheckNameAvailabilityResult> ValidateKeyVaultName(
+            Guid subscriptionId, string resourceGroupName, string keyVaultName)
         {
             var accessToken = await GetAccessToken();
             var token = new TokenCredentials(accessToken);
@@ -236,6 +246,11 @@ namespace WebApp.Arm
                 {
                     if (ce.Body.Code != "NotFound" && ce.Body.Code != "ResourceNotFound")
                     {
+                        _logger.LogError(ce,
+                            $"Exception validating Key Vault {keyVaultName} " +
+                            $"in resource group {resourceGroupName} " +
+                            $"in subscription {subscriptionId} " +
+                            $"with request {ce.RequestId}");
                         throw;
                     }
                 }
@@ -332,6 +347,9 @@ namespace WebApp.Arm
             {
                 if (cEx.Response?.StatusCode != HttpStatusCode.NotFound)
                 {
+                    _logger.LogError(cEx,
+                        $"Exception deleting Key Vault {keyVault.ResourceId} " +
+                        $"with request {cEx.RequestId}");
                     throw;
                 }
             }
@@ -384,10 +402,44 @@ namespace WebApp.Arm
             var fileClient = client.CreateCloudFileClient();
             var share = fileClient.GetShareReference(filesShareName);
 
+            await WaitForDns(share.Uri);
+
             await share.CreateIfNotExistsAsync();
         }
 
-        public async Task<StorageProperties> GetStorageProperties(Guid subscriptionId,
+        private async Task WaitForDns(Uri hostname)
+        {
+            var stopwatch = Stopwatch.StartNew();
+
+            while (true)
+            {
+                if (stopwatch.ElapsedMilliseconds > 60000)
+                {
+                    throw new TimeoutException($"Timeout waiting for hostname {hostname} to become resolvable");
+                }
+
+                try
+                {
+                    IPAddress[] addresslist = await Dns.GetHostAddressesAsync(hostname.Host);
+
+                    if (addresslist != null && addresslist.Length > 0)
+                    {
+                        return;
+                    }
+
+                    _logger.LogDebug($"Hostname {hostname} returned no addresses");
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError(e, $"Error resolving hostname {hostname}");
+                }
+
+                await Task.Delay(1000);
+            }
+        }
+
+        public async Task<StorageProperties> GetStorageProperties(
+            Guid subscriptionId,
             string resourceGroupName,
             string storageAccountName)
         {
@@ -441,6 +493,11 @@ namespace WebApp.Arm
             {
                 if (cEx.Response?.StatusCode != HttpStatusCode.NotFound)
                 {
+                    _logger.LogError(cEx,
+                        $"Exception deleting storage account {storageAccountName} " +
+                        $"in resource group {resourceGroupName} " +
+                        $"in subscription {subscriptionId} " +
+                        $"with request {cEx.RequestId}");
                     throw;
                 }
             }
@@ -490,6 +547,11 @@ namespace WebApp.Arm
             {
                 if (cEx.Response?.StatusCode != HttpStatusCode.NotFound)
                 {
+                    _logger.LogError(cEx,
+                        $"Exception deleting batch account {batchAccountName} " +
+                        $"in resource group {resourceGroupName} " +
+                        $"in subscription {subscriptionId} " +
+                        $"with request {cEx.RequestId}");
                     throw;
                 }
             }
@@ -795,7 +857,28 @@ namespace WebApp.Arm
             var accessToken = await GetAccessToken();
             var token = new TokenCredentials(accessToken);
             var rmClient = new ResourceManagementClient(token, _httpClientFactory.CreateClient(), false) { SubscriptionId = subscriptionId.ToString() };
-            await rmClient.Providers.RegisterAsync(resourceProviderNamespace);
+            var provider = await rmClient.Providers.RegisterAsync(resourceProviderNamespace);
+            _logger.LogInformation(
+                $"Registered provider {resourceProviderNamespace} " +
+                $"in subscription {subscriptionId} " +
+                $"with result {provider.RegistrationState}");
+            await WaitForProviderRegistration(rmClient, resourceProviderNamespace, provider);
+        }
+
+        private async Task WaitForProviderRegistration(ResourceManagementClient rmClient, string resourceProviderNamespace, Provider provider)
+        {
+            var stopwatch = Stopwatch.StartNew();
+            while (!provider.RegistrationState.Equals("Registered", StringComparison.InvariantCultureIgnoreCase))
+            {
+                if (stopwatch.ElapsedMilliseconds > 60000)
+                {
+                    throw new TimeoutException($"Timeout waiting for subscription {rmClient.SubscriptionId} to register provider {resourceProviderNamespace}");
+                }
+
+                await Task.Delay(2000);
+
+                provider = await rmClient.Providers.GetAsync(resourceProviderNamespace);
+            }
         }
     }
 }
