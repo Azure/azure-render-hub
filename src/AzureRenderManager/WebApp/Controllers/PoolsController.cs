@@ -32,7 +32,6 @@ namespace WebApp.Controllers
 
         private readonly IPoolCoordinator _poolCoordinator;
         private readonly IVMSizes _vmSizes;
-        private readonly IEnvironmentCoordinator _environmentCoordinator;
         private readonly IPackageCoordinator _packageCoordinator;
         private readonly IPoolUsageProvider _poolUsageProvider;
         private readonly StartTaskProvider _startTaskProvider;
@@ -48,7 +47,6 @@ namespace WebApp.Controllers
         {
             _poolCoordinator = poolCoordinator;
             _vmSizes = vmSizes;
-            _environmentCoordinator = environmentCoordinator;
             _packageCoordinator = packageCoordinator;
             _poolUsageProvider = poolUsageProvider;
             _startTaskProvider = startTaskProvider;

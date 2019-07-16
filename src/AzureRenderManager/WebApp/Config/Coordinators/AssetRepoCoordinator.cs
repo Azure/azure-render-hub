@@ -29,6 +29,8 @@ namespace WebApp.Config.Coordinators
         private readonly ITemplateProvider _templateProvider;
         private readonly IIdentityProvider _identityProvider;
         private readonly IDeploymentQueue _deploymentQueue;
+        private readonly IManagementClientProvider _clientProvider;
+        private readonly IAzureResourceProvider _azureResourceProvider;
         private readonly ILogger _logger;
 
         public AssetRepoCoordinator(
@@ -36,12 +38,16 @@ namespace WebApp.Config.Coordinators
             ITemplateProvider templateProvider,
             IIdentityProvider identityProvider,
             IDeploymentQueue deploymentQueue,
+            IManagementClientProvider clientProvider,
+            IAzureResourceProvider azureResourceProvider,
             ILogger<AssetRepoCoordinator> logger)
         {
             _configCoordinator = configCoordinator;
             _templateProvider = templateProvider;
             _identityProvider = identityProvider;
             _deploymentQueue = deploymentQueue;
+            _clientProvider = clientProvider;
+            _azureResourceProvider = azureResourceProvider;
             _logger = logger;
         }
 
@@ -83,9 +89,9 @@ namespace WebApp.Config.Coordinators
         //
         // Deployment operations
         //
-        public async Task BeginRepositoryDeploymentAsync(AssetRepository repository, IManagementClientProvider managementClientProvider, IAzureResourceProvider azureResourceProvider)
+        public async Task BeginRepositoryDeploymentAsync(AssetRepository repository)
         {
-            using (var client = await managementClientProvider.CreateResourceManagementClient(repository.SubscriptionId))
+            using (var client = await _clientProvider.CreateResourceManagementClient(repository.SubscriptionId))
             {
                 await client.ResourceGroups.CreateOrUpdateAsync(
                     repository.ResourceGroupName,
@@ -93,7 +99,7 @@ namespace WebApp.Config.Coordinators
                         repository.Subnet.Location, // The subnet location pins us to a region
                         tags: AzureResourceProvider.GetEnvironmentTags(repository.EnvironmentName)));
 
-                await azureResourceProvider.AssignRoleToIdentityAsync(
+                await _azureResourceProvider.AssignRoleToIdentityAsync(
                     repository.SubscriptionId,
                     repository.ResourceGroupResourceId,
                     AzureResourceProvider.ContributorRole,
@@ -102,15 +108,13 @@ namespace WebApp.Config.Coordinators
                 repository.DeploymentName = "FileServerDeployment";
                 await UpdateRepository(repository);
 
-                await DeployFileServer(repository as NfsFileServer, managementClientProvider);
+                await DeployFileServer(repository as NfsFileServer);
             }
         }
 
-        public async Task<ProvisioningState> UpdateRepositoryFromDeploymentAsync(
-            AssetRepository repository,
-            IManagementClientProvider managementClientProvider)
+        public async Task<ProvisioningState> UpdateRepositoryFromDeploymentAsync(AssetRepository repository)
         {
-            var deployment = await GetDeploymentAsync(repository, managementClientProvider);
+            var deployment = await GetDeploymentAsync(repository);
             if (deployment == null)
             {
                 return ProvisioningState.Failed;
@@ -128,7 +132,7 @@ namespace WebApp.Config.Coordinators
             Enum.TryParse<ProvisioningState>(deployment.Properties.ProvisioningState, out var deploymentState);
             if (deploymentState == ProvisioningState.Succeeded)
             {
-                (privateIp, publicIp) = await GetIpAddressesAsync(fileServer, managementClientProvider);
+                (privateIp, publicIp) = await GetIpAddressesAsync(fileServer);
             }
 
             if (deploymentState == ProvisioningState.Succeeded || deploymentState == ProvisioningState.Failed)
@@ -143,7 +147,7 @@ namespace WebApp.Config.Coordinators
         }
 
 
-        public async Task BeginDeleteRepositoryAsync(AssetRepository repository, IManagementClientProvider managementClientProvider)
+        public async Task BeginDeleteRepositoryAsync(AssetRepository repository)
         {
             repository.ProvisioningState = ProvisioningState.Deleting;
             await UpdateRepository(repository);
@@ -155,7 +159,7 @@ namespace WebApp.Config.Coordinators
             });
         }
 
-        public async Task DeleteRepositoryResourcesAsync(AssetRepository repository, IManagementClientProvider managementClientProvider)
+        public async Task DeleteRepositoryResourcesAsync(AssetRepository repository)
         {
             var fileServer = repository as NfsFileServer;
             if (fileServer == null)
@@ -163,9 +167,9 @@ namespace WebApp.Config.Coordinators
                 return;
             }
 
-            using (var resourceClient = await managementClientProvider.CreateResourceManagementClient(repository.SubscriptionId))
-            using (var computeClient = await managementClientProvider.CreateComputeManagementClient(repository.SubscriptionId))
-            using (var networkClient = await managementClientProvider.CreateNetworkManagementClient(repository.SubscriptionId))
+            using (var resourceClient = await _clientProvider.CreateResourceManagementClient(repository.SubscriptionId))
+            using (var computeClient = await _clientProvider.CreateComputeManagementClient(repository.SubscriptionId))
+            using (var networkClient = await _clientProvider.CreateNetworkManagementClient(repository.SubscriptionId))
             {
                 try
                 {
@@ -252,10 +256,10 @@ namespace WebApp.Config.Coordinators
             }
         }
 
-        private async Task<(string privateIp, string publicIp)> GetIpAddressesAsync(NfsFileServer fileServer, IManagementClientProvider managementClientProvider)
+        private async Task<(string privateIp, string publicIp)> GetIpAddressesAsync(NfsFileServer fileServer)
         {
-            using (var computeClient = await managementClientProvider.CreateComputeManagementClient(fileServer.SubscriptionId))
-            using (var networkClient = await managementClientProvider.CreateNetworkManagementClient(fileServer.SubscriptionId))
+            using (var computeClient = await _clientProvider.CreateComputeManagementClient(fileServer.SubscriptionId))
+            using (var networkClient = await _clientProvider.CreateNetworkManagementClient(fileServer.SubscriptionId))
             {
                 var vm = await computeClient.VirtualMachines.GetAsync(fileServer.ResourceGroupName, fileServer.VmName);
                 var networkIfaceName = vm.NetworkProfile.NetworkInterfaces.First().Id.Split("/").Last();
@@ -275,9 +279,9 @@ namespace WebApp.Config.Coordinators
             }
         }
 
-        private async Task<DeploymentExtended> GetDeploymentAsync(AssetRepository assetRepo, IManagementClientProvider managementClientProvider)
+        private async Task<DeploymentExtended> GetDeploymentAsync(AssetRepository assetRepo)
         {
-            using (var resourceClient = await managementClientProvider.CreateResourceManagementClient(assetRepo.SubscriptionId))
+            using (var resourceClient = await _clientProvider.CreateResourceManagementClient(assetRepo.SubscriptionId))
             {
                 try
                 {
@@ -297,11 +301,11 @@ namespace WebApp.Config.Coordinators
             }
         }
 
-        private async Task DeployFileServer(NfsFileServer repository, IManagementClientProvider managementClientProvider)
+        private async Task DeployFileServer(NfsFileServer repository)
         {
             try
             {
-                using (var client = await managementClientProvider.CreateResourceManagementClient(repository.SubscriptionId))
+                using (var client = await _clientProvider.CreateResourceManagementClient(repository.SubscriptionId))
                 {
                     await client.ResourceGroups.CreateOrUpdateAsync(repository.ResourceGroupName,
                         new ResourceGroup { Location = repository.Subnet.Location });

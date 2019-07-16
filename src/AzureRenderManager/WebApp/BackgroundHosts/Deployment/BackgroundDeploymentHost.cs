@@ -18,20 +18,17 @@ namespace WebApp.BackgroundHosts.Deployment
     public class BackgroundDeploymentHost : BackgroundService
     {
         private readonly IAssetRepoCoordinator _assetRepoCoordinator;
-        private readonly IManagementClientProvider _managementClientProvider;
         private readonly IDeploymentQueue _deploymentQueue;
         private readonly ILeaseMaintainer _leaseMaintainer;
         private readonly ILogger _logger;
 
         public BackgroundDeploymentHost(
             IAssetRepoCoordinator assetRepoCoordinator,
-            IManagementClientProvider managementClientProvider,
             IDeploymentQueue deploymentQueue,
             ILeaseMaintainer leaseMaintainer,
             ILogger<BackgroundDeploymentHost> logger)
         {
             _assetRepoCoordinator = assetRepoCoordinator;
-            _managementClientProvider = managementClientProvider;
             _deploymentQueue = deploymentQueue;
             _leaseMaintainer = leaseMaintainer;
             _logger = logger;
@@ -93,10 +90,7 @@ namespace WebApp.BackgroundHosts.Deployment
                             break;
                         }
 
-                        deploymentState =
-                            await _assetRepoCoordinator.UpdateRepositoryFromDeploymentAsync(
-                                fileServer,
-                                _managementClientProvider);
+                        deploymentState = await _assetRepoCoordinator.UpdateRepositoryFromDeploymentAsync(fileServer);
 
                         if (deploymentState == ProvisioningState.Running)
                         {
@@ -135,7 +129,7 @@ namespace WebApp.BackgroundHosts.Deployment
                     var repository = await _assetRepoCoordinator.GetRepository(activeDeployment.FileServerName);
                     if (repository != null)
                     {
-                        await _assetRepoCoordinator.DeleteRepositoryResourcesAsync(repository, _managementClientProvider);
+                        await _assetRepoCoordinator.DeleteRepositoryResourcesAsync(repository);
                     }
 
                     await _deploymentQueue.Delete(activeDeployment.MessageId, activeDeployment.PopReceipt);
