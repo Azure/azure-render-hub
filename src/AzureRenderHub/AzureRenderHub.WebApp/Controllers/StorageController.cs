@@ -210,6 +210,8 @@ namespace WebApp.Controllers
 
             if (!ModelState.IsValid)
             {
+                model.Environments = await _environmentCoordinator.ListEnvironments();
+
                 // Validation errors, redirect back to form
                 return View("Create/Step1", model);
             }
