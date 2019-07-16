@@ -45,7 +45,6 @@ namespace WebApp.Config.Storage
 
         public string ControllerName { get; set; }
 
-        [JsonIgnore]
         public bool UseControllerPasswordCredential { get; set; }
 
         public string ControllerPasswordOrSshKey { get; set; }
