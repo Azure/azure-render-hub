@@ -198,14 +198,17 @@ function registerCheckboxEnabledFormSection(masterCheckboxId, checkboxId, outerD
 
             // Always enable the checkboxes and master/top-level components
             $(divId + " :input[type='checkbox']").removeAttr("disabled");
-            $(".master-component select").removeAttr("disabled");
             $(".master-component :input").removeAttr("readonly");
+            $(".master-component :input").removeAttr("disabled");
 
         } else {
-            $(divId + " :input").attr("readonly", "readonly");
-            $(divId + " :input[type='checkbox']").attr("disabled", true);
             $(divId + " select").attr("disabled", "disabled");
+            $(divId + " :input").attr("readonly", "readonly");
             $(divId + " :input[type='file']").attr("disabled", "disabled");
+
+            if (e.currentTarget.id === masterCheckboxId) {
+                $(".master-component :input[type='checkbox']").attr("disabled", "disabled");
+            }
         }
     });
 
