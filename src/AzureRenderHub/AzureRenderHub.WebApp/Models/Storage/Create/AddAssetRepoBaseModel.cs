@@ -22,7 +22,6 @@ namespace WebApp.Models.Storage.Create
         /// <summary>
         /// Semi-colon delimited resource id, location and address prefix
         /// </summary>
-        [Required]
         public string SubnetResourceIdLocationAndAddressPrefix { get; set; }
 
         public bool UseEnvironment { get; set; } = true;
