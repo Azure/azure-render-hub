@@ -62,6 +62,9 @@
     <Content Update="Views\Environments\View\Overview.cshtml">
       <Pack>$(IncludeRazorContentInPack)</Pack>
     </Content>
+    <Content Update="Views\Environments\View\NoStorage.cshtml">
+      <Pack>$(IncludeRazorContentInPack)</Pack>
+    </Content>
     <Content Update="Views\Environments\View\UserAccess.cshtml">
       <Pack>$(IncludeRazorContentInPack)</Pack>
     </Content>

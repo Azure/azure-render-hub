@@ -39,7 +39,16 @@
                         <label asp-for="PoolName">Pool name</label>
                         <input asp-for="PoolName" />
                         <span asp-validation-for="PoolName" class=""></span>
+                        @if (Model.RenderManagerType == RenderManagerType.Deadline)
+                        {
+                        <small>The Batch Pool name.  By default compute nodes will automatically join a Deadline pool of the same name.</small>
+                        }
+                        else
+                        {
+                        <small>The Batch Pool name.  By default compute nodes will automatically join a Qube worker group of the same name.</small>
+                        }
                     </div>
+
                     @if (Model.RenderManagerType == RenderManagerType.Deadline)
                     {
                         <div class="form-element">
@@ -50,7 +59,29 @@
                             </div>
                             <small>By default all compute nodes will be added to a Deadline pool of the same name as the Batch pool.  Use this flag to add to a group of this name instead.</small>
                         </div>
+
+                        <div class="form-element">
+                            <label asp-for="AdditionalPools">Additional Pools</label>
+                            <input asp-for="AdditionalPools" />
+                            <span asp-validation-for="AdditionalPools" class=""></span>
+                            <small>Optional comma-seperated list of additional Deadline pools to join the compute nodes to.</small>
+                        </div>
                     }
+
+                    <div class="form-element">
+                        <label asp-for="AdditionalGroups">Additional Groups</label>
+                        <input asp-for="AdditionalGroups" />
+                        <span asp-validation-for="AdditionalGroups" class=""></span>
+                        @if (Model.RenderManagerType == RenderManagerType.Deadline)
+                        {
+                            <small>Optional comma-seperated list of additional Deadline groups to join the compute nodes to.</small>
+                        }
+                        else
+                        {
+                            <small>Optional comma-seperated list of additional Qube worker groups to join the compute nodes to.</small>
+                        }
+                    </div>
+
                     <div class="form-element">
                         <label>Application licenses</label>
                         <div class="form-check">

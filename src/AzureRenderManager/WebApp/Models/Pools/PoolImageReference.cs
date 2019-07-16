@@ -60,13 +60,14 @@ namespace WebApp.Models.Pools
                 Os = ParseOperatingSystem(tokens[1]);
                 Type = ImageReferenceType.Custom;
             }
-            else if (tokens.Length == 5)
+            else if (tokens.Length == 6)
             {
-                Publisher = tokens[0];
-                Offer = tokens[1];
-                Sku = tokens[2];
-                Version = tokens[3];
-                Os = ParseOperatingSystem(tokens[4]);
+                // tokens[0] is the node agent SKU
+                Publisher = tokens[1];
+                Offer = tokens[2];
+                Sku = tokens[3];
+                Version = tokens[4];
+                Os = ParseOperatingSystem(tokens[5]);
                 Type = ImageReferenceType.Marketplace;
             }
             else

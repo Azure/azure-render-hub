@@ -11,12 +11,7 @@ namespace WebApp.Code
         public const string RepositoryList = "RepositoryList";
         public const string SubscriptionList = "SubscriptionList";
         public const string LocationList = "LocationList";
-        public const string AccountList = "AccountList";
         public const string EnvironmentList = "EnvironmentList";
-        public const string StorageAccountList = "StorageAccounts";
-        public const string SubnetList = "Subnets";
-        public const string AppInsightsList = "AppInsights";
-        public const string KeyVaultList = "KeyVaults";
         public const string PoolList = "PoolList";
 
         public static string MakeKey(string key, string id, params string[] extras)
