@@ -33,7 +33,9 @@ namespace WebApp.Config.Storage
             CreateSubnet = model.CreateSubnet;
             if (CreateSubnet)
             {
-                Subnet = new Subnet($"{Subnet.VnetResourceId}/subnets/{model.NewSubnetName};{Subnet.Location};{model.NewSubnetAddressPrefix}");
+                var newSubnet = new Subnet($"{Subnet.VnetResourceId}/subnets/{model.NewSubnetName};{Subnet.Location};{model.NewSubnetAddressPrefix}");
+                newSubnet.VNetAddressPrefixes = Subnet.VNetAddressPrefixes;
+                Subnet = newSubnet;
             }
             UseControllerPasswordCredential = model.UseControllerPasswordCredential;
             ControllerPasswordOrSshKey = model.UseControllerPasswordCredential 

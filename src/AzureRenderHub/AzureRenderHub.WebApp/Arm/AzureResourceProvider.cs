@@ -677,9 +677,52 @@ namespace WebApp.Arm
             {
                 AddressPrefix = subnetAddressRange,
                 Location = location,
-                ResourceId = vnet.Subnets.First().Id,
+                ResourceId = vnet.Subnets.FirstOrDefault(s => s.Name.Equals(subnetName, StringComparison.InvariantCultureIgnoreCase))?.Id,
                 ExistingResource = false,
             };
+        }
+
+        public async Task<Config.Subnet> CreateSubnetAsync(
+            Guid subscriptionId,
+            string location,
+            string resourceGroupName,
+            string vnetName,
+            string subnetName,
+            string vnetAddressSpace,
+            string subnetAddressRange,
+            string environmentName)
+        {
+            await RegisterProvider(subscriptionId, "Microsoft.Network");
+
+            var accessToken = await GetAccessToken();
+            var token = new TokenCredentials(accessToken);
+            var networkClient = new NetworkManagementClient(token) { SubscriptionId = subscriptionId.ToString() };
+
+            var newSubnet = new Microsoft.Azure.Management.Network.Models.Subnet(name: subnetName, addressPrefix: subnetAddressRange);
+            var subnet = await networkClient.Subnets.CreateOrUpdateAsync(resourceGroupName, vnetName, subnetName, newSubnet);
+
+            return new Config.Subnet
+            {
+                AddressPrefix = subnetAddressRange,
+                Location = location,
+                ResourceId = subnet.Id,
+                ExistingResource = false,
+            };
+        }
+
+        public async Task CreateSubnetServiceEndpointAsync(
+            Guid subscriptionId,
+            string location,
+            string resourceGroupName,
+            string vnetName,
+            string subnetName,
+            string service)
+        {
+            var accessToken = await GetAccessToken();
+            var token = new TokenCredentials(accessToken);
+            var networkClient = new NetworkManagementClient(token) { SubscriptionId = subscriptionId.ToString() };
+            var storageClient = new StorageManagementClient(token) { SubscriptionId = subscriptionId.ToString() };
+            //TODO: We need to update the Management client but there are issues with that...
         }
 
         public async Task<List<AzureSubnet>> GetSubnets(Guid subscriptionId, string location = null)

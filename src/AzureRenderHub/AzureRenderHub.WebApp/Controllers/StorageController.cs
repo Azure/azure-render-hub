@@ -446,7 +446,7 @@ namespace WebApp.Controllers
 
                 if (model.CreateSubnet)
                 {
-                    await _azureResourceProvider.CreateVnetAsync(
+                    await _azureResourceProvider.CreateSubnetAsync(
                         repository.Subnet.SubscriptionId,
                         repository.Subnet.Location,
                         repository.Subnet.ResourceGroupName,
@@ -455,6 +455,8 @@ namespace WebApp.Controllers
                         repository.Subnet.VNetAddressPrefixes,
                         repository.Subnet.AddressPrefix,
                         repository.EnvironmentName ?? "Global");
+
+                    // TODO: Create service endpoint
                 }
 
                 await _assetRepoCoordinator.BeginRepositoryDeploymentAsync(repository);

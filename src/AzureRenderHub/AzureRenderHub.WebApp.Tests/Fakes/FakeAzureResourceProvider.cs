@@ -160,5 +160,15 @@ namespace WebApp.Tests.Fakes
         {
             throw new NotImplementedException();
         }
+
+        public Task<Subnet> CreateSubnetAsync(Guid subscriptionId, string location, string resourceGroupName, string vnetName, string subnetName, string vnetAddressSpace, string subnetAddressRange, string environmentName)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task CreateSubnetServiceEndpointAsync(Guid subscriptionId, string location, string resourceGroupName, string vnetName, string subnetName, string service)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
