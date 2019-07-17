@@ -9,6 +9,7 @@ using Microsoft.Azure.Management.KeyVault.Models;
 using Microsoft.Azure.Management.ResourceManager.Models;
 
 using WebApp.Config;
+using WebApp.Models.Api;
 using WebApp.Models.Environments;
 
 namespace WebApp.Arm
@@ -121,6 +122,8 @@ namespace WebApp.Arm
         Task<Subnet> GetVnetAsync(Guid subscriptionId, string location, string resourceGroupName, string vnetName, string subnetName);
 
         Task DeleteVNetAsync(Guid subscriptionId, string resourceGroupName, string vnetName);
+
+        Task<List<AzureSubnet>> GetSubnets(Guid subscriptionId, string location = null);
 
         Task<List<UserPermission>> GetUserPermissions(Guid subscriptionId, string scope);
 

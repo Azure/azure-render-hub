@@ -139,7 +139,9 @@
             $.get(`/api/subscriptions/${subscriptionId}/subnets`,
                 function (subnets) {
                     var dropDownItems = $.map(subnets, function (subnet) {
-                        return `<option value="${subnet.id};${subnet.location};${subnet.addressPrefix}">${subnet.vNetName} - ${subnet.location} - ${subnet.name} (${subnet.addressPrefix})</option>`;
+                        var value = `${subnet.id};${subnet.location};${subnet.addressPrefix};${subnet.vNetAddressPrefixes}`;
+                        var text = `${subnet.vNetName} - ${subnet.location} - ${subnet.name} (${subnet.addressPrefix})`;
+                        return `<option value="${value}">${text}</option>`;
                     });
 
                     $("#Subnets").empty().append(dropDownItems);

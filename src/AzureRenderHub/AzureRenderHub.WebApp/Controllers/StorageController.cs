@@ -235,8 +235,12 @@ namespace WebApp.Controllers
                 repository.EnvironmentName = null;
                 if (model.UseEnvironment)
                 {
+                    var subnets = await _azureResourceProvider.GetSubnets(environment.SubscriptionId);
+                    var subnet = subnets.FirstOrDefault(s => s.Id.Equals(environment.Subnet.ResourceId, StringComparison.InvariantCultureIgnoreCase));
+
                     repository.EnvironmentName = model.SelectedEnvironmentName;
                     repository.Subnet = environment.Subnet;
+                    repository.Subnet.VNetAddressPrefixes = subnet?.VNetAddressPrefixes;
                 }
                 else
                 {
@@ -245,6 +249,7 @@ namespace WebApp.Controllers
                         ResourceId = model.SubnetResourceIdLocationAndAddressPrefix.Split(";")[0],
                         Location = model.SubnetResourceIdLocationAndAddressPrefix.Split(";")[1],
                         AddressPrefix = model.SubnetResourceIdLocationAndAddressPrefix.Split(";")[2],
+                        VNetAddressPrefixes = model.SubnetResourceIdLocationAndAddressPrefix.Split(";")[3],
                     };
                 }
 
@@ -395,6 +400,21 @@ namespace WebApp.Controllers
                     $"The Avere vFXT cache size must be either 1024 or 4096.");
             }
 
+            if (model.CreateSubnet)
+            {
+                if (string.IsNullOrWhiteSpace(model.NewSubnetName))
+                {
+                    ModelState.AddModelError(nameof(AddAvereClusterModel.NewSubnetName),
+                        $"When Create Subnet is specified, a subnet name must be specified.");
+                }
+
+                if (string.IsNullOrWhiteSpace(model.NewSubnetAddressPrefix))
+                {
+                    ModelState.AddModelError(nameof(AddAvereClusterModel.NewSubnetAddressPrefix),
+                        $"When Create Subnet is specified, a subnet address prefix (CIDR block) must be specified.");
+                }
+            }
+
             if (!ModelState.IsValid)
             {
                 return View("Create/Step2Avere", model);
@@ -423,6 +443,19 @@ namespace WebApp.Controllers
             {
                 // update and save the model before we deploy as we can always retry the create
                 repository.UpdateFromModel(model);
+
+                if (model.CreateSubnet)
+                {
+                    await _azureResourceProvider.CreateVnetAsync(
+                        repository.Subnet.SubscriptionId,
+                        repository.Subnet.Location,
+                        repository.Subnet.ResourceGroupName,
+                        repository.Subnet.VNetName,
+                        repository.Subnet.Name,
+                        repository.Subnet.VNetAddressPrefixes,
+                        repository.Subnet.AddressPrefix,
+                        repository.EnvironmentName ?? "Global");
+                }
 
                 await _assetRepoCoordinator.BeginRepositoryDeploymentAsync(repository);
             }

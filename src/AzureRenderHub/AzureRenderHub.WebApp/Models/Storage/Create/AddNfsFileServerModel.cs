@@ -23,13 +23,8 @@ namespace WebApp.Models.Storage.Create
             RepositoryType = fileServer.RepositoryType;
             NewResourceGroupName = fileServer.ResourceGroupName;
             SubscriptionId = fileServer.SubscriptionId;
-
-            if (fileServer.Subnet?.ResourceId != null)
-            {
-                SubnetResourceIdLocationAndAddressPrefix = fileServer.Subnet.ToString();
-                AllowedNetworks = fileServer.Subnet.AddressPrefix;
-            }
-
+            Subnet = fileServer.Subnet;
+            AllowedNetworks = Subnet?.AddressPrefix;
             VmName = fileServer.VmName;
             VmSize = fileServer.VmSize;
             UserName = fileServer.Username;

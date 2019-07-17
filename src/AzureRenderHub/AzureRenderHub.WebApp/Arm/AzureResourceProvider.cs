@@ -37,6 +37,7 @@ using WebApp.Authorization;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 using Microsoft.Identity.Web.Client;
+using WebApp.Models.Api;
 
 namespace WebApp.Arm
 {
@@ -679,6 +680,20 @@ namespace WebApp.Arm
                 ResourceId = vnet.Subnets.First().Id,
                 ExistingResource = false,
             };
+        }
+
+        public async Task<List<AzureSubnet>> GetSubnets(Guid subscriptionId, string location = null)
+        {
+            var accessToken = await GetAccessToken();
+            var token = new TokenCredentials(accessToken);
+            var networkClient = new NetworkManagementClient(token) { SubscriptionId = subscriptionId.ToString() };
+            var vNets = await networkClient.VirtualNetworks.ListAllAsync();
+
+            return vNets
+                .Where(vnet => string.IsNullOrWhiteSpace(location) || vnet.Location.Equals(location, StringComparison.OrdinalIgnoreCase))
+                .SelectMany(vnet => vnet.Subnets.Select(subnet => new AzureSubnet(vnet, subnet)))
+                .OrderBy(subnet => subnet.Name)
+                .ToList();
         }
 
         public async Task<Config.Subnet> GetVnetAsync(Guid subscriptionId, string location, string resourceGroupName, string vnetName, string subnetName)

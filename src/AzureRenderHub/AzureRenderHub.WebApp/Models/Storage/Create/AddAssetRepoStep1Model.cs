@@ -19,12 +19,7 @@ namespace WebApp.Models.Storage.Create
                 RepositoryName = repository.Name;
                 RepositoryType = repository.RepositoryType;
                 SubscriptionId = repository.SubscriptionId;
-
-                if (repository.Subnet?.ResourceId != null)
-                {
-                    SubnetResourceIdLocationAndAddressPrefix = repository.Subnet.ToString();
-                }
-
+                Subnet = repository.Subnet;
                 UseEnvironment = !string.IsNullOrEmpty(repository.EnvironmentName);
                 SelectedEnvironmentName = repository.EnvironmentName;
             }

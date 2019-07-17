@@ -10,6 +10,7 @@ using Microsoft.Azure.Management.ResourceManager.Models;
 using WebApp.Arm;
 using WebApp.Config;
 using WebApp.Identity;
+using WebApp.Models.Api;
 using WebApp.Models.Environments;
 
 namespace WebApp.Tests.Fakes
@@ -151,6 +152,11 @@ namespace WebApp.Tests.Fakes
         }
 
         public Task<CheckNameAvailabilityResult> ValidateKeyVaultName(Guid subscriptionId, string resourceGroupName, string keyVaultName)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<List<AzureSubnet>> GetSubnets(Guid subscriptionId, string location = null)
         {
             throw new NotImplementedException();
         }

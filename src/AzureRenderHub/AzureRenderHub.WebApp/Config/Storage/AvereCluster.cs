@@ -30,8 +30,11 @@ namespace WebApp.Config.Storage
 
             SubscriptionId = model.SubscriptionId.GetValueOrDefault();
             ResourceGroupName = model.NewResourceGroupName;
-            Subnet = new Subnet(model.SubnetResourceIdLocationAndAddressPrefix);
-
+            CreateSubnet = model.CreateSubnet;
+            if (CreateSubnet)
+            {
+                Subnet = new Subnet($"{Subnet.VnetResourceId}/subnets/{model.NewSubnetName};{Subnet.Location};{model.NewSubnetAddressPrefix}");
+            }
             UseControllerPasswordCredential = model.UseControllerPasswordCredential;
             ControllerPasswordOrSshKey = model.UseControllerPasswordCredential 
                 ? model.ControllerPassword 
@@ -42,6 +45,8 @@ namespace WebApp.Config.Storage
             NodeCount = model.NodeCount;
             AvereCacheSizeGB = model.CacheSizeInGB;
         }
+
+        public bool CreateSubnet { get; set; }
 
         public string ControllerName { get; set; }
 
@@ -81,6 +86,7 @@ namespace WebApp.Config.Storage
                 {"virtualNetworkResourceGroup", Subnet.ResourceGroupName},
                 {"virtualNetworkName", Subnet.VNetName},
                 {"virtualNetworkSubnetName", Subnet.Name},
+                {"subnetAddressRangePrefix", Subnet.AddressPrefix},
                 {"avereBackedStorageAccountName", AvereBackedStorageAccountName},
                 {"controllerName", ControllerName},
                 {"controllerAdminUsername", ControllerUserName},

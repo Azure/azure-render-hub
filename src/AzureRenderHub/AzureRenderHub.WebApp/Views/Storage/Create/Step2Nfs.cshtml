@@ -14,7 +14,7 @@
 <form asp-controller="Storage" asp-action="Step2Nfs" method="post">
     @await Html.PartialAsync("Menu/StorageSubMenu", Model, new ViewDataDictionary(ViewData)
     {
-        { "Step", 2 },
+        { "Step", 3 },
         { "RepoId", Model.RepositoryName }
     })
 

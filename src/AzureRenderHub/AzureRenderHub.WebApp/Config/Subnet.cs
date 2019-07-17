@@ -51,6 +51,8 @@ namespace WebApp.Config
 
         public string AddressPrefix { get; set; }
 
+        public string VNetAddressPrefixes { get; set; }
+
         public string VNetName
         {
             get

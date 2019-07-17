@@ -11,106 +11,174 @@
 
 @await Html.PartialAsync("Storage/Create/CreateFormHeaderPartial")
 
-<form asp-controller="Storage" asp-action="Step2Avere" method="post">
-    @await Html.PartialAsync("Menu/StorageSubMenu", Model, new ViewDataDictionary(ViewData)
-    {
-        { "Step", 2 },
-        { "RepoId", Model.RepositoryName }
-    })
+    <form asp-controller="Storage" asp-action="Step2Avere" method="post">
+        @await Html.PartialAsync("Menu/StorageSubMenu", Model, new ViewDataDictionary(ViewData)
+        {
+            { "Step", 2 },
+            { "RepoId", Model.RepositoryName }
+        })
 
-    @Html.AntiForgeryToken()
-    @Html.HiddenFor(model => model.RepositoryName)
-    @Html.HiddenFor(model => model.RepositoryType)
-    @Html.HiddenFor(model => model.SubnetResourceIdLocationAndAddressPrefix)
-    @Html.HiddenFor(model => model.SubscriptionId)
+        @Html.AntiForgeryToken()
+        @Html.HiddenFor(model => model.RepositoryName)
+        @Html.HiddenFor(model => model.RepositoryType)
+        @Html.HiddenFor(model => model.SubnetResourceIdLocationAndAddressPrefix)
+        @Html.HiddenFor(model => model.SubscriptionId)
 
-    <div asp-validation-summary="ModelOnly" class=""></div>
-    <div class="form-section">
-        <div class="section-title">
-            <span class="step-index">1</span>
-            <div class="step-header">
-                <h3>Configure Avere Cluster</h3>
-                <p>Set up the details specific to the Avere cluster</p>
+        <div asp-validation-summary="ModelOnly" class=""></div>
+        <div class="form-section">
+            <div class="section-title">
+                <span class="step-index">1</span>
+                <div class="step-header">
+                    <h3>Specify Subnet</h3>
+                    <p>Avere should always be deployed to a dedicated Subnet within the selected VNet.</p>
+                </div>
             </div>
-        </div>
-        <div class="section-wrapper">
-            <div class="section-bar"></div>
-            <div class="section-content">
-                <div class="form-element">
-                    <label asp-for="NewResourceGroupName">Resource Group</label>
-                    <input asp-for="NewResourceGroupName" />
-                    <span asp-validation-for="NewResourceGroupName"></span>
-                </div>
+            <div class="section-wrapper">
+                <div class="section-bar"></div>
+                <div class="section-content">
 
-                <div class="form-element">
-                    <label>Controller Credential</label>
-                    <div class="form-check">
-                        <input id="UsePassword" asp-for="UseControllerPasswordCredential" value="true" type="radio">
-                        <label class="form-check-label" for="UsePassword">Password</label>
-                    </div>
-                    <div class="form-check">
-                        <input id="UseSSHKey" asp-for="UseControllerPasswordCredential" value="false" type="radio">
-                        <label class="form-check-label" for="UseSSHKey">SSH Public Key</label>
-                    </div>
-                </div>
-
-                <div id="ControllerPasswordSection" hidden="@(!Model.UseControllerPasswordCredential)">
                     <div class="form-element">
-                        <label asp-for="ControllerPassword">Password</label>
-                        <input asp-for="ControllerPassword" type="password" />
-                        <span asp-validation-for="ControllerPassword"></span>
+                        <div class="form-check">
+                            <input id="CreateSubnet" asp-for="CreateSubnet" value="true" type="radio">
+                            <label class="form-check-label" for="CreateSubnet">Create new Subnet in the VNet '@Model.ExistingVNetName'</label>
+                        </div>
+                        <div class="form-check">
+                            <input id="UseExistingSubnet" asp-for="CreateSubnet" value="false" type="radio">
+                            <label class="form-check-label" for="UseExistingSubnet">Use Existing Subnet</label>
+                        </div>
                     </div>
-                </div>
-                <div id="ControllerSSHSection" hidden="@(Model.UseControllerPasswordCredential)">
-                    <div class="form-element">
-                        <label asp-for="ControllerSshKey">SSH Key</label>
-                        <input asp-for="ControllerSshKey" />
-                        <span asp-validation-for="ControllerSshKey"></span>
+
+                    <div id="CreateSubnetSection" hidden="@(!Model.CreateSubnet)">
+
+                        <hr class="form-element" />
+
+                        <div class="form-element">
+                            <label>Selected VNet: @Model.ExistingVNetName</label>
+                        </div>
+                        <div class="form-element">
+                            <label>VNet Address Space: @Model.VNetAddressSpace</label>
+                        </div>
+                        <div class="form-element">
+                            <label>Existing Subnet Address Prefix: @Model.ExistingSubnetAddressPrefix</label>
+                        </div>
+
+                        <hr class="form-element" />
+
+                        <div class="form-element">
+                            <label asp-for="NewSubnetName">New Subnet Name</label>
+                            <input asp-for="NewSubnetName" value="avere-subnet" />
+                            <span asp-validation-for="NewSubnetName"></span>
+                        </div>
+
+                        <div class="form-element">
+                            <label asp-for="NewSubnetAddressPrefix">New Subnet Address Prefix</label>
+                            <input asp-for="NewSubnetAddressPrefix" />
+                            <span asp-validation-for="NewSubnetAddressPrefix"></span>
+                        </div>
                     </div>
-                </div>
 
-                <div class="form-element">
-                    <label asp-for="AdminPassword">Management Admin Password</label>
-                    <input asp-for="AdminPassword" type="password" />
-                    <span asp-validation-for="AdminPassword"></span>
-                </div>
+                    <div id="UseExistingSubnetSection" hidden="@(Model.CreateSubnet)">
+                        <div class="form-element">
+                            <label asp-for="ExistingSubnetName">Subnet Name</label>
+                            <input asp-for="ExistingSubnetName" readonly="readonly" />
+                        </div>
 
-                <div class="form-element">
-                    <label asp-for="NodeCount">Cluster Size (VM Count)</label>
-                    <input asp-for="NodeCount" value="3"/>
-                    <span asp-validation-for="NodeCount"></span>
-                </div>
+                        <div class="form-element">
+                            <label asp-for="ExistingSubnetAddressPrefix">Subnet Address Prefix</label>
+                            <input asp-for="ExistingSubnetAddressPrefix" readonly="readonly" />
+                        </div>
 
-                <div class="form-element">
-                    <label asp-for="VMSize">VM Size</label>
-                    <select asp-for="VMSize" name="VMSize">
-                        <option value="Standard_E8s_v3" selected>Standard_E8s_v3</option>
-                        <option value="Standard_E16s_v3">Standard_E16s_v3</option>
-                        <option value="Standard_E32s_v3">Standard_E32s_v3</option>
-                    </select>
-                    <span asp-validation-for="VMSize" class=""></span>
-                </div>
-
-                <div class="form-element">
-                    <label asp-for="CacheSizeInGB">Cache Size</label>
-                    <select asp-for="CacheSizeInGB" name="CacheSizeInGB">
-                        <option value="1024" selected>1024</option>
-                        <option value="4096">4096</option>
-                    </select>
-                    <span asp-validation-for="CacheSizeInGB" class=""></span>
+                        <p>*Using an existing, utilized, subnet is not recommended.</p>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-    <div class="form-footer">
-        <div class="summary"></div>
-        <div class="button-bar">
-            <a class="button" asp-controller="Storage" asp-action="Step1" asp-route-envId="@Model.RepositoryName">Previous</a>
-            <button type="submit">Create <i class="fa fa-save"></i></button>
+        <div class="form-section">
+            <div class="section-title">
+                <span class="step-index">2</span>
+                <div class="step-header">
+                    <h3>Configure Avere Cluster</h3>
+                    <p>Set up the details specific to the Avere cluster</p>
+                </div>
+            </div>
+            <div class="section-wrapper">
+                <div class="section-bar"></div>
+                <div class="section-content">
+                    <div class="form-element">
+                        <label asp-for="NewResourceGroupName">Resource Group</label>
+                        <input asp-for="NewResourceGroupName" />
+                        <span asp-validation-for="NewResourceGroupName"></span>
+                    </div>
+
+                    <div class="form-element">
+                        <label>Controller Credential</label>
+                        <div class="form-check">
+                            <input id="UsePassword" asp-for="UseControllerPasswordCredential" value="true" type="radio">
+                            <label class="form-check-label" for="UsePassword">Password</label>
+                        </div>
+                        <div class="form-check">
+                            <input id="UseSSHKey" asp-for="UseControllerPasswordCredential" value="false" type="radio">
+                            <label class="form-check-label" for="UseSSHKey">SSH Public Key</label>
+                        </div>
+                    </div>
+
+                    <div id="ControllerPasswordSection" hidden="@(!Model.UseControllerPasswordCredential)">
+                        <div class="form-element">
+                            <label asp-for="ControllerPassword">Password</label>
+                            <input asp-for="ControllerPassword" type="password" />
+                            <span asp-validation-for="ControllerPassword"></span>
+                        </div>
+                    </div>
+                    <div id="ControllerSSHSection" hidden="@(Model.UseControllerPasswordCredential)">
+                        <div class="form-element">
+                            <label asp-for="ControllerSshKey">SSH Key</label>
+                            <input asp-for="ControllerSshKey" />
+                            <span asp-validation-for="ControllerSshKey"></span>
+                        </div>
+                    </div>
+
+                    <div class="form-element">
+                        <label asp-for="AdminPassword">Management Admin Password</label>
+                        <input asp-for="AdminPassword" type="password" />
+                        <span asp-validation-for="AdminPassword"></span>
+                    </div>
+
+                    <div class="form-element">
+                        <label asp-for="NodeCount">Cluster Size (VM Count)</label>
+                        <input asp-for="NodeCount" value="3" />
+                        <span asp-validation-for="NodeCount"></span>
+                    </div>
+
+                    <div class="form-element">
+                        <label asp-for="VMSize">VM Size</label>
+                        <select asp-for="VMSize" name="VMSize">
+                            <option value="Standard_E8s_v3" selected>Standard_E8s_v3</option>
+                            <option value="Standard_E16s_v3">Standard_E16s_v3</option>
+                            <option value="Standard_E32s_v3">Standard_E32s_v3</option>
+                        </select>
+                        <span asp-validation-for="VMSize" class=""></span>
+                    </div>
+
+                    <div class="form-element">
+                        <label asp-for="CacheSizeInGB">Cache Size</label>
+                        <select asp-for="CacheSizeInGB" name="CacheSizeInGB">
+                            <option value="1024" selected>1024</option>
+                            <option value="4096">4096</option>
+                        </select>
+                        <span asp-validation-for="CacheSizeInGB" class=""></span>
+                    </div>
+                </div>
+            </div>
         </div>
-    </div>
-    <p>&nbsp;</p>
-</form>
+        <div class="form-footer">
+            <div class="summary"></div>
+            <div class="button-bar">
+                <a class="button" asp-controller="Storage" asp-action="Step1" asp-route-repoId="@Model.RepositoryName">Previous</a>
+                <button type="submit">Create <i class="fa fa-save"></i></button>
+            </div>
+        </div>
+        <p>&nbsp;</p>
+    </form>
 
 @section scripts
     {
@@ -124,6 +192,18 @@
                 } else {
                     $('#ControllerPasswordSection').hide();
                     $('#ControllerSSHSection').show();
+                }
+            });
+
+            $('input[type=radio][name=CreateSubnet]').change(function () {
+                var createSubnet = this.value;
+                if (createSubnet === 'true') {
+                    UseExistingSubnetSection
+                    $('#UseExistingSubnetSection').hide();
+                    $('#CreateSubnetSection').show();
+                } else {
+                    $('#CreateSubnetSection').hide();
+                    $('#UseExistingSubnetSection').show();
                 }
             });
         });
