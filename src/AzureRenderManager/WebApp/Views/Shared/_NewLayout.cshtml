@@ -64,7 +64,7 @@
                     @if (User?.Identity != null)
                     {
                         <span class="">@User.Identity.Name</span>
-                        <a asp-controller="Account" asp-action="SignOut"><i class="fa fa-sign-out" title="Sign out"></i></a>
+                        <a asp-area="AzureAD" asp-controller="Account" asp-action="SignOut"><i class="fa fa-sign-out" title="Sign out"></i></a>
                     }
 
                     <a href="#"><i class="fa fa-bell" title="Alerts"></i></a>
