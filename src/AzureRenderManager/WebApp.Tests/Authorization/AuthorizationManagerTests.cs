@@ -17,7 +17,7 @@ namespace WebApp.Tests.Authorization
         public async Task SubscriptionOwnerIsEnvOwner()
         {
             var arm = new FakeAzureResourceProvider();
-            var graphProvider = new AuthorizationManager(null, null, arm, null);
+            var graphProvider = new AuthorizationManager(null, null, null, arm, null);
             var env = RenderingEnvironment;
 
             arm.UserPermissions.Add(new UserPermission {
@@ -36,7 +36,7 @@ namespace WebApp.Tests.Authorization
         public async Task SubscriptionReaderIsEnvReader()
         {
             var arm = new FakeAzureResourceProvider();
-            var graphProvider = new AuthorizationManager(null, null, arm, null);
+            var graphProvider = new AuthorizationManager(null, null, null, arm, null);
             var env = RenderingEnvironment;
 
             arm.UserPermissions.Add(new UserPermission
@@ -56,7 +56,7 @@ namespace WebApp.Tests.Authorization
         public async Task SubscriptionContributorIsEnvPoolManager()
         {
             var arm = new FakeAzureResourceProvider();
-            var graphProvider = new AuthorizationManager(null, null, arm, null);
+            var graphProvider = new AuthorizationManager(null, null, null, arm, null);
             var env = RenderingEnvironment;
 
             arm.UserPermissions.Add(new UserPermission
@@ -76,7 +76,7 @@ namespace WebApp.Tests.Authorization
         public async Task IndividualResourceOwnerIsEnvOwner()
         {
             var arm = new FakeAzureResourceProvider();
-            var graphProvider = new AuthorizationManager(null, null, arm, null);
+            var graphProvider = new AuthorizationManager(null, null, null, arm, null);
             var env = RenderingEnvironment;
 
             var objectId = Guid.NewGuid().ToString();
@@ -97,7 +97,7 @@ namespace WebApp.Tests.Authorization
         public async Task MissingResourcePermissionMeansNoEnvPermissions()
         {
             var arm = new FakeAzureResourceProvider();
-            var graphProvider = new AuthorizationManager(null, null, arm, null);
+            var graphProvider = new AuthorizationManager(null, null, null, arm, null);
             var env = RenderingEnvironment;
 
             var objectId = Guid.NewGuid().ToString();

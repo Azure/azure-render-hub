@@ -36,6 +36,7 @@ using WebApp.Code.Extensions;
 using WebApp.Authorization;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
+using Microsoft.Identity.Web.Client;
 
 namespace WebApp.Arm
 {
@@ -69,9 +70,10 @@ namespace WebApp.Arm
 
         public AzureResourceProvider(
             IHttpContextAccessor contextAccessor,
+            ITokenAcquisition tokenAcquisition,
             IHttpClientFactory httpClientFactory,
             IGraphProvider graphProvider,
-            ILogger<AzureResourceProvider> logger) : base(contextAccessor)
+            ILogger<AzureResourceProvider> logger) : base(contextAccessor, tokenAcquisition)
         {
             _httpClientFactory = httpClientFactory;
             _graphProvider = graphProvider;
