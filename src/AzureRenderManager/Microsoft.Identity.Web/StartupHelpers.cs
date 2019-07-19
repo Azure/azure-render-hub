@@ -61,7 +61,7 @@ namespace Microsoft.Identity.Web
 
             services.Configure<CookieAuthenticationOptions>(AzureADDefaults.CookieScheme, options =>
             {
-                options.Events.OnSigningIn = SetIncarnationClaim;
+                options.Events.OnSigningIn = SetIncarnationCacheKey;
                 options.Events.OnValidatePrincipal = ValidateTokenAndCache;
             });
 
@@ -119,10 +119,6 @@ namespace Microsoft.Identity.Web
 
                     return Task.FromResult(0);
                 };
-
-                // If you want to debug, or just understand the OpenIdConnect events, just
-                // uncomment the following line of code
-                OpenIdConnectMiddlewareDiagnostics.Subscribe(options.Events);
             });
             return services;
         }
@@ -131,8 +127,9 @@ namespace Microsoft.Identity.Web
         // restart the user can have a valid token set in a cookie, but the 
         // server side TokenCache doesn't have the refresh token and hence we cannot
         // get Graph or ARM resource tokens.
-        // For this reason we set a Claim to indicate the Web App instance that 
-        private static Task SetIncarnationClaim(CookieSigningInContext context)
+        // For this reason we set a marker to indicate the user has logged into 
+        // this instance of the web app at least once.
+        private static Task SetIncarnationCacheKey(CookieSigningInContext context)
         {
             var cache = context.HttpContext.RequestServices.GetRequiredService<IMemoryCache>();
             var cacheKey = CacheKey(GetObjectId(context.Principal.Claims));
