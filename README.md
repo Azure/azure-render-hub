@@ -52,7 +52,7 @@ The required input fields and prerequisites are described in the detailed [deplo
 
 ## Documentation
 
-For more information about the render farm manager see the docs [here](docs/README.md).
+For more information about Azure Render Hub see the docs [here](docs/README.md).
 
 # Contributing
 
