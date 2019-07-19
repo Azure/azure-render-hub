@@ -91,7 +91,7 @@ namespace WebApp.Controllers
 
         [HttpGet]
         [Route("Environments/Error")]
-        public async Task<ActionResult> Error()
+        public ActionResult Error()
         {
             var exceptionHandlerPathFeature = HttpContext.Features.Get<IExceptionHandlerPathFeature>();
             var path = exceptionHandlerPathFeature?.Path;

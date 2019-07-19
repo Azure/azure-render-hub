@@ -47,6 +47,7 @@ namespace WebApp.Operations
 
         public async Task<IStorageManagementClient> CreateStorageManagementClient(Guid subscription)
         {
+            await Task.CompletedTask;
             throw new NotImplementedException();
         }
 
@@ -58,11 +59,13 @@ namespace WebApp.Operations
 
         public async Task<IApplicationInsightsManagementClient> CreateApplicationInsightsManagementClient(Guid subscription)
         {
+            await Task.CompletedTask;
             throw new NotImplementedException();
         }
 
         public async Task<IKeyVaultManagementClient> CreateKeyVaultManagementClient(Guid subscription)
         {
+            await Task.CompletedTask;
             throw new NotImplementedException();
         }
 

@@ -102,6 +102,8 @@ namespace WebApp.Config.Pools
             bool isWindows,
             bool useGroups)
         {
+            await Task.CompletedTask;
+
             if (environment == null ||
                 environment.RenderManagerConfig == null ||
                 environment.RenderManager != RenderManagerType.Deadline)

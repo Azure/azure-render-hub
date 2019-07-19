@@ -152,10 +152,6 @@ namespace WebApp.Models.Environments.Details
 
         public Guid? SubscriptionId { get; set; }
 
-        public RenderManagerType RenderManager { get; set; }
-
-        public string RenderManagerName => RenderManager.GetDescription();
-
         public string LocationName { get; set; }
 
         public string ResourceGroup { get; set; }

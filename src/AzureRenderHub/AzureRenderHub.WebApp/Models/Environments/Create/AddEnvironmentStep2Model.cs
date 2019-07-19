@@ -125,10 +125,6 @@ namespace WebApp.Models.Environments.Create
 
         public string NewApplicationInsightsLocation { get; set; }
 
-        public string Error { get; set; }
-
-        public string ErrorMessage { get; set; }
-
         public bool CreateFilesShare { get; set; } = false;
     }
 }

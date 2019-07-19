@@ -22,10 +22,6 @@ namespace WebApp.Models.Environments
 
         public List<UserPermission> UserPermissions { get; set; } = new List<UserPermission>();
 
-        public string Error { get; set; }
-
-        public string ErrorMessage { get; set; }
-
         public bool NoGraphAccess { get; set; }
 
         [EmailAddress]

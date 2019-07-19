@@ -47,9 +47,5 @@ namespace WebApp.Models.Environments.Create
         public Guid SubscriptionId { get; }
 
         public string KeyVaultName { get; }
-
-        public string Error { get; set; }
-
-        public string ErrorMessage { get; set; }
     }
 }
