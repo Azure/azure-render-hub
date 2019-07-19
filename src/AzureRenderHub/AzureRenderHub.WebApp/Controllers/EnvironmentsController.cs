@@ -105,7 +105,7 @@ namespace WebApp.Controllers
                     {
                         Path = path,
                         Error = "You're not authorized to view this page",
-                        Message = "You'll need to contact Render Hub administrator and request access to the environment.",
+                        Message = "You'll need to contact your Render Hub administrator and request access to the environment.",
                         Details = ce.Message,
                     });
                 }

@@ -10,7 +10,7 @@ You will need an existing Qube supervisor or Deadline 10 deployment, on-prem or 
 connecting Azure VMs to an on-prem render farm you will need an existing Express Route or VPN connection
 and associated Azure VNet.
 
-Suppoer for additional Render Managers like OpenCue and Tractor is in the works.
+Support for additional render managers like OpenCue and Tractor is in the works.
 
 **Connection to Azure (for Hybrid)**
 
