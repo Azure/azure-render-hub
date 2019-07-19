@@ -1,11 +1,14 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
-
+using Microsoft.AspNetCore.Authentication.AzureAD.UI;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
@@ -13,6 +16,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Identity.Web;
+using Microsoft.Identity.Web.Client.TokenCacheProviders;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Blob;
 using WebApp.AppInsights;
@@ -25,9 +30,6 @@ using WebApp.BackgroundHosts.Deployment;
 using WebApp.BackgroundHosts.LeaseMaintainer;
 using WebApp.BackgroundHosts.ScaleUpProcessor;
 using WebApp.Code.Contract;
-using WebApp.Code.Extensions;
-using WebApp.Code.Graph;
-using WebApp.Code.Session;
 using WebApp.Config;
 using WebApp.Config.Coordinators;
 using WebApp.Config.Pools;
@@ -53,44 +55,29 @@ namespace WebApp
 
         public Microsoft.AspNetCore.Hosting.IHostingEnvironment Environment { get; }
 
-        // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddAuthentication(sharedOptions =>
+            services.Configure<CookiePolicyOptions>(options =>
             {
-                sharedOptions.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-                sharedOptions.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
-            })
+                options.CheckConsentNeeded = context => true;
+                options.MinimumSameSitePolicy = SameSiteMode.None;
+            });
 
-            .AddAzureAd(options => Configuration.Bind("AzureAd", options))
-            .AddCookie(
-                options =>
-                {
-                    options.Events.OnValidatePrincipal =
-                        context =>
-                        {
-                            if (context.Properties.Items.TryGetValue(".Token.expires_at", out var expiryString)
-                                && DateTimeOffset.TryParse(expiryString, out var expiresAt)
-                                && expiresAt < DateTimeOffset.UtcNow)
-                            {
-                                // TODO: we should be able to refresh this without redirecting the user...
-                                context.RejectPrincipal();
-                            }
+            services.AddOptions();
 
-                            return Task.CompletedTask;
-                        };
-                    options.SessionStore = new MemoryCacheTicketStore();
-                });
+            // Token acquisition service based on MSAL.NET
+            // and chosen token cache implementation
+            services.AddAzureAdV2Authentication(Configuration)
+                    .AddMsal(new string[] { "https://graph.microsoft.com/.default" })
+                    .AddInMemoryTokenCaches();
 
-            services.AddMemoryCache();
             services.AddSession(options =>
             {
                 options.Cookie.Name = "RenderFarmManager.Session";
                 options.IdleTimeout = TimeSpan.FromMinutes(10);
             });
 
-            services.AddSingleton<IGraphAuthProvider, GraphAuthProvider>();
-            services.AddSingleton<IGraphProvider, GraphProvider>();
+            services.AddTransient<IGraphProvider, GraphProvider>();
 
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
             services.Configure<FormOptions>(x =>
@@ -126,7 +113,6 @@ namespace WebApp
             services.AddSingleton(Environment);
 
             services.AddHttpClient();
-            services.AddHttpContextAccessor();
             services.AddMemoryCache();
 
             // Add HttpClient with retry policy for contacting Cost Management

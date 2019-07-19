@@ -6,12 +6,10 @@ using WebApp.Arm;
 using WebApp.Config;
 using WebApp.Models.Environments;
 using TaskTupleAwaiter;
-using WebApp.Code.Graph;
-using Microsoft.Graph;
-using System.Net.Http.Headers;
 using WebApp.Operations;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Identity.Web.Client;
 
 namespace WebApp.Authorization
 {
@@ -62,9 +60,10 @@ namespace WebApp.Authorization
 
         public AuthorizationManager(
             IHttpContextAccessor contextAccessor,
+            ITokenAcquisition tokenAcquisition,
             IConfiguration configuration,
             IAzureResourceProvider azureResourceProvider,
-            IGraphProvider graphProvider) : base(contextAccessor)
+            IGraphProvider graphProvider) : base(contextAccessor, tokenAcquisition)
         {
             _azureResourceProvider = azureResourceProvider;
             _configuration = configuration;

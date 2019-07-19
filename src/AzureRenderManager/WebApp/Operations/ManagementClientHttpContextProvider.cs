@@ -13,6 +13,7 @@ using Microsoft.Azure.Management.KeyVault;
 using Microsoft.Azure.Management.Network;
 using Microsoft.Azure.Management.ResourceManager;
 using Microsoft.Azure.Management.Storage;
+using Microsoft.Identity.Web.Client;
 using Microsoft.Rest;
 using WebApp.Config;
 
@@ -20,7 +21,9 @@ namespace WebApp.Operations
 {
     public sealed class ManagementClientHttpContextProvider : NeedsAccessToken, IManagementClientProvider
     {
-        public ManagementClientHttpContextProvider(IHttpContextAccessor contextAccessor) : base(contextAccessor)
+        public ManagementClientHttpContextProvider(
+            IHttpContextAccessor contextAccessor,
+            ITokenAcquisition tokenAcquisition) : base(contextAccessor, tokenAcquisition)
         {
         }
 

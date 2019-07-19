@@ -1,35 +1,41 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Graph;
+using Microsoft.Identity.Web.Client;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using WebApp.Code.Graph;
+using WebApp.Code.Extensions;
+using WebApp.Operations;
 
 namespace WebApp.Authorization
 {
-    public class GraphProvider : IGraphProvider
+    public class GraphProvider : NeedsAccessToken, IGraphProvider
     {
         private static string[] DirectoryObjectTypes = new[] { "user" };
 
         private readonly IConfiguration _configuration;
-        private readonly IGraphAuthProvider _graphAuthProvider;
+        private readonly string[] _scopes;
 
         public GraphProvider(
             IConfiguration configuration,
-            IGraphAuthProvider graphAuthProvider)
+            ITokenAcquisition tokenAcquisition,
+            IHttpContextAccessor contextAccessor) : base(contextAccessor, tokenAcquisition)
         {
             _configuration = configuration;
-            _graphAuthProvider = graphAuthProvider;
+            var adOptions = new AzureAdOptions();
+            configuration.Bind("AzureAd", adOptions);
+            _scopes = adOptions.GraphScopes.Split(new[] { ' ' });
         }
 
         public async Task<Dictionary<string, User>> LookupObjectIdsAsync(ClaimsPrincipal claim, IList<string> userIds)
         {
             var graphServiceClient = new GraphServiceClient(new DelegateAuthenticationProvider(async requestMessage =>
             {
-                var graphAccessToken = await _graphAuthProvider.GetUserAccessTokenAsync(claim);
+                var graphAccessToken = await GetAccessTokenWithGraphScope();
                 requestMessage
                     .Headers
                     .Authorization = new AuthenticationHeaderValue("Bearer", graphAccessToken);
@@ -59,7 +65,7 @@ namespace WebApp.Authorization
         {
             var graphServiceClient = new GraphServiceClient(new DelegateAuthenticationProvider(async requestMessage =>
             {
-                var graphAccessToken = await _graphAuthProvider.GetUserAccessTokenAsync(claim);
+                var graphAccessToken = await GetAccessTokenWithGraphScope();
                 requestMessage
                     .Headers
                     .Authorization = new AuthenticationHeaderValue("Bearer", graphAccessToken);
@@ -107,6 +113,11 @@ namespace WebApp.Authorization
                 return encodedEmail.Replace("_", "@");
             }
             return userPrincipalName;
+        }
+
+        private async Task<string> GetAccessTokenWithGraphScope()
+        {
+            return await GetAccessToken(_scopes.FirstOrDefault());
         }
     }
 }

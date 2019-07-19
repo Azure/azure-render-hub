@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Azure.Management.Batch;
 using Microsoft.Azure.Management.Batch.Models;
 using Microsoft.Azure.Management.Compute;
+using Microsoft.Identity.Web.Client;
 using Microsoft.Rest.Azure;
 using TaskTupleAwaiter;
 using WebApp.Code;
@@ -32,9 +33,10 @@ namespace WebApp.Config.Coordinators
 
         public PoolCoordinator(
             IHttpContextAccessor httpContextAccessor,
+            ITokenAcquisition tokenAcquisition,
             IManagementClientProvider managementClient,
             BatchClientMsiProvider batchClient)
-            : base(httpContextAccessor)
+            : base(httpContextAccessor, tokenAcquisition)
         {
             _managementClient = managementClient;
             _batchClient = batchClient;

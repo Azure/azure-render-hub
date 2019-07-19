@@ -115,8 +115,8 @@ namespace WebApp.Controllers
             {
                 Path = path,
                 Error = "An unknown error has occurred",
-                Message = error.Message,
-                Details = error.ToString()
+                Message = error?.Message,
+                Details = error?.ToString()
             });
         }
 
