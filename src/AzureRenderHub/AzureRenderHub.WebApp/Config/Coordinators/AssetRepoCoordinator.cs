@@ -119,20 +119,24 @@ namespace WebApp.Config.Coordinators
             var deployment = await GetDeploymentAsync(repository);
             if (deployment == null)
             {
-                case NfsFileServer fileServer:
-                    return await UpdateFileServerFromDeploymentAsync(fileServer, managementClientProvider);
-                case AvereCluster avere:
-                    return await UpdateAvereFromDeploymentAsync(avere, managementClientProvider);
-                default:
-                    throw new NotSupportedException("Unknown type of repository");
+                return ProvisioningState.Failed;
             }
+
+            if (repository is NfsFileServer fileServer)
+            {
+                return await UpdateFileServerFromDeploymentAsync(fileServer);
+            }
+            else if (repository is AvereCluster avere)
+            {
+                return await UpdateAvereFromDeploymentAsync(avere);
+            }
+
+            throw new NotSupportedException("Unknown type of repository");
         }
 
-        public async Task<ProvisioningState> UpdateFileServerFromDeploymentAsync(
-            NfsFileServer fileServer,
-            IManagementClientProvider managementClientProvider)
+        public async Task<ProvisioningState> UpdateFileServerFromDeploymentAsync(NfsFileServer fileServer)
         {
-            var deployment = await GetDeploymentAsync(fileServer, managementClientProvider);
+            var deployment = await GetDeploymentAsync(fileServer);
             if (deployment == null)
             {
                 return ProvisioningState.Failed;
@@ -158,13 +162,11 @@ namespace WebApp.Config.Coordinators
             return deploymentState;
         }
 
-        public async Task<ProvisioningState> UpdateAvereFromDeploymentAsync(
-            AvereCluster avereCluster,
-            IManagementClientProvider managementClientProvider)
+        public async Task<ProvisioningState> UpdateAvereFromDeploymentAsync(AvereCluster avereCluster)
         {
             ProvisioningState provisioningState;
 
-            var deployment = await GetDeploymentAsync(avereCluster, managementClientProvider);
+            var deployment = await GetDeploymentAsync(avereCluster);
             if (deployment == null)
             {
                 provisioningState = ProvisioningState.Failed;

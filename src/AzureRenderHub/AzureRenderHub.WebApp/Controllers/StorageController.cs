@@ -82,7 +82,7 @@ namespace WebApp.Controllers
                 return RedirectToAction("Index");
             }
 
-            var state = await _assetRepoCoordinator.UpdateRepositoryFromDeploymentAsync(repo, _managementClientProvider);
+            var state = await _assetRepoCoordinator.UpdateRepositoryFromDeploymentAsync(repo);
 
             if (repo.ProvisioningState != state)
             {
