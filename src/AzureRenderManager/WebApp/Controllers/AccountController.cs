@@ -36,7 +36,7 @@ namespace WebApp.Controllers
             if (User.Identity.IsAuthenticated)
             {
                 // Redirect to home page if the user is authenticated.
-                return RedirectToAction(nameof(HomeController.Index), "Home");
+                return RedirectToAction(nameof(EnvironmentsController.Index), "Environments");
             }
 
             return View();
