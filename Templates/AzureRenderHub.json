@@ -82,7 +82,7 @@
         }
     },
     "variables": {
-        "repoURL": "https://github.com/Azure/azure-render-farm-manager.git",
+        "repoURL": "https://github.com/Azure/azure-render-hub.git",
         "skuTier": "[split(parameters('sku'), ':')[0]]",
         "skuSize": "[split(parameters('sku'), ':')[1]]",
         "webSitesApiVersion": "2016-08-01",
