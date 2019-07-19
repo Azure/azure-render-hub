@@ -1,0 +1,89 @@
+﻿@model WebApp.Models.Environments.Details.ViewEnvironmentModel
+@{
+    ViewBag.Title = Model.EnvironmentName;
+}
+
+@section Breadcrumb
+    {
+    <a asp-controller="Environments" asp-action="Index">Environments</a> &gt;
+    <a asp-controller="Environments" asp-action="Details" asp-route-envId="@Model.EnvironmentName">@Model.EnvironmentName</a> &gt;
+    <span>Details</span>
+}
+
+<h2>@Model.EnvironmentName - details</h2>
+<p>View the details of a pre-configured render farm environment.</p>
+
+@await Html.PartialAsync("Menu/EnvironmentMainMenu", Model, new ViewDataDictionary(ViewData) { { "Step", "env" } })
+@await Html.PartialAsync("Menu/EnvironmentSubMenu", Model, new ViewDataDictionary(ViewData)
+{
+    { "Step", 2 },
+    { "Type", "view" }
+})
+
+<div class="form-section">
+    <div class="section-title">
+        <span class="step-index">1</span>
+        <div class="step-header">
+            <h3>General details</h3>
+            <p>Information about the render farm environment</p>
+        </div>
+    </div>
+    <div class="section-wrapper">
+        <div class="section-bar"></div>
+        <div class="section-content">
+            <div class="form-element">
+                <label asp-for="EnvironmentName">Environment name</label>
+                <input asp-for="EnvironmentName" readonly="readonly" />
+            </div>
+            <div class="form-element">
+                <label asp-for="RenderManager">Render farm manager</label>
+                <input asp-for="RenderManager" readonly="readonly" />
+            </div>
+            <div class="form-element">
+                <label asp-for="SubscriptionId">Subscription ID</label>
+                <input asp-for="SubscriptionId" readonly="readonly" />
+            </div>
+            <div class="form-element">
+                <label asp-for="LocationName">Location</label>
+                <input asp-for="LocationName" readonly="readonly" />
+            </div>
+            <div class="form-element">
+                <label asp-for="ResourceGroup">Resource group</label>
+                <input asp-for="ResourceGroup" readonly="readonly" />
+            </div>
+            <div class="form-element">
+                <label asp-for="KeyVaultName">Azure Key Vault</label>
+                <input asp-for="KeyVaultName" readonly="readonly" />
+            </div>
+            <div class="form-element">
+                <label asp-for="KeyVaultUrl">Azure Key Vault URL</label>
+                <input asp-for="KeyVaultUrl" readonly="readonly" />
+            </div>
+        </div>
+    </div>
+</div>
+<div class="form-footer">
+
+</div>
+<p>&nbsp;</p>
+
+@section Scripts
+    {
+    <script>
+        $(document).ready(function () {
+            // Show a warning if the sub is locked
+            var deleteErrors = '@Model.DeleteErrors';
+            if (deleteErrors !== '') {
+                toastr.options.timeOut = 0;
+                toastr.options.extendedTimeOut = 0;
+                toastr.options.closeButton = true;
+                toastr.options.positionClass = "toast-top-center";
+
+                var title = 'An error occured deleting the environment';
+                var message = '@Model.DeleteErrors';
+
+                toastr.warning(message, title).css("width", "600px");
+            }
+        });
+    </script>
+}

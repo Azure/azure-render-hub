@@ -1,6 +1,6 @@
-# Render Farm Environments
+# Render Hub Environments
 
-Environments are a core concept of the Render Farm Manager and encapsulate all the Azure resources required to deploy and 
+Environments are a core concept of Azure Render Hub and encapsulate all the Azure resources required to deploy and 
 maintain a render farm in Azure.
 
 You can have a single environment, or multiple environments that could represent different
@@ -47,7 +47,7 @@ See [here](https://azure.microsoft.com/en-au/services/key-vault/) for more infor
 
 **Application Insights**
 
-The Render Farm Manager automatically installs the Application Insights agent on the render nodes to capture CPU, GPU and Rendering process metrics. 
+Render Hub automatically installs the Application Insights agent on the render nodes to capture CPU, GPU and Rendering process metrics. 
 This information is used to automatically scale down virtual machine pools as nodes become idle.
 
 For more information see [here](https://docs.microsoft.com/en-us/azure/azure-monitor/app/app-insights-overview).

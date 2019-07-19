@@ -1,0 +1,99 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Azure Render Hub - @ViewData["Title"]</title>
+    <environment include="Development">
+        <script src="~/lib/jquery/dist/jquery.js"></script>
+        <script src="~/lib/bootstrap/dist/js/bootstrap.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.13.0/moment.min.js"></script>
+        <script src="~/js/Chart.bundle.min.js" asp-append-version="true"></script>
+        <script src="~/js/hammer.min.js" asp-append-version="true"></script>
+        <script src="~/js/chartjs-plugin-zoom.min.js" asp-append-version="true"></script>
+        <script src="~/js/site.js" asp-append-version="true"></script>
+        <script src="~/js/split.js" asp-append-version="true"></script>
+        <script src="https://ajax.aspnetcdn.com/ajax/jquery.validate/1.16.0/jquery.validate.min.js"></script>
+        <script src="https://ajax.aspnetcdn.com/ajax/jquery.validation.unobtrusive/3.2.6/jquery.validate.unobtrusive.min.js"></script>
+
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+        <link rel="stylesheet" href="~/css/main.css" asp-append-version="true" />
+
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.0/css/toastr.css" />
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.0/js/toastr.js"></script>
+    </environment>
+    <environment exclude="Development">
+        <script src="https://ajax.aspnetcdn.com/ajax/jquery/jquery-3.3.1.min.js"
+                asp-fallback-src="~/lib/jquery/dist/jquery.min.js"
+                asp-fallback-test="window.jQuery"
+                crossorigin="anonymous"
+                integrity="sha384-tsQFqpEReu7ZLhBV2VZlAu7zcOV+rXbYlF2cqB8txI/8aZajjp4Bqd+V6D5IgvKT">
+        </script>
+        <script src="https://ajax.aspnetcdn.com/ajax/bootstrap/3.3.7/bootstrap.min.js"
+                asp-fallback-src="~/lib/bootstrap/dist/js/bootstrap.min.js"
+                asp-fallback-test="window.jQuery && window.jQuery.fn && window.jQuery.fn.modal"
+                crossorigin="anonymous"
+                integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa">
+        </script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.13.0/moment.min.js"></script>
+        <script src="~/js/Chart.bundle.min.js" asp-append-version="true"></script>
+        <script src="~/js/hammer.min.js" asp-append-version="true"></script>
+        <script src="~/js/chartjs-plugin-zoom.min.js" asp-append-version="true"></script>
+        <script src="~/js/site.min.js" asp-append-version="true"></script>
+        <script src="~/js/split.min.js" asp-append-version="true"></script>
+        <script src="https://ajax.aspnetcdn.com/ajax/jquery.validate/1.16.0/jquery.validate.min.js"></script>
+        <script src="https://ajax.aspnetcdn.com/ajax/jquery.validation.unobtrusive/3.2.6/jquery.validate.unobtrusive.min.js"></script>
+
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+        <link rel="stylesheet" href="~/css/main.css" asp-append-version="true" />
+
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.0/css/toastr.min.css" />
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.0/js/toastr.min.js"></script>
+    </environment>
+    <link rel="icon" type="image/png" href="~/images/favicon.png" />
+</head>
+<body>
+    <div id="container">
+        <header>
+            <nav class="top-nav no-select flex">
+                <div class="home-link flex">
+                    <img src="~/images/azure.svg" width="45" height="45" title="Azure Render Hub" alt="Azure" />
+                    <a asp-area="" asp-controller="Home" asp-action="Index">Azure Render Hub</a>
+                </div>
+                <div class="action-link flex">
+                    @if (User?.Identity != null)
+                    {
+                        <span class="">@User.Identity.Name</span>
+                        <a asp-area="AzureAD" asp-controller="Account" asp-action="SignOut"><i class="fa fa-sign-out" title="Sign out"></i></a>
+                    }
+
+                    <a href="#"><i class="fa fa-bell" title="Alerts"></i></a>
+                    <a href="#"><i class="fa fa-info-circle" title="Information"></i></a>
+                </div>
+            </nav>
+        </header>
+        <section id="content">
+            <div id="content-inner">
+                <div id="nav" class="split split-vertical">
+                    @await Html.PartialAsync("Menu/MainMenu", Model, new ViewDataDictionary(ViewData))
+                </div>
+                <div id="nav-shadow" class="split split-vertical"></div>
+                <div id="body" class="split split-vertical">
+                    <div id="breadcrumb">
+                        @RenderSection("Breadcrumb", false)
+                    </div>
+                    <div id="body-content">
+                        @RenderBody()
+                    </div>
+                </div>
+            </div>
+        </section>
+        <footer>
+            <div class="content no-select">
+                <span>&copy; 2019 - Microsoft</span>
+            </div>
+        </footer>
+    </div>
+    @RenderSection("Scripts", false)
+</body>
+</html>

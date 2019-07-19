@@ -1,6 +1,6 @@
 # Documentation and Guides
 
-These docs will guide you through the setup and configuration process of the Render Farm Manager.  
+These docs will guide you through Azure Render Hub's setup and configuration process.
 
 # Prerequisites
 
@@ -10,6 +10,8 @@ You will need an existing Qube supervisor or Deadline 10 deployment, on-prem or 
 connecting Azure VMs to an on-prem render farm you will need an existing Express Route or VPN connection
 and associated Azure VNet.
 
+Suppoer for additional Render Managers like OpenCue and Tractor is in the works.
+
 **Connection to Azure (for Hybrid)**
 
 Site-to-site VPN connections to Azure are reasonably straightforward to deploy and setup.  For more information
@@ -17,7 +19,7 @@ checkout the setup guide [here](https://docs.microsoft.com/en-us/azure/vpn-gatew
 
 # Setup Steps
 
-1. [Deploy the Render Farm Manager Portal](00-deployment.md)
+1. [Deploy the Render Hub Portal](00-deployment.md)
 
 2. [Create an Environment](10-environments-overview.md)
 

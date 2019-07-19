@@ -1,0 +1,271 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2014-04-01-preview/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "webSiteName": {
+            "defaultValue": "RenderFarmManager",
+            "type": "String",
+            "minLength": "4",
+            "maxLength": "20",
+            "metadata": {
+                "description": "The name of the web app that you wish to create."
+            }
+        },
+        "hostingPlanName": {
+            "defaultValue": "RenderFarmManagerPlan",
+            "type": "String",
+            "metadata": {
+                "description": "The name of the App Service plan to use for hosting the web app, default should be fine"
+            }
+        },
+        "sku": {
+            "defaultValue": "Basic:B1",
+            "allowedValues": [
+                "Free:F1",
+                "Shared:D1",
+                "Basic:B1",
+                "Basic:B2",
+                "Basic:B3",
+                "Standard:S1",
+                "Standard:S2",
+                "Standard:S3",
+                "Premium:P1",
+                "Premium:P2",
+                "Premium:P3"
+            ],
+            "type": "String",
+            "metadata": {
+                "description": "The pricing tier for the hosting plan."
+            }
+        },
+        "aadTenantId": {
+            "type": "String",
+            "metadata": {
+                "description": "The AAD tenant Id."
+            }
+        },
+        "aadDomain": {
+            "type": "String",
+            "metadata": {
+                "description": "The AAD directory domain, e.g. contoso.onmicrosoft.com"
+            }
+        },
+        "aadClientId": {
+            "type": "String",
+            "metadata": {
+                "description": "The AAD application client Id."
+            }
+        },
+        "aadClientSecret": {
+            "type": "SecureString",
+            "metadata": {
+                "description": "The AAD application client secret/password."
+            }
+        },
+        "applicationInsightsLocation": {
+            "defaultValue": "West US 2",
+            "allowedValues": [
+                "East US",
+                "West US 2",
+                "South Central US",
+                "North Europe",
+                "West Europe",
+                "UK South",
+                "Canada Central",
+                "Central India",
+                "Southeast Asia"
+            ],
+            "type": "String",
+            "metadata": {
+                "description": "The Application Insights location."
+            }
+        }
+    },
+    "variables": {
+        "repoURL": "https://github.com/Azure/azure-render-farm-manager.git",
+        "skuTier": "[split(parameters('sku'), ':')[0]]",
+        "skuSize": "[split(parameters('sku'), ':')[1]]",
+        "webSitesApiVersion": "2016-08-01",
+        "storageApiVersion": "2018-07-01",
+        "storageAccountName": "[concat(uniqueString(resourceGroup().id), 'sa')]",
+        "storageAccountType": "Standard_LRS",
+        "applicationInsightsName": "[concat(parameters('webSiteName'), '-ai')]",
+        "keyVaultName": "[concat(parameters('webSiteName'), '-kv')]",
+        "keyVaultUri": "[concat('https://', variables('keyVaultName'), '.vault.azure.net')]",
+        "identityResourceId": "[concat(resourceId('Microsoft.Web/sites', parameters('webSiteName')),'/providers/Microsoft.ManagedIdentity/Identities/default')]"
+    },
+    "resources": [
+        {
+            "apiVersion": "2018-02-01",
+            "name": "pid-8998603f-4caf-4c8a-ab6b-5de903bec332",
+            "type": "Microsoft.Resources/deployments",
+            "properties": {
+                "mode": "Incremental",
+                "template": {
+                    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                    "contentVersion": "1.0.0.0",
+                    "resources": []
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Insights/components",
+            "name": "[variables('applicationInsightsName')]",
+            "apiVersion": "2014-04-01",
+            "location": "[parameters('applicationInsightsLocation')]",
+            "tags": {
+                "[concat('hidden-link:', resourceGroup().id, '/providers/Microsoft.Web/sites/', parameters('webSiteName'))]": "Resource",
+                "displayName": "AppInsightsComponent"
+            },
+            "properties": {
+                "applicationId": "[variables('applicationInsightsName')]"
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "name": "[variables('storageAccountName')]",
+            "apiVersion": "[variables('storageApiVersion')]",
+            "location": "[resourceGroup().location]",
+            "sku": {
+                "name": "[variables('storageAccountType')]"
+            },
+            "kind": "StorageV2"
+        },
+        {
+            "type": "Microsoft.Web/serverfarms",
+            "name": "[parameters('hostingPlanName')]",
+            "apiVersion": "2016-09-01",
+            "location": "[resourceGroup().location]",
+            "sku": {
+                "name": "[variables('skuSize')]",
+                "tier": "[variables('skuTier')]",
+                "size": "[variables('skuSize')]"
+            },
+            "properties": {
+                "name": "[parameters('hostingPlanName')]",
+                "workerSize": "0",
+                "numberOfWorkers": "1"
+            }
+        },
+        {
+            "type": "Microsoft.Web/sites",
+            "name": "[parameters('webSiteName')]",
+            "apiVersion": "[variables('webSitesApiVersion')]",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/serverfarms', parameters('hostingPlanName'))]",
+                "[resourceId('microsoft.insights/components/', variables('applicationInsightsName'))]"
+            ],
+            "identity": {
+                "type": "SystemAssigned"
+            },
+            "properties": {
+                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('hostingPlanName'))]",
+                "siteConfig": {
+                    "alwaysOn": "[not(or(equals(variables('skuSize'), 'F1'), equals(variables('skuSize'), 'D1')))]",
+                    "appSettings": []
+                }
+            },
+            "resources": [
+                {
+                    "type": "config",
+                    "name": "appsettings",
+                    "apiVersion": "2015-08-01",
+                    "properties": {
+                        "PortalManagedIdentity:ObjectId": "[reference(variables('identityResourceId'), '2015-08-31-PREVIEW').principalId]",
+                        "PortalManagedIdentity:TenantId": "[reference(variables('identityResourceId'), '2015-08-31-PREVIEW').tenantId]",
+                        "ASPNETCORE_HOSTINGSTARTUP__KEYVAULT__CONFIGURATIONENABLED": "true",
+                        "SubscriptionId": "[subscription().subscriptionId]",
+                        "Location": "[resourceGroup().location]",
+                        "AzureAd:Instance": "https://login.microsoftonline.com/",
+                        "AzureAd:TenantId": "[parameters('aadTenantId')]",
+                        "AzureAd:ClientId": "[parameters('aadClientId')]",
+                        "AzureAd:Domain": "[parameters('aadDomain')]",
+                        "KeyVault:BaseUrl": "[variables('keyVaultUri')]",
+                        "APPINSIGHTS_INSTRUMENTATIONKEY": "[reference(concat('microsoft.insights/components/', variables('applicationInsightsName'))).InstrumentationKey]"
+                    },
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Web/Sites', parameters('webSiteName'))]"
+                    ]
+                },
+                {
+                    "type": "sourcecontrols",
+                    "name": "web",
+                    "apiVersion": "[variables('webSitesApiVersion')]",
+                    "properties": {
+                        "repoUrl": "[variables('repoURL')]",
+                        "isManualIntegration": true,
+                        "branch": "master"
+                    },
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Web/Sites', parameters('webSiteName'))]",
+                        "[resourceId('Microsoft.Web/sites/config', parameters('webSiteName'), 'appsettings')]"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults",
+            "name": "[variables('keyVaultName')]",
+            "apiVersion": "2018-02-14",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('webSiteName'))]"
+            ],
+            "properties": {
+                "tenantId": "[parameters('aadTenantId')]",
+                "sku": {
+                    "family": "A",
+                    "name": "standard"
+                },
+                "accessPolicies": [
+                    {
+                        "tenantId": "[reference(variables('identityResourceId'), '2015-08-31-PREVIEW').tenantId]",
+                        "objectId": "[reference(variables('identityResourceId'), '2015-08-31-PREVIEW').principalId]",
+                        "permissions": {
+                            "secrets": [
+                                "get",
+                                "list",
+                                "set",
+                                "delete"
+                            ],
+                            "certificates": [
+                                "get",
+                                "list",
+                                "set",
+                                "update",
+                                "delete",
+                                "create",
+                                "import"
+                            ]
+                        }
+                    }
+                ],
+                "enabledForDeployment": false
+            }
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults/secrets",
+            "name": "[concat(variables('keyVaultName'), '/', 'StorageConnectionString')]",
+            "apiVersion": "2018-02-14",
+            "dependsOn": [
+                "[concat('Microsoft.KeyVault/vaults/', variables('keyVaultName'))]",
+                "[concat('Microsoft.Storage/storageAccounts/', variables('storageAccountName'))]"
+            ],
+            "properties": {
+                "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountName'), ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), variables('storageApiVersion')).keys[0].value, ';EndpointSuffix=core.windows.net')]"
+            }
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults/secrets",
+            "name": "[concat(variables('keyVaultName'), '/', 'AzureAd--ClientSecret')]",
+            "apiVersion": "2018-02-14",
+            "dependsOn": [
+                "[concat('Microsoft.KeyVault/vaults/', variables('keyVaultName'))]"
+            ],
+            "properties": {
+                "value": "[parameters('aadClientSecret')]"
+            }
+        }
+    ]
+}

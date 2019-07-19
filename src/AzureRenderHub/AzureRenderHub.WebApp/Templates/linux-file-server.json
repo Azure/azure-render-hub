@@ -1,0 +1,299 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "vmName": {
+      "type": "string",
+      "defaultValue": "FileServer",
+      "metadata": {
+        "description": "The VM name."
+      }
+    },
+    "adminUserName": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "User name for the Virtual Machine. Pick a valid username otherwise there will be a BadRequest error."
+      }
+    },
+    "adminPassword": {
+      "type": "securestring",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Admin password. Pick a complex password with uppercase letters, lowercase letters, digits, and symbols. The password should not be longer than 16. Otherwise you'll get a BadRequest error."
+      }
+    },
+    "image": {
+      "type": "string",
+      "defaultValue": "OpenLogic:CentOS:7.5",
+      "metadata": {
+        "description": "The OS image offer to use, eithe HPC with Intel MPI or the vanilla CentOS version."
+      }
+    },
+    "vmSize": {
+      "type": "string",
+      "defaultValue": "Standard_DS4_v2",
+      "metadata": {
+        "description": "VM Size."
+      }
+    },
+    "dataDiskSize": {
+      "type": "int",
+      "defaultValue": 128,
+      "allowedValues": [
+        32,
+        64,
+        128,
+        512,
+        1024,
+        2048,
+        4095
+      ],
+      "metadata": {
+        "description": "The size in GB of each data disk that is attached to the VM.  A RAID-0 volume is created with all data disks that is dataDiskSize * dataDiskCount in size."
+      }
+    },
+    "storageAccountType": {
+      "type": "string",
+      "defaultValue": "Premium_LRS",
+      "allowedValues": [
+        "Standard_LRS",
+        "Premium_LRS"
+      ],
+      "metadata": {
+        "description": "Type of storage account to create for disks."
+      }
+    },
+    "subnetResourceId": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Subnet resource id."
+      }
+    },
+    "subnetAddressPrefix": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Optional subnet address prefix to restrict NFS access to, e.g. 10.2.0.0/24"
+      }
+    },
+    "sharesToExport": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Comma separated list of shares to export, e.g. myscenes,mytextures"
+      }
+    },
+    "environmentTag": {
+      "type": "string",
+      "defaultValue": "Global",
+      "metadata": {
+        "description": "Environment tag"
+      }
+    }
+  },
+    "variables": {
+        "imagePublisher": "[split(parameters('image'), ':')[0]]",
+        "imageOffer": "[split(parameters('image'), ':')[1]]",
+        "imageSku": "[split(parameters('image'), ':')[2]]",
+        "armApiVersion": "2015-06-15",
+        "computeApiVersion": "2016-04-30-preview",
+        "avSetName": "avSet",
+        "masterDiskCount": 4,
+        "installationScriptUrl": "https://raw.githubusercontent.com/Azure/azure-render-hub/master/Scripts/Storage/install-nfs.sh",
+        "installationCLI": "[concat('bash install-nfs.sh', ' \"', parameters('subnetAddressPrefix'), '\" \"', parameters('sharesToExport'), '\"')]"
+    },
+  "resources": [
+    {
+      "type": "Microsoft.Compute/availabilitySets",
+      "name": "[variables('avSetName')]",
+      "apiVersion": "[variables('computeApiVersion')]",
+      "location": "[resourceGroup().location]",
+      "tags": {
+        "Environment": "parameters('environmentTag')"
+      },
+      "properties": {
+        "platformFaultDomainCount": "2",
+        "platformUpdateDomainCount": "2",
+        "managed": "true"
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "name": "nsg",
+      "apiVersion": "[variables('armApiVersion')]",
+      "location": "[resourceGroup().location]",
+      "tags": {
+        "Environment": "parameters('environmentTag')"
+      },
+      "properties": {
+        "securityRules": [
+          {
+            "name": "SSH",
+            "properties": {
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "22",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 100,
+              "direction": "Inbound"
+            }
+          }
+        ]
+      },
+      "dependsOn": [
+
+      ]
+    },
+    {
+      "apiVersion": "[variables('armApiVersion')]",
+      "type": "Microsoft.Network/networkInterfaces",
+      "name": "nic",
+      "location": "[resourceGroup().location]",
+      "tags": {
+        "Environment": "parameters('environmentTag')"
+      },
+      "dependsOn": [
+        "Microsoft.Network/networkSecurityGroups/nsg"
+      ],
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "subnet": {
+                "id": "[parameters('subnetResourceId')]"
+              }
+            }
+          }
+        ],
+        "networkSecurityGroup": {
+          "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'nsg')]"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Compute/disks",
+      "name": "[concat('datadisk', copyindex())]",
+      "apiVersion": "[variables('computeApiVersion')]",
+      "location": "[resourceGroup().location]",
+      "tags": {
+        "Environment": "parameters('environmentTag')"
+      },
+      "copy": {
+        "name": "foo",
+        "count": "[variables('masterDiskCount')]"
+      },
+      "properties": {
+        "creationData": {
+          "createOption": "Empty"
+        },
+        "accountType": "[parameters('storageAccountType')]",
+        "diskSizeGB": "[parameters('dataDiskSize')]"
+      }
+    },
+    {
+      "apiVersion": "[variables('computeApiVersion')]",
+      "type": "Microsoft.Compute/virtualMachines",
+      "name": "[parameters('vmName')]",
+      "location": "[resourceGroup().location]",
+      "tags": {
+        "Environment": "parameters('environmentTag')"
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Network/networkInterfaces/', 'nic')]",
+        "[concat('Microsoft.Compute/availabilitySets/', variables('avSetName'))]",
+        "Microsoft.Compute/disks/datadisk0",
+        "Microsoft.Compute/disks/datadisk1",
+        "Microsoft.Compute/disks/datadisk2",
+        "Microsoft.Compute/disks/datadisk3"
+      ],
+      "properties": {
+        "availabilitySet": {
+          "id": "[resourceId('Microsoft.Compute/availabilitySets', variables('avSetName'))]"
+        },
+        "hardwareProfile": {
+          "vmSize": "[parameters('vmSize')]"
+        },
+        "osProfile": {
+          "computername": "[parameters('vmName')]",
+          "adminUsername": "[parameters('adminUsername')]",
+          "adminPassword": "[parameters('adminPassword')]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "[variables('imagePublisher')]",
+            "offer": "[variables('imageOffer')]",
+            "sku": "[variables('imageSku')]",
+            "version": "latest"
+          },
+          "osDisk": {
+            "createOption": "FromImage"
+          },
+          "dataDisks": [
+            {
+              "lun": 1,
+              "createOption": "attach",
+              "managedDisk": {
+                "id": "[resourceId('Microsoft.Compute/disks', concat('datadisk', 0))]"
+              }
+            },
+            {
+              "lun": 2,
+              "createOption": "attach",
+              "managedDisk": {
+                "id": "[resourceId('Microsoft.Compute/disks', concat('datadisk', 1))]"
+              }
+            },
+            {
+              "lun": 3,
+              "createOption": "attach",
+              "managedDisk": {
+                "id": "[resourceId('Microsoft.Compute/disks', concat('datadisk', 2))]"
+              }
+            },
+            {
+              "lun": 4,
+              "createOption": "attach",
+              "managedDisk": {
+                "id": "[resourceId('Microsoft.Compute/disks', concat('datadisk', 3))]"
+              }
+            }
+          ]
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', 'nic')]"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "apiVersion": "[variables('computeApiVersion')]",
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "name": "[concat(parameters('vmName'), '/Installation')]",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [
+        "[concat('Microsoft.Compute/virtualMachines/', parameters('vmName'))]"
+      ],
+      "properties": {
+        "publisher": "Microsoft.Azure.Extensions",
+        "type": "CustomScript",
+        "typeHandlerVersion": "2.0",
+        "autoUpgradeMinorVersion": true,
+        "settings": {
+          "skipDos2Unix": false,
+          "fileUris": [
+            "[variables('installationScriptUrl')]"
+          ],
+          "commandToExecute": "[variables('installationCLI')]"
+        }
+      }
+    }
+  ]
+}

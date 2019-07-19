@@ -3,7 +3,7 @@
 Each environment creates an Azure Files share, but this isn't always sufficient if you have hundreds or thousands of virtual machines in
 your render farm due to the IOPS and throughput required to support these higher numbers of virtual machines.
 
-The Render Farm Manager supports two storage options that target different sized render farms, a File Server (NFS) or Avere vFXT cluster. 
+Render Hub supports two storage options that target different sized render farms, a File Server (NFS) or Avere vFXT cluster. 
 
 # File Server (NFS)
 
