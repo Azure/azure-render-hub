@@ -3,12 +3,18 @@
 using System.Diagnostics;
 
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Identity.Web.Client;
 using WebApp.Models;
 
 namespace WebApp.Controllers
 {
     public class HomeController : ViewBaseController
     {
+        public HomeController(ITokenAcquisition tokenAcquisition) : base (tokenAcquisition)
+        {
+
+        }
+
         [HttpGet]
         public IActionResult Index()
         {

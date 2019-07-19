@@ -32,6 +32,7 @@ using WebApp.CostManagement;
 using Microsoft.AspNetCore.Diagnostics;
 using WebApp.Models;
 using WebApp.Authorization;
+using Microsoft.Identity.Web.Client;
 
 namespace WebApp.Controllers
 {
@@ -63,8 +64,9 @@ namespace WebApp.Controllers
             IAssetRepoCoordinator assetRepoCoordinator,
             StartTaskProvider startTaskProvider,
             ICostCoordinator costCoordinator,
+            ITokenAcquisition tokenAcquisition,
             ILogger<EnvironmentsController> logger)
-            : base(environmentCoordinator, packageCoordinator, assetRepoCoordinator)
+            : base(environmentCoordinator, packageCoordinator, assetRepoCoordinator, tokenAcquisition)
         {
             _configuration = configuration;
             _azureResourceProvider = azureResourceProvider;

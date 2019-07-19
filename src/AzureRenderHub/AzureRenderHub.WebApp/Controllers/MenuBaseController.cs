@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+using Microsoft.Identity.Web.Client;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -19,7 +20,8 @@ namespace WebApp.Controllers
         public MenuBaseController(
             IEnvironmentCoordinator environmentCoordinator,
             IPackageCoordinator packageCoordinator,
-            IAssetRepoCoordinator assetRepoCoordinator)
+            IAssetRepoCoordinator assetRepoCoordinator,
+            ITokenAcquisition tokenAcquisition) : base(tokenAcquisition)
         {
             _packageCoordinator = packageCoordinator;
             _environmentCoordinator = environmentCoordinator;

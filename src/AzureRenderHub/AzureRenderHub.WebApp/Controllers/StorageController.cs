@@ -10,6 +10,7 @@ using Microsoft.Azure.Management.Compute.Models;
 using Microsoft.Azure.Management.Network;
 using Microsoft.Azure.Management.ResourceManager;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Identity.Web.Client;
 using Microsoft.Rest.Azure;
 using WebApp.Arm;
 using WebApp.Code.Attributes;
@@ -31,14 +32,18 @@ namespace WebApp.Controllers
         private readonly IManagementClientProvider _managementClientProvider;
         private readonly IAzureResourceProvider _azureResourceProvider;
 
-
         public StorageController(
             IConfiguration configuration,
             IManagementClientProvider managementClientProvider,
             IAssetRepoCoordinator assetRepoCoordinator,
             IEnvironmentCoordinator environmentCoordinator,
             IPackageCoordinator packageCoordinator,
-            IAzureResourceProvider azureResourceProvider) : base(environmentCoordinator, packageCoordinator, assetRepoCoordinator)
+            IAzureResourceProvider azureResourceProvider,
+            ITokenAcquisition tokenAcquisition) : base(
+                environmentCoordinator,
+                packageCoordinator, 
+                assetRepoCoordinator,
+                tokenAcquisition)
         {
             _configuration = configuration;
             _azureResourceProvider = azureResourceProvider;
@@ -353,7 +358,7 @@ namespace WebApp.Controllers
             }
 
             // validate the resource group doesn't exist
-            var client = await GetResourceClient(model.SubscriptionId.ToString());
+            var client = await _managementClientProvider.CreateResourceManagementClient(model.SubscriptionId.Value);
             if (!await ValidateResourceGroup(client, model.NewResourceGroupName))
             {
                 return View("Create/Step2Avere", model);

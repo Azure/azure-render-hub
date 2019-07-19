@@ -16,6 +16,10 @@ namespace WebApp.Tests.Fakes
 {
     class FakeAzureResourceProvider : IAzureResourceProvider
     {
+        public FakeAzureResourceProvider()
+        {
+        }
+
         public Task AddReaderIdentityToAccessPolicies(Guid subscriptionId, KeyVault keyVault, ServicePrincipal identity)
         {
             throw new NotImplementedException();

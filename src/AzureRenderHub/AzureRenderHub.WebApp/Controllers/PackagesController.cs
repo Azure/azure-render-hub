@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Identity.Web.Client;
 using Microsoft.WindowsAzure.Storage.Blob;
 using WebApp.Code;
 using WebApp.Code.Attributes;
@@ -27,7 +28,12 @@ namespace WebApp.Controllers
             CloudBlobClient cloudBlobClient,
             IEnvironmentCoordinator environmentCoordinator,
             IPackageCoordinator packageCoordinator,
-            IAssetRepoCoordinator assetRepoCoordinator) : base(environmentCoordinator, packageCoordinator, assetRepoCoordinator)
+            IAssetRepoCoordinator assetRepoCoordinator,
+            ITokenAcquisition tokenAcquisition) : base(
+                environmentCoordinator, 
+                packageCoordinator, 
+                assetRepoCoordinator,
+                tokenAcquisition)
         {
             _blobClient = cloudBlobClient;
             _packageCoordinator = packageCoordinator;

@@ -5,6 +5,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Identity.Web.Client;
 using WebApp.Code.Attributes;
 using WebApp.Code.Contract;
 using WebApp.CostManagement;
@@ -22,8 +23,9 @@ namespace WebApp.Controllers
             IEnvironmentCoordinator environmentCoordinator,
             IPackageCoordinator packageCoordinator,
             IAssetRepoCoordinator assetRepoCoordinator,
-            ICostCoordinator costCoordinator)
-            : base(environmentCoordinator, packageCoordinator, assetRepoCoordinator)
+            ICostCoordinator costCoordinator,
+            ITokenAcquisition tokenAcquisition)
+            : base(environmentCoordinator, packageCoordinator, assetRepoCoordinator, tokenAcquisition)
         {
             _costCoordinator = costCoordinator;
         }

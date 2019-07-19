@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Azure.Management.Batch.Models;
+using Microsoft.Identity.Web.Client;
 using Microsoft.Rest.Azure;
 using TaskTupleAwaiter;
 using WebApp.AppInsights.PoolUsage;
@@ -43,7 +44,12 @@ namespace WebApp.Controllers
             IPackageCoordinator packageCoordinator,
             IAssetRepoCoordinator assetRepoCoordinator,
             IPoolUsageProvider poolUsageProvider,
-            StartTaskProvider startTaskProvider) : base(environmentCoordinator, packageCoordinator, assetRepoCoordinator)
+            ITokenAcquisition tokenAcquisition,
+            StartTaskProvider startTaskProvider) : base(
+                environmentCoordinator, 
+                packageCoordinator, 
+                assetRepoCoordinator,
+                tokenAcquisition)
         {
             _poolCoordinator = poolCoordinator;
             _vmSizes = vmSizes;

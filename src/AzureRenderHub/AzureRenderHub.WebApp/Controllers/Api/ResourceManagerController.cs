@@ -19,6 +19,7 @@ using Microsoft.Azure.Management.ResourceManager.Models;
 using Microsoft.Azure.Management.Storage;
 using Microsoft.Azure.Management.Storage.Models;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Identity.Web.Client;
 using Microsoft.Rest;
 using WebApp.Code;
 using WebApp.Code.Extensions;
@@ -30,7 +31,9 @@ namespace WebApp.Controllers.Api
     {
         private readonly IConfiguration _configuration;
 
-        public ResourceManagerController(IConfiguration configuration)
+        public ResourceManagerController(
+            IConfiguration configuration,
+            ITokenAcquisition tokenAcquisition) : base(tokenAcquisition)
         {
             _configuration = configuration;
         }

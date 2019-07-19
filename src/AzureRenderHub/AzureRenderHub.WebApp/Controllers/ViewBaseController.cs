@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Azure.Management.Network;
 using Microsoft.Azure.Management.ResourceManager;
+using Microsoft.Identity.Web.Client;
 using Microsoft.Rest;
 using Microsoft.Rest.Azure;
 using WebApp.Code.Attributes;
@@ -15,25 +16,11 @@ namespace WebApp.Controllers
     [RequireConfig]
     public class ViewBaseController : BaseController
     {
-        protected async Task<TokenCredentials> GetTokenCredentials()
+        public ViewBaseController(ITokenAcquisition tokenAcquisition) : base(tokenAcquisition)
         {
-            var accessToken = await GetAccessToken();
-            return new TokenCredentials(accessToken);
         }
 
-        protected async Task<ResourceManagementClient> GetResourceClient(string subscriptionId)
-        {
-            var token = await GetTokenCredentials();
-            return new ResourceManagementClient(token) { SubscriptionId = subscriptionId };
-        }
-
-        protected async Task<NetworkManagementClient> GetNetworkManagementClient(string subscriptionId)
-        {
-            var token = await GetTokenCredentials();
-            return new NetworkManagementClient(token) { SubscriptionId = subscriptionId };
-        }
-
-        protected async Task<bool> ValidateResourceGroup(ResourceManagementClient client, string rgName)
+        protected async Task<bool> ValidateResourceGroup(IResourceManagementClient client, string rgName)
         {
             try
             {

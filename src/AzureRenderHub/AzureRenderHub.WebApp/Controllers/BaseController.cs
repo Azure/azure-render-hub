@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Identity.Web.Client;
 
 namespace WebApp.Controllers
 {
@@ -13,6 +15,18 @@ namespace WebApp.Controllers
     [AutoValidateAntiforgeryToken]
     public class BaseController : Controller
     {
-        protected Task<string> GetAccessToken() => HttpContext.GetTokenAsync("access_token");
+        private readonly ITokenAcquisition _tokenAcquisition;
+
+        public BaseController(ITokenAcquisition tokenAcquisition)
+        {
+            _tokenAcquisition = tokenAcquisition;
+        }
+
+        protected async Task<string> GetAccessToken(string scope = "https://management.azure.com/user_impersonation")
+        {
+            return await _tokenAcquisition.GetAccessTokenOnBehalfOfUser(
+                HttpContext,
+                new[] { scope });
+        }
     }
 }
