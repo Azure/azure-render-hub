@@ -1,14 +1,14 @@
-# Deploying the Portal
+# Deploying Azure Render Hub
 
 Before you deploy the portal you'll need to create an Azure Active Directory (AAD) application.  You can create the application via the Azure Cloud Shell [here](https://shell.azure.com/powershell).
 
 ## Create an Azure AD Application
 
-The AAD application is used by the portal to authenticate the user and request consent for the portal to access Azure resources as the user.  Creating the AAD application via the Azure portal will enable the application as an 'Enterprise Application' which means you can restrict portal access to specific users.  This is recommended, otherwise all users in your AAD organization will have access to the portal.
+The AAD application is used by Render Hub to authenticate the user and request consent for the portal to access Azure resources as the user.  Creating the AAD application via the Azure portal will enable the application as an 'Enterprise Application' which means you can restrict portal access to specific users.  This is recommended, otherwise all users in your AAD organization will have access to the portal.
 
-It should be noted that the Render Farm Manager portal uses delegated permissions to access Azure resources as the logged in user.  Therefore, just because a user can login to the portal, does not guarantee they have access to read or create Azure resources within the Azure Subscription.
+It should be noted that the Render Hub portal uses delegated permissions to access Azure resources as the logged in user.  Therefore, just because a user can login to the portal, does not guarantee they have access to read or create Azure resources within the Azure Subscription.
 
-The user deploying the portal and setting up the first environment should ideally have Subscription Administrator or Owner permissions as they will need to have the rights to create resources and assign permissions.
+The user deploying the Render Hub portal and setting up the first environment should ideally have Subscription Administrator or Owner permissions as they will need to have the rights to create resources and assign permissions.
 
 ### Using the Azure Portal
 
@@ -17,7 +17,7 @@ Login to the Azure portal and navigate to the Azure Active Directory application
 #### Create the AAD Application
 
  1. Click New application registration
- 2. Enter an application name, e.g. RenderFarmManager
+ 2. Enter an application name, e.g. AzureRenderHub
  3. For application type select Web app/ API
  4. Enter a sign-on URL - this is the URL of the Web App that you will deploy next.  The URL will be in the format, https://[MyWebAppName].azurewebsites.net.  You must ensure the name is globally unique and has not been used by anyone else.
  5. Click Create
@@ -71,10 +71,10 @@ In the Azure Portal navigate to Azure Active Directory -> Properties.  Note down
 Simply copy the script snippet below, update the $webAppName variable and paste the script below into the cloud shell to create a new AAD application.  Keep in mind the Web App name must be globally unique and be a valid DNS name as it becomes the host in your website's URL, e.g. https://< webAppName >.azurewebsites.net.
 
 ```
-$webAppName = "contosorenderfarmmanager"
+$webAppName = "MyAzureRenderHub"
 
 # Create the application
-$app = az ad app create --display-name $webAppName --identifier-uris http://$webAppName --end-date 2040-12-31 --homepage "https://$webAppName.azurewebsites.net" --reply-urls "https://$webAppName.azurewebsites.net/signin-oidc"
+$app = az ad app create --display-name $webAppName --identifier-uris http://$webAppName --end-date 2040-12-31 --homepage "https://${webAppName}.azurewebsites.net" --reply-urls "https://${webAppName}.azurewebsites.net/signin-oidc"
 
 # Register the Service Principal in the current directory
 az ad sp create --id ($app | ConvertFrom-Json).appId
@@ -99,7 +99,7 @@ $app
 
 Click the following link to start a deployment into your existing Azure subscription.  The required input fields are described in detail below.
 
-<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FAzure%2Fazure-render-farm-manager%2Fmaster%2FTemplates%2FAzureRenderFarmManager.json" target="_blank">
+<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FAzure%2Fazure-render-hub%2Fmaster%2FTemplates%2FAzureRenderHub.json" target="_blank">
    <img alt="Deploy to Azure" src="http://azuredeploy.net/deploybutton.png"/>
 </a>
 

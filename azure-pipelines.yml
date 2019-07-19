@@ -11,7 +11,7 @@ pool:
 
 variables:
   buildConfiguration: 'Release'
-  slnFile: 'src/AzureRenderManager/AzureRenderManager.sln'
+  slnFile: 'src/AzureRenderHub/AzureRenderHub.sln'
 
 steps:
 - script: dotnet build --configuration $(buildConfiguration) $(slnFile)
