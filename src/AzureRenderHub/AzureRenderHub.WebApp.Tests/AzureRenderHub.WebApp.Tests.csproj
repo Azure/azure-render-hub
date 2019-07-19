@@ -15,7 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\WebApp\WebApp.csproj" />
+    <ProjectReference Include="..\AzureRenderHub.WebApp\AzureRenderHub.WebApp.csproj" />
   </ItemGroup>
 
 
