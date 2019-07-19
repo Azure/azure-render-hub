@@ -132,7 +132,7 @@ namespace Microsoft.Identity.Web
         private static Task SetIncarnationCacheKey(CookieSigningInContext context)
         {
             var cache = context.HttpContext.RequestServices.GetRequiredService<IMemoryCache>();
-            var cacheKey = CacheKey(GetObjectId(context.Principal.Claims));
+            var cacheKey = CacheKey(context.Principal);
             if (!cache.TryGetValue(cacheKey, out var value))
             {
                 // Set a user specific key to indicate they have logged in during this
@@ -149,7 +149,7 @@ namespace Microsoft.Identity.Web
             // they don't have a refresh token in the TokenCache so we
             // need to force a login by rejecting the principal.
             var cache = context.HttpContext.RequestServices.GetRequiredService<IMemoryCache>();
-            if (!cache.TryGetValue(CacheKey(GetObjectId(context.Principal.Claims)), out string value))
+            if (!cache.TryGetValue(CacheKey(context.Principal), out string value))
             {
                 context.RejectPrincipal();
             }
@@ -164,15 +164,14 @@ namespace Microsoft.Identity.Web
             return Task.CompletedTask;
         }
 
-        private static string GetObjectId(IEnumerable<Claim> claims)
+        private static string CacheKey(ClaimsPrincipal claimsPrincipal)
         {
-            return claims.FirstOrDefault(
-                c => c.Type == "http://schemas.microsoft.com/identity/claims/objectidentifier")?.Value;
-        }
-
-        private static string CacheKey(string objectId)
-        {
-            return $"{IncarnationKeyPrefix}{objectId}";
+            string accountIdentifier = claimsPrincipal.GetMsalAccountId();
+            if (accountIdentifier == null)
+            {
+                accountIdentifier = claimsPrincipal.GetLoginHint();
+            }
+            return $"{IncarnationKeyPrefix}{accountIdentifier}";
         }
 
         /// <summary>
