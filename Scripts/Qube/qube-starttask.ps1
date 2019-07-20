@@ -147,5 +147,5 @@ if ($service)
 if ($env:APP_INSIGHTS_APP_ID -and $env:APP_INSIGHTS_INSTRUMENTATION_KEY)
 {
     # Install Batch Insights
-    iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/Azure/batch-insights/master/scripts/run-windows.ps1')) | Out-File batchinsights.log
+    iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/Azure/batch-insights/v1.2.0/scripts/run-windows.ps1')) | Out-File batchinsights.log
 }
