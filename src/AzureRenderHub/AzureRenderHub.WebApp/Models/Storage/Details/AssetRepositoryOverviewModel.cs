@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using AzureRenderHub.WebApp.Arm.Deploying;
+using AzureRenderHub.WebApp.Config.Storage;
 using System;
 using WebApp.Config.Storage;
 
@@ -47,10 +49,9 @@ namespace WebApp.Models.Storage.Details
 
         public string DeploymentName { get; set; }
 
-        public string DeploymentUrl =>
-            $"https://portal.azure.com/#resource/subscriptions/{SubscriptionId}/resourceGroups/{ResourceGroupName}/deployments";
+        public string DeploymentUrl { get; set; }
 
-        public abstract ProvisioningState ProvisioningState { get; set; }
+        public StorageState State { get; set; }
 
         public abstract string PowerStatus { get; set; }
 

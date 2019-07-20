@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+using AzureRenderHub.WebApp.Arm.Deploying;
 using System.Collections.Generic;
 using WebApp.Config.Storage;
 
@@ -25,9 +26,10 @@ namespace WebApp.Models.Storage.Details
                 PublicIp = fileServer.PublicIp;
                 PrivateIp = fileServer.PrivateIp;
                 VmSize = fileServer.VmSize;
-                ProvisioningState = fileServer.ProvisioningState;
+                State = fileServer.State;
                 ResourceGroupName = fileServer.ResourceGroupName;
-                DeploymentName = fileServer.DeploymentName;
+                DeploymentName = fileServer.Deployment?.DeploymentName;
+                DeploymentUrl = fileServer.Deployment?.DeploymentLink;
                 FileShares = fileServer.FileShares;
                 AllowedNetworks = fileServer.AllowedNetworks;
 
@@ -48,8 +50,6 @@ namespace WebApp.Models.Storage.Details
         public List<string> AllowedNetworks { get; set; }
 
         // overrides
-        public override ProvisioningState ProvisioningState { get; set; }
-
         public override string PowerStatus { get; set; }
 
         public override string DisplayName => "File Server";

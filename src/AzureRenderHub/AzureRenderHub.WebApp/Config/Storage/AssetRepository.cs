@@ -3,6 +3,8 @@
 
 using System;
 using System.Collections.Generic;
+using AzureRenderHub.WebApp.Arm.Deploying;
+using AzureRenderHub.WebApp.Config.Storage;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using WebApp.Models;
@@ -24,17 +26,13 @@ namespace WebApp.Config.Storage
         public Subnet Subnet { get; set; }
 
         [JsonConverter(typeof(StringEnumConverter))]
-        public ProvisioningState ProvisioningState { get; set; }
+        public StorageState State { get; set; }
 
         public string ResourceGroupName { get; set; }
 
         public string ResourceGroupResourceId => $"/subscriptions/{SubscriptionId}/resourceGroups/{ResourceGroupName}";
 
-        public string DeploymentName { get; set; }
-
-        public string DeploymentResourceId => $"https://ms.portal.azure.com/#blade/HubsExtension/DeploymentDetailsBlade/overview/id/%2Fsubscriptions%2F82acd5bb-4206-47d4-9c12-a65db028483d%2FresourceGroups%2FAvere-christis-3%2Fproviders%2FMicrosoft.Resources%2Fdeployments%2FAvere-dd55fa6e-184e-4130-acf0-1772c3af298d";
-
-        public string DeploymentLink => $"https://ms.portal.azure.com/#blade/HubsExtension/DeploymentDetailsBlade/overview/id/%2Fsubscriptions%2F82acd5bb-4206-47d4-9c12-a65db028483d%2FresourceGroups%2FAvere-christis-3%2Fproviders%2FMicrosoft.Resources%2Fdeployments%2FAvere-dd55fa6e-184e-4130-acf0-1772c3af298d";
+        public Deployment Deployment { get; set; }
 
         public bool InProgress { get; set; }
 
@@ -57,15 +55,5 @@ namespace WebApp.Config.Storage
 
         public bool Enabled => !InProgress;
         // end ISubMenuItem
-    }
-
-    public enum ProvisioningState
-    {
-        Unknown,
-        Creating, // Config creted, not deploying yet
-        Running, // ARM deployment
-        Succeeded, // Deployed and ready
-        Failed, // Something failed in the deployment
-        Deleting // Deleting
     }
 }

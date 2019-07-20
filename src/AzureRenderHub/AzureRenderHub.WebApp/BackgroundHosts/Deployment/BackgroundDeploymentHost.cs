@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using AzureRenderHub.WebApp.Arm.Deploying;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Rest.Azure;
@@ -90,7 +91,9 @@ namespace WebApp.BackgroundHosts.Deployment
                             break;
                         }
 
-                        deploymentState = await _assetRepoCoordinator.UpdateRepositoryFromDeploymentAsync(fileServer);
+                        await _assetRepoCoordinator.UpdateRepositoryFromDeploymentAsync(fileServer);
+
+                        deploymentState = fileServer.Deployment.ProvisioningState;
 
                         if (deploymentState == ProvisioningState.Running)
                         {

@@ -698,6 +698,8 @@ namespace WebApp.Arm
             var token = new TokenCredentials(accessToken);
             var networkClient = new NetworkManagementClient(token) { SubscriptionId = subscriptionId.ToString() };
 
+
+
             var newSubnet = new Microsoft.Azure.Management.Network.Models.Subnet(name: subnetName, addressPrefix: subnetAddressRange);
             var subnet = await networkClient.Subnets.CreateOrUpdateAsync(resourceGroupName, vnetName, subnetName, newSubnet);
 

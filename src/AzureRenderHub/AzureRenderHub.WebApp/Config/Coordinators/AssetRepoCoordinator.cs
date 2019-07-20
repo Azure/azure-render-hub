@@ -6,6 +6,8 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using AzureRenderHub.WebApp.Arm.Deploying;
+using AzureRenderHub.WebApp.Config.Storage;
 using Microsoft.Azure.Management.Compute;
 using Microsoft.Azure.Management.Network;
 using Microsoft.Azure.Management.ResourceManager;
@@ -106,7 +108,12 @@ namespace WebApp.Config.Coordinators
                     AzureResourceProvider.ContributorRole,
                     _identityProvider.GetPortalManagedServiceIdentity());
 
-                repository.DeploymentName = $"{repository.Name}-{Guid.NewGuid()}";
+                repository.Deployment = new AzureRenderHub.WebApp.Arm.Deploying.Deployment
+                {
+                    DeploymentName = $"{repository.Name}-{Guid.NewGuid()}",
+                    SubscriptionId = repository.SubscriptionId,
+                    ResourceGroupName = repository.ResourceGroupName,
+                };
 
                 await UpdateRepository(repository);
 
@@ -114,89 +121,97 @@ namespace WebApp.Config.Coordinators
             }
         }
 
-        public async Task<ProvisioningState> UpdateRepositoryFromDeploymentAsync(AssetRepository repository)
+        public async Task UpdateRepositoryFromDeploymentAsync(AssetRepository repository)
+        {
+            var deployment = await GetDeploymentAndUpdateState(repository);
+
+            if (repository is NfsFileServer fileServer)
+            {
+                await UpdateFileServerFromDeploymentAsync(deployment, fileServer);
+            }
+            else if (repository is AvereCluster avere)
+            {
+                await UpdateAvereFromDeploymentAsync(deployment, avere);
+            }
+            else
+            {
+                throw new NotSupportedException("Unknown type of repository");
+            }
+
+            await UpdateRepository(repository);
+        }
+
+        private async Task<DeploymentExtended> GetDeploymentAndUpdateState(AssetRepository repository)
         {
             var deployment = await GetDeploymentAsync(repository);
             if (deployment == null)
             {
-                return ProvisioningState.Failed;
-            }
-
-            if (repository is NfsFileServer fileServer)
-            {
-                return await UpdateFileServerFromDeploymentAsync(fileServer);
-            }
-            else if (repository is AvereCluster avere)
-            {
-                return await UpdateAvereFromDeploymentAsync(avere);
-            }
-
-            throw new NotSupportedException("Unknown type of repository");
-        }
-
-        public async Task<ProvisioningState> UpdateFileServerFromDeploymentAsync(NfsFileServer fileServer)
-        {
-            var deployment = await GetDeploymentAsync(fileServer);
-            if (deployment == null)
-            {
-                return ProvisioningState.Failed;
-            }
-
-            string privateIp = null;
-            string publicIp = null;
-
-            Enum.TryParse<ProvisioningState>(deployment.Properties.ProvisioningState, out var deploymentState);
-            if (deploymentState == ProvisioningState.Succeeded)
-            {
-                (privateIp, publicIp) = await GetIpAddressesAsync(fileServer);
-            }
-
-            if (deploymentState == ProvisioningState.Succeeded || deploymentState == ProvisioningState.Failed)
-            {
-                fileServer.ProvisioningState = deploymentState;
-                fileServer.PrivateIp = privateIp;
-                fileServer.PublicIp = publicIp;
-                await UpdateRepository(fileServer);
-            }
-
-            return deploymentState;
-        }
-
-        public async Task<ProvisioningState> UpdateAvereFromDeploymentAsync(AvereCluster avereCluster)
-        {
-            ProvisioningState provisioningState;
-
-            var deployment = await GetDeploymentAsync(avereCluster);
-            if (deployment == null)
-            {
-                provisioningState = ProvisioningState.Failed;
+                repository.Deployment.ProvisioningState = ProvisioningState.Unknown;
+                if (repository.State == StorageState.Creating)
+                {
+                    // Deployment is gone, but storage never finished deploying (that we know).
+                    repository.State = StorageState.Failed;
+                }
             }
             else
             {
-                Enum.TryParse<ProvisioningState>(deployment.Properties.ProvisioningState, out provisioningState);
-                if (provisioningState == ProvisioningState.Succeeded)
+                Enum.TryParse<ProvisioningState>(deployment.Properties.ProvisioningState, out var deploymentState);
+
+                repository.Deployment.ProvisioningState = deploymentState;
+
+                if (deploymentState == ProvisioningState.Succeeded)
                 {
-                    avereCluster.ProvisioningState = provisioningState;
-                    if (deployment.Properties.Outputs != null)
-                    {
-                        var outputs = deployment.Properties.Outputs as JObject;
-                        avereCluster.SshConnectionDetails = (string)outputs["ssh_string"]?["value"];
-                        avereCluster.ManagementIP = (string)outputs["mgmt_ip"]?["value"];
-                        avereCluster.VServerIPRange = (string)outputs["vserver_ips"]?["value"];
-                    }
+                    repository.State = StorageState.Ready;
+                }
+
+                if (deploymentState == ProvisioningState.Failed)
+                {
+                    repository.State = StorageState.Failed;
                 }
             }
 
-            avereCluster.ProvisioningState = provisioningState;
+            return deployment;
+        }
 
-            await UpdateRepository(avereCluster);
+        private async Task UpdateFileServerFromDeploymentAsync(
+            DeploymentExtended deployment, 
+            NfsFileServer fileServer)
+        {
+            if (fileServer.Deployment.ProvisioningState == ProvisioningState.Succeeded)
+            {
+                var (privateIp, publicIp) = await GetIpAddressesAsync(fileServer);
+                fileServer.PrivateIp = privateIp;
+                fileServer.PublicIp = publicIp;
+            }
 
-            return provisioningState;
+            if (fileServer.Deployment.ProvisioningState == ProvisioningState.Failed)
+            {
+                fileServer.State = StorageState.Failed;
+            }
+        }
+
+        private async Task UpdateAvereFromDeploymentAsync(
+            DeploymentExtended deployment, 
+            AvereCluster avereCluster)
+        {
+            await Task.CompletedTask;
+
+            if (avereCluster.Deployment.ProvisioningState == ProvisioningState.Succeeded)
+            {
+                if (deployment.Properties.Outputs != null)
+                {
+                    var outputs = deployment.Properties.Outputs as JObject;
+                    avereCluster.SshConnectionDetails = (string)outputs["ssh_string"]?["value"];
+                    avereCluster.ManagementIP = (string)outputs["mgmt_ip"]?["value"];
+                    avereCluster.VServerIPRange = (string)outputs["vserver_ips"]?["value"];
+                }
+            }
         }
 
         public async Task BeginDeleteRepositoryAsync(AssetRepository repository)
         {
-            repository.ProvisioningState = ProvisioningState.Deleting;
+            // TODO: Set the storage state to deleting, NOT deployment
+            //repository.ProvisioningState = ProvisioningState.Deleting;
             await UpdateRepository(repository);
             await _deploymentQueue.Add(new ActiveDeployment
             {
@@ -334,7 +349,7 @@ namespace WebApp.Config.Coordinators
                 {
                     return await resourceClient.Deployments.GetAsync(
                         assetRepo.ResourceGroupName,
-                        assetRepo.DeploymentName);
+                        assetRepo.Deployment.DeploymentName);
                 }
                 catch (CloudException e)
                 {
@@ -359,7 +374,7 @@ namespace WebApp.Config.Coordinators
 
                     var templateParams = repository.GetTemplateParameters();
 
-                    var properties = new Deployment
+                    var properties = new Microsoft.Azure.Management.ResourceManager.Models.Deployment
                     {
                         Properties = new DeploymentProperties
                         {
@@ -371,8 +386,8 @@ namespace WebApp.Config.Coordinators
 
                     // Start the ARM deployment
                     await client.Deployments.BeginCreateOrUpdateAsync(
-                        repository.ResourceGroupName,
-                        repository.DeploymentName,
+                        repository.Deployment.ResourceGroupName,
+                        repository.Deployment.DeploymentName,
                         properties);
 
                     // TODO re-enable below for background monitoring.
@@ -384,7 +399,7 @@ namespace WebApp.Config.Coordinators
                     //    StartTime = DateTime.UtcNow,
                     //});
 
-                    repository.ProvisioningState = ProvisioningState.Running;
+                    repository.State = StorageState.Creating;
                     repository.InProgress = false;
 
                     await UpdateRepository(repository);

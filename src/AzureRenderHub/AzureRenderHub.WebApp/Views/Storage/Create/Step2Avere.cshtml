@@ -48,7 +48,7 @@
                         </div>
                     </div>
 
-                    <div id="CreateSubnetSection" hidden="@(!Model.CreateSubnet)">
+                    <div id="CreateSubnetSection" hidden="@(Model.CreateSubnet ? "" : "hidden")">
 
                         <hr class="form-element" />
 
@@ -77,7 +77,7 @@
                         </div>
                     </div>
 
-                    <div id="UseExistingSubnetSection" hidden="@(Model.CreateSubnet)">
+                    <div id="UseExistingSubnetSection" hidden="@(Model.CreateSubnet ? "hidden" : "")">
                         <div class="form-element">
                             <label asp-for="ExistingSubnetName">Subnet Name</label>
                             <input asp-for="ExistingSubnetName" readonly="readonly" />

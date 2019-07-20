@@ -4,6 +4,7 @@ using System;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using AzureRenderHub.WebApp.Arm.Deploying;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Management.Compute;
 using Microsoft.Azure.Management.Compute.Models;
@@ -31,6 +32,7 @@ namespace WebApp.Controllers
         private readonly IConfiguration _configuration;
         private readonly IManagementClientProvider _managementClientProvider;
         private readonly IAzureResourceProvider _azureResourceProvider;
+        private readonly IDeploymentCoordinator _deploymentCoordinator;
 
         public StorageController(
             IConfiguration configuration,
@@ -39,6 +41,7 @@ namespace WebApp.Controllers
             IEnvironmentCoordinator environmentCoordinator,
             IPackageCoordinator packageCoordinator,
             IAzureResourceProvider azureResourceProvider,
+            IDeploymentCoordinator deploymentCoordinator,
             ITokenAcquisition tokenAcquisition) : base(
                 environmentCoordinator,
                 packageCoordinator, 
@@ -48,6 +51,7 @@ namespace WebApp.Controllers
             _configuration = configuration;
             _azureResourceProvider = azureResourceProvider;
             _managementClientProvider = managementClientProvider;
+            _deploymentCoordinator = deploymentCoordinator;
         }
 
         [HttpGet]
@@ -82,14 +86,9 @@ namespace WebApp.Controllers
                 return RedirectToAction("Index");
             }
 
-            var state = await _assetRepoCoordinator.UpdateRepositoryFromDeploymentAsync(repo);
+            await _assetRepoCoordinator.UpdateRepositoryFromDeploymentAsync(repo);
 
-            if (repo.ProvisioningState != state)
-            {
-                repo = await _assetRepoCoordinator.GetRepository(repoId);
-            }
-
-            if (repo.ProvisioningState == ProvisioningState.Succeeded)
+            if (repo.State == AzureRenderHub.WebApp.Config.Storage.StorageState.Ready)
             {
                 return RedirectToAction("Overview", new { repoId });
             }
@@ -106,11 +105,10 @@ namespace WebApp.Controllers
             var repo = await _assetRepoCoordinator.GetRepository(repoId);
             if (repo == null)
             {
-                return RedirectToAction("Step1", new { repoId });
+                return RedirectToAction("Index");
             }
 
-            if (repo.ProvisioningState != ProvisioningState.Creating &&
-                repo.ProvisioningState != ProvisioningState.Succeeded)
+            if (repo.State == AzureRenderHub.WebApp.Config.Storage.StorageState.Creating)
             {
                 return RedirectToAction("Deploying", new { repoId });
             }
@@ -446,17 +444,25 @@ namespace WebApp.Controllers
 
                 if (model.CreateSubnet)
                 {
-                    await _azureResourceProvider.CreateSubnetAsync(
-                        repository.Subnet.SubscriptionId,
+                    var deploymentSpec = new Deployment(
+                        repository.SubscriptionId,
                         repository.Subnet.Location,
-                        repository.Subnet.ResourceGroupName,
+                        repository.ResourceGroupName,
+                        $"subnet-{Guid.NewGuid()}");
+                    var subnetDeployment = new SubnetDeployment(
+                        deploymentSpec,
                         repository.Subnet.VNetName,
                         repository.Subnet.Name,
-                        repository.Subnet.VNetAddressPrefixes,
-                        repository.Subnet.AddressPrefix,
-                        repository.EnvironmentName ?? "Global");
+                        repository.Subnet.AddressPrefix);
 
-                    // TODO: Create service endpoint
+                    await _deploymentCoordinator.BeginDeploymentAsync(subnetDeployment);
+
+                    var deploymentStatus = await _deploymentCoordinator.WaitForCompletionAsync(subnetDeployment);
+
+                    if (deploymentStatus.ProvisioningState != ProvisioningState.Succeeded)
+                    {
+                        throw new Exception($"Subnet deployment {deploymentSpec.DeploymentName} failed with error {deploymentStatus.Error}");
+                    }
                 }
 
                 await _assetRepoCoordinator.BeginRepositoryDeploymentAsync(repository);
