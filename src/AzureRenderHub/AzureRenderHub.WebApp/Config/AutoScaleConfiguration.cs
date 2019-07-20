@@ -16,6 +16,7 @@ namespace WebApp.Config
         {
             Policy = AutoScalePolicy.Disabled;
             MaxIdleCpuPercent = DefaultIdlePercent;
+            MaxIdleGpuPercent = DefaultIdlePercent;
         }
 
         public AutoScalePolicy Policy { get; set; }

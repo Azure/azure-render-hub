@@ -146,14 +146,14 @@ namespace WebApp.BackgroundHosts.AutoScale
                     {
                         activeNodeByCpuNames = poolNodeCpuAndProcessEvents.Where(an =>
                                 !an.TrackedProcess && // Grab nodes with CPU usage (not whitelisted)
-                                an.CpuPercent >=
+                                an.CpuPercent >
                                 environment.AutoScaleConfiguration.MaxIdleCpuPercent) // Over the idle CPU % limit
                             .Select(an => an.ComputeNodeName)
                             .ToHashSet();
 
                         activeNodeByGpuNames = poolNodeCpuAndProcessEvents.Where(an =>
                                 !an.TrackedProcess && // Grab nodes with GPU usage (not whitelisted)
-                                an.GpuPercent >=
+                                an.GpuPercent >
                                 environment.AutoScaleConfiguration.MaxIdleGpuPercent) // Over the idle GPU % limit
                             .Select(an => an.ComputeNodeName)
                             .ToHashSet();
