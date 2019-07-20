@@ -392,11 +392,17 @@ namespace WebApp.Config.Pools
                 startTask.ResourceFiles.Add(resourceFile);
                 startTask.CommandLine += $".\\{resourceFile.FilePath} " +
                                          $"-domainName {environment.Domain.DomainName} " +
-                                         $"-domainOuPath {environment.Domain.DomainWorkerOuPath} " +
                                          $"-tenantId {environment.KeyVaultServicePrincipal.TenantId} " +
                                          $"-applicationId {environment.KeyVaultServicePrincipal.ApplicationId} " +
                                          $"-keyVaultCertificateThumbprint {environment.KeyVaultServicePrincipal.Thumbprint} " +
-                                         $"-keyVaultName {environment.KeyVault.Name};";
+                                         $"-keyVaultName {environment.KeyVault.Name}";
+
+                if (!string.IsNullOrWhiteSpace(environment.Domain.DomainWorkerOuPath))
+                {
+                    startTask.CommandLine += $" -domainOuPath {environment.Domain.DomainWorkerOuPath} ";
+                }
+
+                startTask.CommandLine += ";";
             }
         }
 
