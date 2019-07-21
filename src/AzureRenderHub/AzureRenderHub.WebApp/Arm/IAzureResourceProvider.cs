@@ -125,24 +125,13 @@ namespace WebApp.Arm
             string resourceGroupName,
             string vnetName,
             string subnetName,
-            string vnetAddressSpace,
             string subnetAddressRange,
             string environmentName);
 
-        Task CreateSubnetServiceEndpointAsync(
-            Guid subscriptionId,
-            string location,
-            string resourceGroupName,
-            string vnetName,
-            string subnetName,
-            string service);
-
-        Task<Subnet> GetVnetAsync(Guid subscriptionId, string location, string resourceGroupName, string vnetName, string subnetName);
+        Task<Subnet> GetSubnetAsync(Guid subscriptionId, string location, string resourceGroupName, string vnetName, string subnetName);
 
         Task DeleteVNetAsync(Guid subscriptionId, string resourceGroupName, string vnetName);
-
-        Task<List<AzureSubnet>> GetSubnets(Guid subscriptionId, string location = null);
-
+        
         Task<List<UserPermission>> GetUserPermissions(Guid subscriptionId, string scope);
 
         Task AssignRoleToIdentityAsync(Guid subscriptionId, string resourceId, string role, Identity.Identity identity);

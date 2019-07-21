@@ -226,6 +226,8 @@ namespace WebApp.Controllers
 
             try
             {
+                repository.State = AzureRenderHub.WebApp.Config.Storage.StorageState.Creating;
+                repository.InProgress = true;
                 repository.Name = model.RepositoryName;
                 repository.ResourceGroupName = model.RepositoryName;
                 repository.RepositoryType = model.RepositoryType;
@@ -233,12 +235,20 @@ namespace WebApp.Controllers
                 repository.EnvironmentName = null;
                 if (model.UseEnvironment)
                 {
-                    var subnets = await _azureResourceProvider.GetSubnets(environment.SubscriptionId);
-                    var subnet = subnets.FirstOrDefault(s => s.Id.Equals(environment.Subnet.ResourceId, StringComparison.InvariantCultureIgnoreCase));
+                    var subnet = await _azureResourceProvider.GetSubnetAsync(
+                        environment.SubscriptionId, 
+                        environment.Subnet.Location,
+                        environment.Subnet.ResourceGroupName,
+                        environment.Subnet.VNetName,
+                        environment.Subnet.Name);
+
+                    if (subnet == null)
+                    {
+                        throw new Exception($"Subnet with resource Id {environment.Subnet.ResourceId} was not found in Subscription {environment.SubscriptionId}");
+                    }
 
                     repository.EnvironmentName = model.SelectedEnvironmentName;
-                    repository.Subnet = environment.Subnet;
-                    repository.Subnet.VNetAddressPrefixes = subnet?.VNetAddressPrefixes;
+                    repository.Subnet = subnet;
                 }
                 else
                 {
@@ -444,11 +454,25 @@ namespace WebApp.Controllers
 
                 if (model.CreateSubnet)
                 {
+                    // We create the subnet here, it's faster and we get an immediate failure
+                    // if there's validation or permission issues.
+                    repository.Subnet = await _azureResourceProvider.CreateSubnetAsync(
+                        repository.Subnet.SubscriptionId,
+                        repository.Subnet.Location,
+                        repository.Subnet.ResourceGroupName,
+                        repository.Subnet.VNetName,
+                        repository.Subnet.AddressPrefix,
+                        repository.Subnet.AddressPrefix,
+                        repository.EnvironmentName);
+
+                    // Here we update the subnet we just created with 
+                    // Storage service endpoints, required for Avere.
                     var deploymentSpec = new Deployment(
                         repository.SubscriptionId,
                         repository.Subnet.Location,
                         repository.ResourceGroupName,
                         $"subnet-{Guid.NewGuid()}");
+
                     var subnetDeployment = new SubnetDeployment(
                         deploymentSpec,
                         repository.Subnet.VNetName,

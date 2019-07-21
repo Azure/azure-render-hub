@@ -210,8 +210,7 @@ namespace WebApp.Config.Coordinators
 
         public async Task BeginDeleteRepositoryAsync(AssetRepository repository)
         {
-            // TODO: Set the storage state to deleting, NOT deployment
-            //repository.ProvisioningState = ProvisioningState.Deleting;
+            repository.State = StorageState.Deleting;
             await UpdateRepository(repository);
             await _deploymentQueue.Add(new ActiveDeployment
             {
@@ -343,6 +342,11 @@ namespace WebApp.Config.Coordinators
 
         private async Task<DeploymentExtended> GetDeploymentAsync(AssetRepository assetRepo)
         {
+            if (assetRepo?.Deployment == null || assetRepo.ResourceGroupName == null)
+            {
+                return null;
+            }
+
             using (var resourceClient = await _clientProvider.CreateResourceManagementClient(assetRepo.SubscriptionId))
             {
                 try

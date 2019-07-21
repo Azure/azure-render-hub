@@ -124,7 +124,7 @@ namespace WebApp.Tests.Fakes
             return Task.FromResult(UserPermissions.Where(p => p.Scope == scope || scope.Contains(p.Scope)).ToList());
         }
 
-        public Task<Subnet> GetVnetAsync(Guid subscriptionId, string location, string resourceGroupName, string vnetName, string subnetName)
+        public Task<Subnet> GetSubnetAsync(Guid subscriptionId, string location, string resourceGroupName, string vnetName, string subnetName)
         {
             throw new NotImplementedException();
         }
@@ -156,12 +156,7 @@ namespace WebApp.Tests.Fakes
             throw new NotImplementedException();
         }
 
-        public Task<List<AzureSubnet>> GetSubnets(Guid subscriptionId, string location = null)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<Subnet> CreateSubnetAsync(Guid subscriptionId, string location, string resourceGroupName, string vnetName, string subnetName, string vnetAddressSpace, string subnetAddressRange, string environmentName)
+        public Task<Subnet> CreateSubnetAsync(Guid subscriptionId, string location, string resourceGroupName, string vnetName, string subnetName, string subnetAddressRange, string environmentName)
         {
             throw new NotImplementedException();
         }
