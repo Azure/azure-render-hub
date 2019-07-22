@@ -2,19 +2,19 @@
 
 @if (Model.Cost == null)
 {
-    <h2>@Model.EnvironmentId</h2>
+    <h3>@Model.EnvironmentId</h3>
     <p>Cost management is not supported for this environment.</p>
     return;
 }
 
 @if (!Model.Cost.Categorized.Any())
 {
-    <h2>@Model.EnvironmentId</h2>
+    <h3>@Model.EnvironmentId</h3>
     <p>No cost data is available for this period.</p>
     return;
 }
 
-<h2>@Model.EnvironmentId (@Model.Cost.Total.ToString("F2") @Model.Cost.Currency)</h2>
+<h3>@Model.EnvironmentId (@Model.Cost.Total.ToString("F2") @Model.Cost.Currency)</h3>
 
 @{ 
     var id = Guid.NewGuid().ToString();

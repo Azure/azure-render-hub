@@ -13,6 +13,18 @@ namespace WebApp.Models.Reporting
     /// </summary>
     public sealed class Cost
     {
+        public Cost(
+            QueryTimePeriod period,
+            string currency,
+            IReadOnlyDictionary<string, SortedDictionary<DateTimeOffset, double>> categorized,
+            double total)
+        {
+            Period = period;
+            Currency = currency;
+            Categorized = categorized;
+            Total = total;
+        }
+
         /// <summary>
         /// Merges two usages into one. They must be for the same time period.
         /// </summary>
@@ -47,6 +59,25 @@ namespace WebApp.Models.Reporting
             Currency = left.Currency ?? right.Currency;
             Total = left.Total + right.Total;
             Categorized = MergeData(left.Categorized, right.Categorized);
+        }
+
+        /// <summary>
+        /// Merges all cost categories into one new category.
+        /// </summary>
+        public Cost Recategorize(string categoryName)
+        {
+            var squishedData = new SortedDictionary<DateTimeOffset, double>();
+            foreach (var category in Categorized.Values)
+            {
+                foreach (var kvp in category)
+                {
+                    var existing = squishedData.TryGetValue(kvp.Key, out var currentTotal) ? currentTotal : 0;
+                    squishedData[kvp.Key] = existing + kvp.Value;
+                }
+            }
+
+            var categorized = new Dictionary<string, SortedDictionary<DateTimeOffset, double>> { { categoryName, squishedData } };
+            return new Cost(Period, Currency, categorized, Total);
         }
 
         private static IReadOnlyDictionary<string, SortedDictionary<DateTimeOffset, double>> MergeData(
