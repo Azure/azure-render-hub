@@ -125,6 +125,14 @@ namespace WebApp.Arm
             var result = await authClient.ClassicAdministrators.ListAsync();
             var classicAdmins = result.ToList();
             var user = GetUser();
+
+            _logger.LogWarning($"User {user.Identity.Name}");
+
+            foreach (var claim in user.Claims)
+            {
+                _logger.LogWarning($"Claim type {claim.Type}={claim.Value}");
+            }
+
             var names = user.Identities.Select(i => i.Claims.GetName()).ToList();
             var emails = user.Identities.Select(i => i.Claims.GetEmailAddress()).ToList();
             var upns = user.Identities.Select(i => i.Claims.GetUpn()).ToList();
@@ -140,7 +148,12 @@ namespace WebApp.Arm
 
         private IEnumerable<string> GetClassicAdministratorEmails(List<ClassicAdministrator> admins)
         {
-            return admins.Where(a => a.Role.Contains("ServiceAdministrator") || a.Role.Contains("CoAdministrator")).Select(a => a.EmailAddress);
+            foreach(var admin in admins)
+            {
+                _logger.LogWarning($"Admin email={admin.EmailAddress} Id={admin.Id} Name={admin.Name} Role={admin.Role} Type={admin.Type}");
+            }
+            return admins.Where(a => a.Role.ToLower().Contains("ServiceAdministrator".ToLower())
+                || a.Role.ToLower().Contains("CoAdministrator".ToLower())).Select(a => a.EmailAddress);
         }
 
         public async Task<bool> CanCreateRoleAssignments(
