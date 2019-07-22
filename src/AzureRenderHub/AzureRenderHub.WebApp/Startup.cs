@@ -20,6 +20,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Identity.Web;
 using Microsoft.Identity.Web.Client.TokenCacheProviders;
+using Microsoft.Net.Http.Headers;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Blob;
 using WebApp.AppInsights;
@@ -232,7 +233,34 @@ namespace WebApp
             app.UseExceptionHandler("/Environments/Error");
             app.UseHsts();
             app.UseHttpsRedirection();
-            app.UseStaticFiles();
+
+            // set a longer cacheability for static assets
+            var pathsToCache = new[] { "/css", "/js", "/images", "/lib" };
+            app.UseStaticFiles(
+                new StaticFileOptions
+                {
+                    OnPrepareResponse =
+                        ctx =>
+                        {
+                            var path = ctx.Context.Request.Path;
+                            foreach (var shouldBeCached in pathsToCache)
+                            {
+                                if (path.StartsWithSegments(shouldBeCached))
+                                {
+                                    var headers = ctx.Context.Response.GetTypedHeaders();
+                                    headers.CacheControl =
+                                        new CacheControlHeaderValue
+                                        {
+                                            Public = true,
+                                            MaxAge = TimeSpan.FromDays(30),
+                                        };
+
+                                    break;
+                                }
+                            }
+                        }
+                });
+
             app.UseSession();
             app.UseAuthentication();
 
