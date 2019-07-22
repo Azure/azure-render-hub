@@ -7,6 +7,7 @@ namespace AzureRenderHub.WebApp.Config.Storage
 {
     public enum StorageState
     {
+        Unknown,
         Creating,
         Failed,
         Ready,

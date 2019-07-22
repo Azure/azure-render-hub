@@ -130,6 +130,8 @@ namespace WebApp.Arm
 
         Task<Subnet> GetSubnetAsync(Guid subscriptionId, string location, string resourceGroupName, string vnetName, string subnetName);
 
+        Task<List<Config.Subnet>> GetSubnetsAsync(Guid subscriptionId, string location, string resourceGroupName, string vnetName);
+
         Task DeleteVNetAsync(Guid subscriptionId, string resourceGroupName, string vnetName);
         
         Task<List<UserPermission>> GetUserPermissions(Guid subscriptionId, string scope);

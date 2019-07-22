@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Linq;
 
 namespace WebApp.Config
 {
@@ -20,7 +21,7 @@ namespace WebApp.Config
 
             var tokens = resourceIdLocationAddress.Split(Delimiter);
 
-            if (tokens.Length != 3)
+            if (tokens.Length != 4)
             {
                 throw new ArgumentException("Argument must be in the format ResourceId:Location:AddressPrefix", "resourceIdLocationAddress");
             }
@@ -28,6 +29,7 @@ namespace WebApp.Config
             ResourceId = tokens[0];
             Location = tokens[1];
             AddressPrefix = tokens[2];
+            VNetAddressPrefixes = tokens[3];
         }
 
         public string VnetResourceId {
@@ -73,9 +75,16 @@ namespace WebApp.Config
             }
         }
 
+        public Subnet CreateNewSubnet(string newSubnetName, string newSubnetAddressPrefix)
+        {
+            var tokens = ResourceId.Split('/');
+            var newResourceId = ResourceId.Replace($"/{tokens.Last()}", $"/{newSubnetName}");
+            return new Subnet($"{newResourceId}{Delimiter}{Location}{Delimiter}{newSubnetAddressPrefix}{Delimiter}{VNetAddressPrefixes}");
+        }
+
         public override string ToString()
         {
-            return $"{ResourceId}{Delimiter}{Location}{Delimiter}{AddressPrefix}";
+            return $"{ResourceId}{Delimiter}{Location}{Delimiter}{AddressPrefix}{Delimiter}{VNetAddressPrefixes}";
         }
     }
 }

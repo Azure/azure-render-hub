@@ -23,9 +23,20 @@ namespace WebApp.Models.Storage.Create
         public Subnet Subnet { get; set; }
 
         /// <summary>
-        /// Semi-colon delimited resource id, location and address prefix
+        /// Semi-colon delimited resource id, location, address prefix, VNet address prefix
         /// </summary>
-        public string SubnetResourceIdLocationAndAddressPrefix => Subnet?.ToString();
+        public string SubnetResourceIdLocationAndAddressPrefix
+        {
+            get
+            {
+                return Subnet?.ToString();
+            }
+
+            set
+            {
+                Subnet = new Subnet(value);
+            }
+        }
 
         public bool UseEnvironment { get; set; } = true;
 
@@ -33,7 +44,6 @@ namespace WebApp.Models.Storage.Create
 
         public string SelectedEnvironmentName { get; set; }
 
-        [Required]
         public Guid? SubscriptionId { get; set; }
 
         public string Error { get; set; }

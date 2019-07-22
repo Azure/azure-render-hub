@@ -75,7 +75,7 @@
             <a class="button" asp-action="PowerOperation" asp-route-repoId="@Model.Name" asp-route-operation="start">Start Cluster <i class="fa fa-play"></i></a>
             }
 
-            <a class="button" asp-action="Delete" asp-route-repoId="@Model.Name" onclick="return confirm('Are you sure you want to delete @Model.Name?')">Delete Cluster <i class="fa fa-trash"></i></a>
+            <a class="button" asp-action="Delete" asp-route-repoId="@Model.Name">Delete Cluster <i class="fa fa-trash"></i></a>
         </div>
     </div>
 </div>

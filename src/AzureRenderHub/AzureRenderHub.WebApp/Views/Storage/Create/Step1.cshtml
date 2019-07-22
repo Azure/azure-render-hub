@@ -46,16 +46,6 @@
                     <span asp-validation-for="RepositoryType" class=""></span>
                 </div>
                 <div class="form-element">
-                    <label asp-for="SubscriptionId">Subscription ID</label>
-                    <div id="SubSpinner" class="async-select">
-                        <select id="SubscriptionId" asp-for="SubscriptionId">
-                            <option disabled selected> -- Loading Subscriptions -- </option>
-                        </select>
-                        <i class="fa fa-spinner fa-spin"></i>
-                    </div>
-                    <span asp-validation-for="SubscriptionId" class=""></span>
-                </div>
-                <div class="form-element">
                     <label></label>
                     <div class="form-check">
                         <input id="UseEnvironment" asp-for="UseEnvironment" value="true" type="radio">
@@ -77,6 +67,16 @@
                     </div>
                 </div>
                 <div id="VNetSection" hidden="@Model.UseEnvironment">
+                    <div class="form-element">
+                        <label asp-for="SubscriptionId">Subscription ID</label>
+                        <div id="SubSpinner" class="async-select">
+                            <select id="SubscriptionId" asp-for="SubscriptionId">
+                                <option disabled selected> -- Loading Subscriptions -- </option>
+                            </select>
+                            <i class="fa fa-spinner fa-spin"></i>
+                        </div>
+                        <span asp-validation-for="SubscriptionId" class=""></span>
+                    </div>
                     <div class="form-element">
                         <label asp-for="SubnetResourceIdLocationAndAddressPrefix">VNet and Subnet</label>
                         <div id="SubetSpinner" class="async-select">
@@ -158,8 +158,6 @@
         $(document).ready(function () {
             $("#SubscriptionId").change(function () {
                 var subscription = $("#SubscriptionId :selected").val();
-                // TODO: Remove log
-                console.log("Subscription changed: to " + subscription );
                 loadSubnets(subscription);
             });
 

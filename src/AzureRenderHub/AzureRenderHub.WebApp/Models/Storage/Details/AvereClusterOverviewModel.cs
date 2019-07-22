@@ -13,29 +13,15 @@ namespace WebApp.Models.Storage.Details
             // default constructor needed for model binding
         }
 
-        public AvereClusterOverviewModel(AvereCluster avereCluster)
+        public AvereClusterOverviewModel(AvereCluster avereCluster) : base (avereCluster)
         {
             if (avereCluster != null)
             {
-                Name = avereCluster.Name;
-                RepositoryType = avereCluster.RepositoryType;
-                SubscriptionId = avereCluster.SubscriptionId;
                 VServerIPRange = avereCluster.VServerIPRange;
                 ManagementIP = avereCluster.ManagementIP;
                 SshConnectionDetails = avereCluster.SshConnectionDetails;
-
-                if (avereCluster.Subnet != null)
-                {
-                    SubnetName = avereCluster.Subnet.Name;
-                    SubnetVNetName = avereCluster.Subnet.VNetName;
-                    SubnetResourceId = avereCluster.Subnet.ResourceId;
-                    SubnetPrefix = avereCluster.Subnet.AddressPrefix;
-                    SubnetLocation = avereCluster.Subnet.Location;
-                }
             }
         }
-
-        public ProvisioningState DeploymentState { get; set; }
 
         // overrides
 

@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 using WebApp.Code;
@@ -32,9 +33,9 @@ namespace WebApp.Models.Storage.Create
             ControllerSshKey = cluster.UseControllerPasswordCredential ? null : cluster.ControllerPasswordOrSshKey;
             AdminPassword = cluster.ManagementAdminPassword;
             Subnet = cluster.Subnet;
-            ExistingVNetName = cluster.Subnet?.VNetName;
-            ExistingSubnetName = $"{cluster.Subnet?.VNetName} - {cluster.Subnet?.Name} ({cluster.Subnet?.AddressPrefix})";
-            ExistingSubnetAddressPrefix = cluster.Subnet?.AddressPrefix;
+            SelectedVNetName = cluster.Subnet?.VNetName;
+            SelectedSubnetName = $"{cluster.Subnet?.VNetName} - {cluster.Subnet?.Name} ({cluster.Subnet?.AddressPrefix})";
+            SelectedSubnetAddressPrefix = cluster.Subnet?.AddressPrefix;
             VNetAddressSpace = cluster.Subnet?.VNetAddressPrefixes;
             CreateSubnet = true;
         }
@@ -76,13 +77,15 @@ namespace WebApp.Models.Storage.Create
 
         public bool CreateSubnet { get; set; }
 
-        public string ExistingVNetName { get; set; }
+        public string SelectedVNetName { get; set; }
 
-        public string ExistingSubnetName { get; set; }
+        public string SelectedSubnetName { get; set; }
 
-        public string ExistingSubnetAddressPrefix { get; set; }
+        public string SelectedSubnetAddressPrefix { get; set; }
 
         public string VNetAddressSpace { get; set; }
+
+        public List<Subnet> ExistingSubnets { get; set; }
 
         [RegularExpression(Validation.RegularExpressions.ResourceGroup, ErrorMessage = Validation.Errors.Regex.Subnet)]
         [StringLength(Validation.MaxLength.ResourceGroupName)]

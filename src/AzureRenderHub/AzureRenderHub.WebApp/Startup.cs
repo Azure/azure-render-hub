@@ -6,6 +6,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using AzureRenderHub.WebApp.Arm.Deploying;
+using AzureRenderHub.WebApp.Providers.Logs;
 using Microsoft.AspNetCore.Authentication.AzureAD.UI;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
@@ -125,6 +126,7 @@ namespace WebApp
 
 
             // These are scoped as they use the credentials of the user:
+            services.AddScoped<ILogProvider, LogProvider>();
             services.AddScoped<IAzureResourceProvider, AzureResourceProvider>();
             services.AddScoped<IDeploymentCoordinator, DeploymentCoordinator>();
             services.AddScoped<AuthorizationManager>();

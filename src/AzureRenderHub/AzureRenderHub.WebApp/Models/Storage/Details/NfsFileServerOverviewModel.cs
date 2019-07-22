@@ -13,34 +13,18 @@ namespace WebApp.Models.Storage.Details
             // default constructor needed for model binding
         }
 
-        public NfsFileServerOverviewModel(NfsFileServer fileServer)
+        public NfsFileServerOverviewModel(NfsFileServer fileServer) : base(fileServer)
         {
             if (fileServer != null)
             {
-                Name = fileServer.Name;
-                RepositoryType = fileServer.RepositoryType;
-                SubscriptionId = fileServer.SubscriptionId;
                 Username = fileServer.Username;
                 Password = fileServer.Password;
                 VmName = fileServer.VmName;
+                VmSize = fileServer.VmSize;
                 PublicIp = fileServer.PublicIp;
                 PrivateIp = fileServer.PrivateIp;
-                VmSize = fileServer.VmSize;
-                State = fileServer.State;
-                ResourceGroupName = fileServer.ResourceGroupName;
-                DeploymentName = fileServer.Deployment?.DeploymentName;
-                DeploymentUrl = fileServer.Deployment?.DeploymentLink;
                 FileShares = fileServer.FileShares;
                 AllowedNetworks = fileServer.AllowedNetworks;
-
-                if (fileServer.Subnet != null)
-                {
-                    SubnetName = fileServer.Subnet.Name;
-                    SubnetVNetName = fileServer.Subnet.VNetName;
-                    SubnetResourceId = fileServer.Subnet.ResourceId;
-                    SubnetPrefix = fileServer.Subnet.AddressPrefix;
-                    SubnetLocation = fileServer.Subnet.Location;
-                }
             }
         }
 
@@ -48,6 +32,18 @@ namespace WebApp.Models.Storage.Details
 
         // e.g. 10.2.0.0/24
         public List<string> AllowedNetworks { get; set; }
+
+        public string Username { get; set; }
+
+        public string Password { get; set; }
+
+        public string VmName { get; set; }
+
+        public string PublicIp { get; set; }
+
+        public string PrivateIp { get; set; }
+
+        public string VmSize { get; set; }
 
         // overrides
         public override string PowerStatus { get; set; }

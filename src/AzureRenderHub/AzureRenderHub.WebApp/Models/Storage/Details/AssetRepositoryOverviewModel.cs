@@ -10,6 +10,36 @@ namespace WebApp.Models.Storage.Details
 {
     public abstract class AssetRepositoryOverviewModel
     {
+        public AssetRepositoryOverviewModel(AssetRepository storage = null)
+        {
+
+
+            if (storage != null)
+            {
+                Name = storage.Name;
+                RepositoryType = storage.RepositoryType;
+                SubscriptionId = storage.SubscriptionId;
+                ResourceGroupName = storage.ResourceGroupName;
+                State = storage.State;
+
+                if (storage.Subnet != null)
+                {
+                    SubnetName = storage.Subnet.Name;
+                    SubnetVNetName = storage.Subnet.VNetName;
+                    SubnetResourceId = storage.Subnet.ResourceId;
+                    SubnetPrefix = storage.Subnet.AddressPrefix;
+                    SubnetLocation = storage.Subnet.Location;
+                }
+
+                if (storage.Deployment != null)
+                {
+                    DeploymentName = storage.Deployment.DeploymentName;
+                    DeploymentUrl = storage.Deployment.DeploymentLink;
+                    DeploymentState = storage.Deployment.ProvisioningState;
+                }
+            }
+        }
+
         public string Name { get; set; }
 
         public AssetRepositoryType RepositoryType { get; protected set; }
@@ -26,18 +56,6 @@ namespace WebApp.Models.Storage.Details
 
         public string SubnetPrefix { get; set; }
 
-        public string Username { get; set; }
-
-        public string Password { get; set; }
-
-        public string VmName { get; set; }
-
-        public string PublicIp { get; set; }
-
-        public string PrivateIp { get; set; }
-
-        public string VmSize { get; set; }
-
         public int VmCores { get; set; }
 
         public int VmMemory { get; set; }
@@ -50,6 +68,8 @@ namespace WebApp.Models.Storage.Details
         public string DeploymentName { get; set; }
 
         public string DeploymentUrl { get; set; }
+
+        public ProvisioningState DeploymentState { get; set; }
 
         public StorageState State { get; set; }
 

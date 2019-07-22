@@ -38,6 +38,7 @@ using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 using Microsoft.Identity.Web.Client;
 using WebApp.Models.Api;
+using Subnet = Microsoft.Azure.Management.Network.Models.Subnet;
 
 namespace WebApp.Arm
 {
@@ -704,18 +705,37 @@ namespace WebApp.Arm
             return subnet;
         }
 
+        public async Task<List<Config.Subnet>> GetSubnetsAsync(Guid subscriptionId, string location, string resourceGroupName, string vnetName)
+        {
+            var accessToken = await GetAccessToken();
+            var token = new TokenCredentials(accessToken);
+            var networkClient = new NetworkManagementClient(token) { SubscriptionId = subscriptionId.ToString() };
+            var vnet = await networkClient.VirtualNetworks.GetAsync(resourceGroupName, vnetName);
+            return vnet.Subnets.Select(s => ParseSubnet(vnet, s)).ToList();
+        }
+
         public async Task<Config.Subnet> GetSubnetAsync(Guid subscriptionId, string location, string resourceGroupName, string vnetName, string subnetName)
         {
             var accessToken = await GetAccessToken();
             var token = new TokenCredentials(accessToken);
             var networkClient = new NetworkManagementClient(token) { SubscriptionId = subscriptionId.ToString() };
             var vnet = await networkClient.VirtualNetworks.GetAsync(resourceGroupName, vnetName);
+            return ParseSubnet(vnet, vnet.Subnets.First(s => s.Name == subnetName));
+        }
+
+        private Config.Subnet ParseSubnet(VirtualNetwork vnet, Subnet subnet)
+        {
+            if (vnet == null || subnet == null)
+            {
+                return null;
+            }
+
             return new Config.Subnet
             {
                 VNetAddressPrefixes = string.Join(',', vnet.AddressSpace.AddressPrefixes),
-                AddressPrefix = vnet.Subnets.First(s => s.Name == subnetName).AddressPrefix,
-                Location = location,
-                ResourceId = vnet.Subnets.First(s => s.Name == subnetName).Id,
+                AddressPrefix = subnet.AddressPrefix,
+                Location = vnet.Location,
+                ResourceId = subnet.Id,
                 ExistingResource = true,
             };
         }

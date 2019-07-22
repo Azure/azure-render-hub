@@ -123,6 +123,11 @@ namespace WebApp.Config.Coordinators
 
         public async Task UpdateRepositoryFromDeploymentAsync(AssetRepository repository)
         {
+            if (repository.Deployment == null)
+            {
+                return;
+            }
+
             var deployment = await GetDeploymentAndUpdateState(repository);
 
             if (repository is NfsFileServer fileServer)
@@ -222,19 +227,51 @@ namespace WebApp.Config.Coordinators
 
         public async Task DeleteRepositoryResourcesAsync(AssetRepository repository)
         {
-            var fileServer = repository as NfsFileServer;
-            if (fileServer == null)
+            if (repository is NfsFileServer fileServer)
             {
-                return;
+                await DeleteFileServerAsync(fileServer);
+            }
+            else if (repository is AvereCluster avereCluster)
+            {
+                await DeleteAvereAsync(avereCluster);
+            }
+            else
+            {
+                throw new ArgumentException($"Repository {repository.Name} has unknown type {repository.RepositoryType}");
             }
 
-            using (var resourceClient = await _clientProvider.CreateResourceManagementClient(repository.SubscriptionId))
-            using (var computeClient = await _clientProvider.CreateComputeManagementClient(repository.SubscriptionId))
-            using (var networkClient = await _clientProvider.CreateNetworkManagementClient(repository.SubscriptionId))
+            await RemoveRepository(repository);
+        }
+
+        public async Task DeleteFileServerAsync(NfsFileServer fileServer)
+        {
+            await DeleteVirtualMachineAsync(fileServer.SubscriptionId, fileServer.ResourceGroupName, fileServer.VmName);
+        }
+
+        public async Task DeleteAvereAsync(AvereCluster avereCluster)
+        {
+            try
+            {
+                using (var resourceClient = await _clientProvider.CreateResourceManagementClient(avereCluster.SubscriptionId))
+                {
+                    await resourceClient.ResourceGroups.BeginDeleteAsync(avereCluster.ResourceGroupName);
+                }
+            }
+            catch (CloudException ex) when (ResourceNotFound(ex))
+            {
+                // RG doesn't exist
+            }
+        }
+
+        public async Task DeleteVirtualMachineAsync(Guid subscription, string resourceGroupName, string vmName)
+        {
+            using (var resourceClient = await _clientProvider.CreateResourceManagementClient(subscription))
+            using (var computeClient = await _clientProvider.CreateComputeManagementClient(subscription))
+            using (var networkClient = await _clientProvider.CreateNetworkManagementClient(subscription))
             {
                 try
                 {
-                    var virtualMachine = await computeClient.VirtualMachines.GetAsync(fileServer.ResourceGroupName, fileServer.VmName);
+                    var virtualMachine = await computeClient.VirtualMachines.GetAsync(resourceGroupName, vmName);
 
                     var nicName = virtualMachine.NetworkProfile.NetworkInterfaces[0].Id.Split("/").Last(); ;
                     var avSetName = virtualMachine.AvailabilitySet.Id?.Split("/").Last();
@@ -245,7 +282,7 @@ namespace WebApp.Config.Coordinators
                     string nsg = null;
                     try
                     {
-                        var nic = await networkClient.NetworkInterfaces.GetAsync(fileServer.ResourceGroupName, nicName);
+                        var nic = await networkClient.NetworkInterfaces.GetAsync(resourceGroupName, nicName);
                         pip = nic.IpConfigurations[0].PublicIPAddress?.Id.Split("/").Last();
                         nsg = nic.NetworkSecurityGroup?.Id.Split("/").Last();
                     }
@@ -256,37 +293,37 @@ namespace WebApp.Config.Coordinators
 
                     await IgnoreNotFound(async () =>
                     {
-                        await computeClient.VirtualMachines.GetAsync(fileServer.ResourceGroupName, fileServer.VmName);
-                        await computeClient.VirtualMachines.DeleteAsync(fileServer.ResourceGroupName, fileServer.VmName);
+                        await computeClient.VirtualMachines.GetAsync(resourceGroupName, vmName);
+                        await computeClient.VirtualMachines.DeleteAsync(resourceGroupName, vmName);
                     });
 
                     if (nicName != null)
                     {
-                        await IgnoreNotFound(() => networkClient.NetworkInterfaces.DeleteAsync(fileServer.ResourceGroupName, nicName));
+                        await IgnoreNotFound(() => networkClient.NetworkInterfaces.DeleteAsync(resourceGroupName, nicName));
                     }
 
                     var tasks = new List<Task>();
 
                     if (nsg == "nsg")
                     {
-                        tasks.Add(IgnoreNotFound(() => networkClient.NetworkSecurityGroups.DeleteAsync(fileServer.ResourceGroupName, nsg)));
+                        tasks.Add(IgnoreNotFound(() => networkClient.NetworkSecurityGroups.DeleteAsync(resourceGroupName, nsg)));
                     }
 
                     if (pip != null)
                     {
-                        tasks.Add(IgnoreNotFound(() => networkClient.PublicIPAddresses.DeleteAsync(fileServer.ResourceGroupName, pip)));
+                        tasks.Add(IgnoreNotFound(() => networkClient.PublicIPAddresses.DeleteAsync(resourceGroupName, pip)));
                     }
 
-                    tasks.Add(IgnoreNotFound(() => computeClient.Disks.DeleteAsync(fileServer.ResourceGroupName, osDisk)));
+                    tasks.Add(IgnoreNotFound(() => computeClient.Disks.DeleteAsync(resourceGroupName, osDisk)));
 
                     tasks.AddRange(dataDisks.Select(
-                        dd => IgnoreNotFound(() => computeClient.Disks.DeleteAsync(fileServer.ResourceGroupName, dd))));
+                        dd => IgnoreNotFound(() => computeClient.Disks.DeleteAsync(resourceGroupName, dd))));
 
                     await Task.WhenAll(tasks);
 
                     if (avSetName != null)
                     {
-                        await IgnoreNotFound(() => computeClient.AvailabilitySets.DeleteAsync(fileServer.ResourceGroupName, avSetName));
+                        await IgnoreNotFound(() => computeClient.AvailabilitySets.DeleteAsync(resourceGroupName, avSetName));
                     }
                 }
                 catch (CloudException ex) when (ResourceNotFound(ex))
@@ -296,24 +333,22 @@ namespace WebApp.Config.Coordinators
 
                 try
                 {
-                    await resourceClient.ResourceGroups.GetAsync(fileServer.ResourceGroupName);
+                    await resourceClient.ResourceGroups.GetAsync(resourceGroupName);
 
-                    var resources = await resourceClient.Resources.ListByResourceGroupAsync(fileServer.ResourceGroupName);
+                    var resources = await resourceClient.Resources.ListByResourceGroupAsync(resourceGroupName);
                     if (resources.Any())
                     {
                         _logger.LogDebug($"Skipping resource group deletion as it contains the following resources: {string.Join(", ", resources.Select(r => r.Id))}");
                     }
                     else
                     {
-                        await resourceClient.ResourceGroups.DeleteAsync(fileServer.ResourceGroupName);
+                        await resourceClient.ResourceGroups.DeleteAsync(resourceGroupName);
                     }
                 }
                 catch (CloudException ex) when (ResourceNotFound(ex))
                 {
                     // RG doesn't exist
                 }
-
-                await RemoveRepository(repository);
             }
         }
 
@@ -411,7 +446,7 @@ namespace WebApp.Config.Coordinators
             }
             catch (CloudException ex)
             {
-                _logger.LogError(ex, $"Failed to deploy NFS server: {ex.Message}.");
+                _logger.LogError(ex, $"Failed to deploy storage server: {ex.Message}.");
                 throw;
             }
         }

@@ -8,6 +8,7 @@ namespace AzureRenderHub.WebApp.Arm.Deploying
     public enum ProvisioningState
     {
         Unknown,
+        Accepted,
         Running,
         Succeeded,
         Failed

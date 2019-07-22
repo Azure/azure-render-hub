@@ -67,7 +67,8 @@ namespace AzureRenderHub.WebApp.Arm.Deploying
             using (var client = await _managementClientProvider.CreateResourceManagementClient(deployment.SubscriptionId))
             {
                 var deploymentResult = await GetDeploymentInnerAsync(deployment);
-                while (deploymentResult.ProvisioningState == ProvisioningState.Running)
+                while (deploymentResult.ProvisioningState == ProvisioningState.Running
+                    || deploymentResult.ProvisioningState == ProvisioningState.Accepted)
                 {
                     await Task.Delay(2000);
                     deploymentResult = await GetDeploymentInnerAsync(deployment);
@@ -83,17 +84,39 @@ namespace AzureRenderHub.WebApp.Arm.Deploying
                 var deploymentResult = await client.Deployments.GetAsync(
                         deployment.ResourceGroupName,
                         deployment.DeploymentName);
-                return ToDeploymentStatus(deploymentResult);
+
+                IEnumerable<DeploymentOperation> failedOps = null;
+                if (deploymentResult.Properties.ProvisioningState == "Failed")
+                {
+                    var operation = await client.DeploymentOperations.ListAsync(
+                        deployment.ResourceGroupName, deployment.DeploymentName);
+
+                    failedOps = operation.Where(op => op.Properties.ProvisioningState == "Failed");
+                }
+
+                return ToDeploymentStatus(deploymentResult, failedOps);
             }
         }
 
-        private Deployment ToDeploymentStatus(DeploymentExtended deployment)
+        private Deployment ToDeploymentStatus(DeploymentExtended deployment, IEnumerable<DeploymentOperation> failedOps = null)
         {
+            string errors = null;
+            if (failedOps != null && failedOps.Any())
+            {
+                errors = string.Join("\n", failedOps.Select(ToErrorString));
+            }
+
             Enum.TryParse<ProvisioningState>(deployment.Properties.ProvisioningState, out var deploymentState);
             return new Deployment
             {
                 ProvisioningState = deploymentState,
+                Error = errors,
             };
+        }
+
+        private static string ToErrorString(DeploymentOperation op)
+        {
+            return $"Code={op.Properties.StatusCode}; Message={op.Properties.StatusMessage}; Resource={op.Properties.TargetResource}";
         }
     }
 }

@@ -453,7 +453,8 @@
         {
             "apiVersion": "2017-12-01",
             "tags": {
-                "averevfxt": "server"
+                "averevfxt": "server",
+                "Environment": "[parameters('environmentNameTag')]"
             },
             "type": "Microsoft.Compute/virtualMachines",
             "identity": {

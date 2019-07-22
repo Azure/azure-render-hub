@@ -18,6 +18,7 @@ namespace WebApp.Config.Storage
             ControllerName = "avere-ctrl";
             ControllerUserName = "avere";
             AvereBackedStorageAccountName = $"avere{Guid.NewGuid().ToString().Substring(0, 8)}";
+            UseControllerPasswordCredential = true;
         }
 
         public override void UpdateFromModel(AddAssetRepoBaseModel genericModel)
@@ -33,9 +34,7 @@ namespace WebApp.Config.Storage
             CreateSubnet = model.CreateSubnet;
             if (CreateSubnet)
             {
-                var newSubnet = new Subnet($"{Subnet.VnetResourceId}/subnets/{model.NewSubnetName};{Subnet.Location};{model.NewSubnetAddressPrefix}");
-                newSubnet.VNetAddressPrefixes = Subnet.VNetAddressPrefixes;
-                Subnet = newSubnet;
+                Subnet = Subnet.CreateNewSubnet(model.NewSubnetName, model.NewSubnetAddressPrefix);
             }
             UseControllerPasswordCredential = model.UseControllerPasswordCredential;
             ControllerPasswordOrSshKey = model.UseControllerPasswordCredential 
