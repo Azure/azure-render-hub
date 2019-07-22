@@ -165,5 +165,10 @@ namespace WebApp.Tests.Fakes
         {
             throw new NotImplementedException();
         }
+
+        public Task<List<Subnet>> GetSubnetsAsync(Guid subscriptionId, string location, string resourceGroupName, string vnetName)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
