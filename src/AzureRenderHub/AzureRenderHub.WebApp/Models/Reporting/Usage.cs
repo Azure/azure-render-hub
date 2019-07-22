@@ -105,9 +105,9 @@ namespace WebApp.Models.Reporting
             var cols = response.Properties.Columns;
             var dateIndex = cols.FindIndex(col => col.Name == "UsageDate");
             var costIndex = cols.FindIndex(col => col.Name == "PreTaxCost");
-            var meterCategoryIndex = cols.FindIndex(col => col.Name == "MeterSubCategory");
+            var serviceNameIndex = cols.FindIndex(col => col.Name == "ServiceName");
 
-            foreach (var meterCategory in response.Properties.Rows.GroupBy(row => (string)row[meterCategoryIndex]))
+            foreach (var meterCategory in response.Properties.Rows.GroupBy(row => (string)row[serviceNameIndex]))
             {
                 var category = string.IsNullOrWhiteSpace(meterCategory.Key) ? "uncategorized" : meterCategory.Key;
                 result[category] = GenerateDataForCategory(category, meterCategory);

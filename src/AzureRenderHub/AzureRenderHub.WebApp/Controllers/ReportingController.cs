@@ -34,7 +34,7 @@ namespace WebApp.Controllers
         [Route("Reporting", Name = nameof(Index))]
         public async Task<ActionResult> Index([FromQuery] DateTimeOffset? from, [FromQuery] DateTimeOffset? to)
         {
-            var envs = await Environments();
+            var envs = (await Environments()).Where(env => !env.InProgress);
 
             var period = GetQueryPeriod(from, to);
 

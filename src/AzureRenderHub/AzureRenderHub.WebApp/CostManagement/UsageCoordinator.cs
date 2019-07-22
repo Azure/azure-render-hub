@@ -99,7 +99,7 @@ namespace WebApp.CostManagement
                         },
                         new List<Grouping>
                         {
-                            new Grouping("MeterSubCategory", ColumnType.Dimension)
+                            new Grouping("ServiceName", ColumnType.Dimension)
                         },
                         FilterExpression.Tag("environment", Operator.In, new[] { env.Id })));
 
