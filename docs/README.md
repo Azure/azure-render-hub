@@ -1,6 +1,6 @@
 # Documentation and Guides
 
-These docs will guide you through Azure Render Hub's setup and configuration process.
+These docs will guide you through the Azure Render Hub setup and configuration process.
 
 # Prerequisites
 
