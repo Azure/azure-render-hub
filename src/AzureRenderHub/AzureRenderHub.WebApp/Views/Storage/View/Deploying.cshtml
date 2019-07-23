@@ -45,6 +45,19 @@
                 }
             </div>
         </div>
+        @if (Model.State == StorageState.Deleting)
+        {
+            <div class="section-wrapper">
+                <div class="section-bar"></div>
+                <div class="section-content">
+                    <div class="form-element half">
+                        <label asp-for="ResourceGroupName">Resource Group</label>
+                        <a href="@Model.ResourceGroupUrl" target="_blank">@Model.ResourceGroupName <i class="fa fa-external-link"></i></a>
+                    </div>
+                </div>
+            </div>
+        }
+
         @if (Model.State != StorageState.Deleting)
         {
             <div class="section-wrapper">
