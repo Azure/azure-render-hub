@@ -56,5 +56,7 @@ namespace WebApp.Models.Storage
         public bool ResourceLoadFailed { get; set; }
 
         public bool DeleteResourceGroup { get; set; }
+
+        public bool DeleteVirtualMachines { get; set; }
     }
 }

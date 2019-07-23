@@ -214,7 +214,7 @@ namespace WebApp.Config.Coordinators
         }
 
         // Called from the controller to initiate deletion
-        public async Task BeginDeleteRepositoryAsync(AssetRepository repository)
+        public async Task BeginDeleteRepositoryAsync(AssetRepository repository, bool deleteResourceGroup)
         {
             repository.State = StorageState.Deleting;
             await UpdateRepository(repository);
@@ -223,6 +223,7 @@ namespace WebApp.Config.Coordinators
                 StorageName = repository.Name,
                 StartTime = DateTime.UtcNow,
                 Action = "DeleteVM",
+                DeleteResourceGroup = deleteResourceGroup,
             });
         }
 

@@ -129,7 +129,7 @@ namespace WebApp.Controllers
                 return RedirectToAction("Index");
             }
 
-            await _assetRepoCoordinator.BeginDeleteRepositoryAsync(repository);
+            await _assetRepoCoordinator.BeginDeleteRepositoryAsync(repository, model.DeleteResourceGroup);
 
             return RedirectToAction("Deploying", new { repoId });
         }
@@ -152,11 +152,14 @@ namespace WebApp.Controllers
                 return RedirectToAction("Overview", new { repoId });
             }
 
-            await _assetRepoCoordinator.UpdateRepositoryFromDeploymentAsync(repo);
-
-            if (repo.State == AzureRenderHub.WebApp.Config.Storage.StorageState.Ready)
+            if (repo.State != AzureRenderHub.WebApp.Config.Storage.StorageState.Deleting)
             {
-                return RedirectToAction("Overview", new { repoId });
+                await _assetRepoCoordinator.UpdateRepositoryFromDeploymentAsync(repo);
+
+                if (repo.State == AzureRenderHub.WebApp.Config.Storage.StorageState.Ready)
+                {
+                    return RedirectToAction("Overview", new { repoId });
+                }
             }
 
             var model = await GetOverviewViewModel(repo);

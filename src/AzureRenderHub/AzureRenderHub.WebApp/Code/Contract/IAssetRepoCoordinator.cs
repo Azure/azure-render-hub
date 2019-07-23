@@ -20,7 +20,7 @@ namespace WebApp.Code.Contract
 
         Task UpdateRepositoryFromDeploymentAsync(AssetRepository repository);
 
-        Task BeginDeleteRepositoryAsync(AssetRepository repository);
+        Task BeginDeleteRepositoryAsync(AssetRepository repository, bool deleteResourceGroup);
 
         Task DeleteRepositoryResourcesAsync(AssetRepository repository, bool deleteResourceGroup);
 
