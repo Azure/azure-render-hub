@@ -72,7 +72,7 @@ namespace WebApp.BackgroundHosts.Deployment
 
         private async Task MonitorDeployment(ActiveDeployment activeDeployment)
         {
-            _logger.LogDebug($"Waiting for file server {activeDeployment.FileServerName} deployment to complete");
+            _logger.LogDebug($"Waiting for file server {activeDeployment.StorageName} deployment to complete");
 
             using (var cts = new CancellationTokenSource())
             {
@@ -85,7 +85,7 @@ namespace WebApp.BackgroundHosts.Deployment
 
                     while (deploymentState == ProvisioningState.Running)
                     {
-                        var fileServer = (NfsFileServer)await _assetRepoCoordinator.GetRepository(activeDeployment.FileServerName);
+                        var fileServer = (NfsFileServer)await _assetRepoCoordinator.GetRepository(activeDeployment.StorageName);
                         if (fileServer == null)
                         {
                             break;
@@ -118,28 +118,28 @@ namespace WebApp.BackgroundHosts.Deployment
             }
         }
 
-        private async Task DeleteDeployment(ActiveDeployment activeDeployment)
+        private async Task DeleteDeployment(ActiveDeployment storageDeployment)
         {
-            _logger.LogDebug($"Deleting file server {activeDeployment.FileServerName}");
+            _logger.LogDebug($"Deleting storage {storageDeployment.StorageName}");
 
             using (var cts = new CancellationTokenSource())
             {
                 // runs in background
-                var renewer = _leaseMaintainer.MaintainLease(activeDeployment, cts.Token);
+                var renewer = _leaseMaintainer.MaintainLease(storageDeployment, cts.Token);
 
                 try
                 {
-                    var repository = await _assetRepoCoordinator.GetRepository(activeDeployment.FileServerName);
+                    var repository = await _assetRepoCoordinator.GetRepository(storageDeployment.StorageName);
                     if (repository != null)
                     {
-                        await _assetRepoCoordinator.DeleteRepositoryResourcesAsync(repository);
+                        await _assetRepoCoordinator.DeleteRepositoryResourcesAsync(repository, storageDeployment.DeleteResourceGroup);
                     }
 
-                    await _deploymentQueue.Delete(activeDeployment.MessageId, activeDeployment.PopReceipt);
+                    await _deploymentQueue.Delete(storageDeployment.MessageId, storageDeployment.PopReceipt);
                 }
                 catch (CloudException e)
                 {
-                    _logger.LogError(e, $"Error deleting file server {activeDeployment.FileServerName}");
+                    _logger.LogError(e, $"Error deleting file server {storageDeployment.StorageName}");
                 }
                 finally
                 {
