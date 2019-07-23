@@ -10,3 +10,5 @@ and credentials with permissions to join a computer to the domain.
 
 Note that your VNet DNS server must be configured to forward DNS requests to you domain, or set to your domains DNS server.  In short
 the virtual machines on the Azure VNet must be able to resolve your domain name.
+
+Return to the Render Hub [docs](README.md).

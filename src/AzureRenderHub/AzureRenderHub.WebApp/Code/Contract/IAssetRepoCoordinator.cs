@@ -22,7 +22,7 @@ namespace WebApp.Code.Contract
 
         Task BeginDeleteRepositoryAsync(AssetRepository repository);
 
-        Task DeleteRepositoryResourcesAsync(AssetRepository repository);
+        Task DeleteRepositoryResourcesAsync(AssetRepository repository, bool deleteResourceGroup);
 
         Task UpdateRepository(AssetRepository repository, string originalName = null);
 

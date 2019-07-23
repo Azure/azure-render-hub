@@ -31,16 +31,16 @@
                 @if (Model.State == StorageState.Creating)
                 {
                     <h3>Deploying the file server @Model.Name</h3>
-                    <p>The File Server deployment is in progress.</p>
+                    <p>The deployment is in progress.</p>
                 }
                 else if (Model.State == StorageState.Deleting)
                 {
-                    <h3>Deleting the file server @Model.Name</h3>
+                    <h3>Deleting the storage @Model.Name</h3>
                     <p></p>
                 }
                 else if (Model.State == StorageState.Failed)
                 {
-                    <h3>Deployment of file server @Model.Name Failed</h3>
+                    <h3>Deployment of storage @Model.Name Failed</h3>
                     <p></p>
                 }
             </div>
@@ -76,7 +76,7 @@
 {
     <div class="form-footer">
         <div class="button-bar">
-            <a class="button" asp-action="Delete" asp-route-repoId="@Model.Name" onclick="return confirm('Are you sure you want to delete @Model.Name?')">Delete Storage <i class="fa fa-trash"></i></a>
+            <a class="button" asp-action="Delete" asp-route-repoId="@Model.Name" >Delete Storage <i class="fa fa-trash"></i></a>
         </div>
     </div>
 }

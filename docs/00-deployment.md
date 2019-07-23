@@ -89,14 +89,14 @@ If prompted, press *Grand admin consent* to activate these changes. If you don't
 
 We need to create a client key that will be used by the Azure Render Hub to authenticate with AAD.
 
- 1. From the sidebar, select *Certificates and Secrets* and press *New Client Secret*
- 2. Under *Description* enter a description for the secret, e.g. `Client key`in the blank box
- 3. Select *Never* for the secret expiry
+ 1. On the Portal page for your App Registration, *click Certificates & Secrets*  
+    (if you are using App Registrations (Legacy) then it will be under the *Settings* page, and named *Keys*).
 
 ![Add client secret](images/00-add-client-secret.png)
 
- 4. Press *Add* to save your changes
- 5. Save the displayed Key somewhere safe, you'll need it later.
+ 2. Under Client Secrets, press *New client secret*, enter a description in the blank box, select "Never" for an expiry and click *Add*  
+    (with App Registrations (Legacy) this will be called "Passwords").
+ 3. **Important**: Save the displayed Value somewhere safe, you will need it later on. The key cannot be accessed again once you leave this page.
 
 Note: Once you navigate away from this screen, the key cannot be accessed again. If you lose the secret, you'll need to return here and create a new one.
 
@@ -150,7 +150,9 @@ Note down the Directory ID, this is your Tenant ID that will be required when yo
 
 *You don't need to do this if you've used the steps above to create the AAD application using the portal.*
 
-Simply copy the script snippet below, update the $webAppName variable and paste the script below into the cloud shell to create a new AAD application.  Keep in mind the Web App name must be globally unique, no longer than 20 characters, and be a valid DNS name as it becomes the host in your website's URL, e.g. `https://<webAppName>.azurewebsites.net`.
+You can create the application via the Azure Cloud Shell [here](https://shell.azure.com/powershell).  After opening Cloud Shell ensure that it is set to the 'Powershell' environment.
+
+Simply copy the script snippet below, update the $webAppName variable and paste the script below into the cloud shell to create a new AAD application.  Keep in mind the Web App name must be globally unique, and be a valid DNS name as it becomes the host in your website's URL, e.g. `https://<webAppName>.azurewebsites.net`.
 
 ```
 $webAppName = "MyAzureRenderHub"
@@ -181,12 +183,12 @@ $app
 
 Click the following link to start a deployment into your existing Azure subscription.  The required input fields are described in detail below.
 
-<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FAzure%2Fazure-render-hub%2Fbug-bash%2FTemplates%2FAzureRenderHub.json" target="_blank">
+<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FAzure%2Fazure-render-hub%2Fbug-bash%2FTemplates%2FAzureRenderHub.json" target="_blank" rel="noopener">
    <img alt="Deploy to Azure" src="http://azuredeploy.net/deploybutton.png"/>
 </a>
 
  - `Resource Group`: The Azure resource group into which the Azure Render Hub will be deployed. We recommend using a new resource group to keep the hub isolated from your other assets.
- - `Web Site Name`: The Azure Web App name.  This must be globally unique and is also part of the website's DNS name.
+ - `Web Site Name`: The Azure Web App name, which must match the name you used for the AAD Application above. This must be globally unique and is also part of the website's DNS name.
  - `Hosting Plan Name`: The name of the hosting plan service, you can leave the default.
  - `Sku`: The Hosting Plan tier that determines the performance and cost for the Web App.  Plans and prices are available [here](https://azure.microsoft.com/en-au/pricing/details/app-service/plans/).
  - `Aad Tenant Id` ("Directory ID"): the AAD application tenant ID from the application you created above. In the Azure Portal this can be found on the Properties page for the directory.
@@ -204,7 +206,10 @@ After submitting the deployment your instance of the Portal will be deployed int
 
 ## Accessing the Portal
 
+
 Once the deployment is complete you can access the portal at: `https://[webSiteName].azurewebsites.net`
+
+To continue setting up Render Hub see the docs [here](README.md).
 
 ## Troubleshooting
 
@@ -213,4 +218,3 @@ Once the deployment is complete you can access the portal at: `https://[webSiteN
 Causes are ...
 
 Fixes are ...
-

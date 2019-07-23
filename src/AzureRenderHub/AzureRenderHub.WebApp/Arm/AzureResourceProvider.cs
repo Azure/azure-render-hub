@@ -133,9 +133,9 @@ namespace WebApp.Arm
                 _logger.LogDebug($"[UserClaimsAndRoles] Claim type {claim.Type}={claim.Value}");
             }
 
-            var names = user.Identities.Select(i => i.Claims.GetName()).ToList();
-            var emails = user.Identities.Select(i => i.Claims.GetEmailAddress()).ToList();
-            var upns = user.Identities.Select(i => i.Claims.GetUpn()).ToList();
+            var names = user.Identities.Select(i => i.Claims.GetName()).Where(c => c != null).ToList();
+            var emails = user.Identities.Select(i => i.Claims.GetEmailAddress()).Where(c => c != null).ToList();
+            var upns = user.Identities.Select(i => i.Claims.GetUpn()).Where(c => c != null).ToList();
             foreach (var adminEmail in GetClassicAdministratorEmails(classicAdmins))
             {
                 if (names.Any(e => e.Equals(adminEmail, StringComparison.InvariantCultureIgnoreCase))

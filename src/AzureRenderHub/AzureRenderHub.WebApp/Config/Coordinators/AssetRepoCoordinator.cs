@@ -213,54 +213,97 @@ namespace WebApp.Config.Coordinators
             }
         }
 
+        // Called from the controller to initiate deletion
         public async Task BeginDeleteRepositoryAsync(AssetRepository repository)
         {
             repository.State = StorageState.Deleting;
             await UpdateRepository(repository);
             await _deploymentQueue.Add(new ActiveDeployment
             {
-                FileServerName = repository.Name,
+                StorageName = repository.Name,
                 StartTime = DateTime.UtcNow,
                 Action = "DeleteVM",
             });
         }
 
-        public async Task DeleteRepositoryResourcesAsync(AssetRepository repository)
+        // Called from the BackgroundHost to actually delete
+        public async Task DeleteRepositoryResourcesAsync(AssetRepository repository, bool deleteResourceGroup)
         {
-            if (repository is NfsFileServer fileServer)
+            if (deleteResourceGroup)
             {
-                await DeleteFileServerAsync(fileServer);
-            }
-            else if (repository is AvereCluster avereCluster)
-            {
-                await DeleteAvereAsync(avereCluster);
+                using (var resourceClient = await _clientProvider.CreateResourceManagementClient(repository.SubscriptionId))
+                {
+                    await resourceClient.ResourceGroups.DeleteAsync(repository.ResourceGroupName);
+                }
             }
             else
             {
-                throw new ArgumentException($"Repository {repository.Name} has unknown type {repository.RepositoryType}");
+                if (repository is NfsFileServer fileServer)
+                {
+                    await DeleteFileServerAsync(fileServer);
+                }
+                else if (repository is AvereCluster avereCluster)
+                {
+                    await DeleteAvereAsync(avereCluster);
+                }
+                else
+                {
+                    throw new ArgumentException($"Repository {repository.Name} has unknown type {repository.RepositoryType}");
+                }
             }
 
             await RemoveRepository(repository);
         }
 
-        public async Task DeleteFileServerAsync(NfsFileServer fileServer)
+        private async Task DeleteFileServerAsync(NfsFileServer fileServer)
         {
             await DeleteVirtualMachineAsync(fileServer.SubscriptionId, fileServer.ResourceGroupName, fileServer.VmName);
         }
 
-        public async Task DeleteAvereAsync(AvereCluster avereCluster)
+        private async Task DeleteAvereAsync(AvereCluster avereCluster)
         {
             try
             {
-                using (var resourceClient = await _clientProvider.CreateResourceManagementClient(avereCluster.SubscriptionId))
+                var avereClusterVmNames = await GetAvereVMNames(avereCluster);
+                foreach(var vmName in avereClusterVmNames)
                 {
-                    await resourceClient.ResourceGroups.BeginDeleteAsync(avereCluster.ResourceGroupName);
+                    await DeleteVirtualMachineAsync(
+                        avereCluster.SubscriptionId, 
+                        avereCluster.ResourceGroupName,
+                        vmName);
                 }
             }
             catch (CloudException ex) when (ResourceNotFound(ex))
             {
                 // RG doesn't exist
             }
+        }
+
+        private async Task<List<string>> GetAvereVMNames(AvereCluster avereCluster)
+        {
+            var controllerName = avereCluster.ControllerName;
+            var vfxtPrefix = avereCluster.ClusterName;
+
+            using (var computeClient = await _clientProvider.CreateComputeManagementClient(avereCluster.SubscriptionId))
+            {
+                var vms = await computeClient.VirtualMachines.ListAsync(avereCluster.ResourceGroupName);
+                var vmNames = vms.Select(vm => vm.Name).Where(name => IsAvereVM(avereCluster, name)).ToList();
+                while (!string.IsNullOrEmpty(vms.NextPageLink))
+                {
+                    vms = await computeClient.VirtualMachines.ListAsync(avereCluster.ResourceGroupName);
+                    vmNames.AddRange(vms.Select(vm => vm.Name).Where(name => IsAvereVM(avereCluster, name)));
+                }
+                return vmNames;
+            }
+        }
+
+        private bool IsAvereVM(AvereCluster avereCluster, string vmName)
+        {
+            var controllerName = avereCluster.ControllerName;
+            var vfxtPrefix = avereCluster.ClusterName.ToLowerInvariant();
+            return vmName != null
+                && (vmName.Equals(controllerName, StringComparison.InvariantCultureIgnoreCase)
+                || vmName.ToLowerInvariant().StartsWith(vfxtPrefix));
         }
 
         public async Task DeleteVirtualMachineAsync(Guid subscription, string resourceGroupName, string vmName)

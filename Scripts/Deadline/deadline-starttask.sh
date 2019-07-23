@@ -95,7 +95,7 @@ if [ -n "$DEADLINE_EXCLUDE_LIMIT_GROUPS" ]; then
     limitgroups=$(echo $DEADLINE_EXCLUDE_LIMIT_GROUPS | tr ';' '\n')
     for group in $limitgroups; do
         echo "Adding slave to limit group $group"
-        /opt/Thinkbox/Deadline10/bin/deadlinecommand -ExecuteScriptNoGui limitgroups.py --limitgroups $group --slave $HOSTNAME --exclude
+        /opt/Thinkbox/Deadline10/bin/deadlinecommand -ExecuteScriptNoGui limitgroups.py --limitgroups $group --slave `hostname` --exclude
     done
 fi
 

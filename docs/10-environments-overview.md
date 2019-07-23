@@ -56,3 +56,5 @@ For more information see [here](https://docs.microsoft.com/en-us/azure/azure-mon
 # Create an Environment
 
 For instructions on creating a new Environment see [here](11-environments-creation.md)
+
+Return to the Render Hub [docs](README.md).
