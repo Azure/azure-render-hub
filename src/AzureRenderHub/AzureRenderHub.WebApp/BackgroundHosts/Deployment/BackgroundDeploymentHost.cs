@@ -72,7 +72,7 @@ namespace WebApp.BackgroundHosts.Deployment
 
         private async Task MonitorDeployment(ActiveDeployment activeDeployment)
         {
-            _logger.LogDebug($"Waiting for file server {activeDeployment.StorageName} deployment to complete");
+            _logger.LogDebug($"Waiting for storage {activeDeployment.StorageName} deployment to complete");
 
             using (var cts = new CancellationTokenSource())
             {
@@ -95,6 +95,9 @@ namespace WebApp.BackgroundHosts.Deployment
 
                         deploymentState = fileServer.Deployment.ProvisioningState;
 
+                        _logger.LogDebug($"[MonitorDeployment={activeDeployment.StorageName}] " +
+                            $"Deployment returned state {deploymentState}");
+
                         if (deploymentState == ProvisioningState.Running)
                         {
                             await Task.Delay(TimeSpan.FromSeconds(15), cts.Token);
@@ -103,6 +106,10 @@ namespace WebApp.BackgroundHosts.Deployment
                 }
                 finally
                 {
+                    _logger.LogDebug($"[MonitorDeployment={activeDeployment.StorageName}] " +
+                        $"Deleting queue message {activeDeployment.MessageId} " +
+                        $"with receipt {activeDeployment.PopReceipt}");
+
                     await _deploymentQueue.Delete(activeDeployment.MessageId, activeDeployment.PopReceipt);
 
                     cts.Cancel();
@@ -120,7 +127,7 @@ namespace WebApp.BackgroundHosts.Deployment
 
         private async Task DeleteDeployment(ActiveDeployment storageDeployment)
         {
-            _logger.LogDebug($"Deleting storage {storageDeployment.StorageName}");
+            _logger.LogDebug($"[DeleteStorage={storageDeployment.StorageName}] Deleting storage");
 
             using (var cts = new CancellationTokenSource())
             {
@@ -135,11 +142,13 @@ namespace WebApp.BackgroundHosts.Deployment
                         await _assetRepoCoordinator.DeleteRepositoryResourcesAsync(repository, storageDeployment.DeleteResourceGroup);
                     }
 
+                    _logger.LogDebug($"[DeleteStorage={storageDeployment.StorageName}] Deleting queue message {storageDeployment.MessageId} with receipt {storageDeployment.PopReceipt}");
+
                     await _deploymentQueue.Delete(storageDeployment.MessageId, storageDeployment.PopReceipt);
                 }
                 catch (CloudException e)
                 {
-                    _logger.LogError(e, $"Error deleting file server {storageDeployment.StorageName}");
+                    _logger.LogError(e, $"[DeleteStorage={storageDeployment.StorageName}]");
                 }
                 finally
                 {
