@@ -28,3 +28,5 @@ Download and install the Deadline Client Slave as per the Thinkbox Deadline inst
 
 It's recommended that the Deadline Launcher and Slave run in an interactive session, this ensures all features, including GPU support,
 work as expected, for this reason it's not recommended to run as a service.
+
+Return to the Render Hub [docs](README.md).

@@ -46,3 +46,5 @@ The database client certificate/PFX file if required.
 
 **Deadline Database Certificate Password**
 The password to the above certificate, if required.
+
+Return to the Render Hub [docs](README.md).

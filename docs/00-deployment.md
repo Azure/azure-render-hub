@@ -121,3 +121,5 @@ After submitting the deployment your instance of the Portal will be deployed int
 ## Accessing the Portal
 
 Once the deployment is complete you can access the portal at: https://[webSiteName].azurewebsites.net
+
+To continue setting up Render Hub see the docs [here](README.md).
