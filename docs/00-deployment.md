@@ -68,7 +68,7 @@ In the Azure Portal navigate to Azure Active Directory -> Properties.  Note down
 
 ### Using Cloud Shell
 
-You can create the application via the Azure Cloud Shell [here](https://shell.azure.com/powershell).
+You can create the application via the Azure Cloud Shell [here](https://shell.azure.com/powershell).  After opening Cloud Shell ensure that it is set to 'Powershell' environment.
 
 Simply copy the script snippet below, update the $webAppName variable and paste the script below into the cloud shell to create a new AAD application.  Keep in mind the Web App name must be globally unique and be a valid DNS name as it becomes the host in your website's URL, e.g. https://< webAppName >.azurewebsites.net.
 
