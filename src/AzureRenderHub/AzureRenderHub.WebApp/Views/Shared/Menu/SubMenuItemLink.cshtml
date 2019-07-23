@@ -5,7 +5,7 @@
 }
 else if (ViewBag.IsLink && ViewBag.Controller == "Pools")
 {
-    <a asp-controller="@ViewBag.Controller" asp-action="@ViewBag.Action" asp-route-envId="@ViewBag.Id">@ViewBag.LinkText</a>
+    <a asp-controller="@ViewBag.Controller" asp-action="@ViewBag.Action" asp-route-envId="@ViewBag.Id" asp-route-poolId="@ViewBag.PoolName">@ViewBag.LinkText</a>
 }
 else if (ViewBag.IsLink && ViewBag.Controller == "Storage")
 {
