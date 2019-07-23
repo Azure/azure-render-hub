@@ -41,9 +41,9 @@ Login to the Azure portal and navigate to the Azure Active Directory application
 
 #### Create a Client Key (Secret)
 
- 1. Under the application Settings blade click Keys
- 2. Under Passwords enter a description in the blank box, select Never expires and click Save
- 3. Save the displayed Key somewhere safe, you'll need it later.  Note, the key cannot be accessed again.
+ 1. On the Portal page for your App Registration, click "Certificates & secrets" (if you are using App Registrations (Legacy) then it will be under the Settings page, and named "Keys").
+ 2. Under Client Secrets, click "New client secret", enter a description in the blank box, select "Never" for an expiry and click Add (with App Registrations (Legacy) this will be called "Passwords").
+ 3. **Important**: Save the displayed Value somewhere safe, you will need it later on. The key cannot be accessed again once you leave this page.
 
 #### Update the Reply URL
 
