@@ -1,6 +1,6 @@
 # Deploying Azure Render Hub
 
-Deploying the Azure Render Hub requires the following steps
+Deploying the Azure Render Hub requires the following steps:
 
 * Create an Azure Active Directory (AAD) Appliation (used for authentication and to control access)
 * Deploying the hub from our Github Repo
