@@ -93,7 +93,7 @@
                     <label asp-for="FileShareName">Share Name</label>
                     <input asp-for="FileShareName" placeholder="e.g. /exports/share" value="@Model.FileShareName"/>
                     <span asp-validation-for="FileShareName" class=""></span>
-                    <small>The share cannot be at the root of of the filesystem, e.g. /share</small>
+                    <small>The share cannot be at the root of the filesystem, e.g. /share</small>
                 </div>
                 <div class="form-element">
                     <label asp-for="FileShareType">Share Type</label>
@@ -120,7 +120,7 @@
     {
     <script>
         // TODO: Add JS to a shared validation script file that can be minified ....
-        // TODO: Is there an easier way to add these? Can can at least be shared
+        // TODO: Is there an easier way to add these? Can at least be shared
         $.validator.addMethod("ascii-only",
             function (value, element, params) {
                 return /^[a-zA-Z0-9-]+$/.test(value);
