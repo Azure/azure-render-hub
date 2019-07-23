@@ -3,7 +3,7 @@
     "contentVersion": "1.0.0.0",
     "parameters": {
         "webSiteName": {
-            "defaultValue": "RenderFarmManager",
+            "defaultValue": "MyAzureRenderHub",
             "type": "String",
             "minLength": "4",
             "maxLength": "20",
@@ -12,7 +12,7 @@
             }
         },
         "hostingPlanName": {
-            "defaultValue": "RenderFarmManagerPlan",
+            "defaultValue": "AzureRenderHubPlan",
             "type": "String",
             "metadata": {
                 "description": "The name of the App Service plan to use for hosting the web app, default should be fine"

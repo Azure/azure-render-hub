@@ -41,12 +41,12 @@ The unsupported items are in progress and will be available shortly.
 
 ## Deploying
 
-For deployment instructions see [here](docs/00-deployment.md).
+For deployment instructions see [here](docs/00-deployment.md){:target="_blank" rel="noopener"}.
 
 Click the following link to start a deployment into your existing Azure subscription. 
 The required input fields and prerequisites are described in the detailed [deployment instructions](docs/00-deployment.md).
 
-<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FAzure%2Fazure-render-hub%2Fbug-bash%2FTemplates%2FAzureRenderHub.json" target="_blank">
+<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FAzure%2Fazure-render-hub%2Fbug-bash%2FTemplates%2FAzureRenderHub.json" target="_blank" rel="noopener">
    <img alt="Deploy to Azure" src="http://azuredeploy.net/deploybutton.png"/>
 </a>
 
