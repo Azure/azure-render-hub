@@ -1,6 +1,6 @@
 # Deploying Azure Render Hub
 
-Before you deploy the portal you'll need to create an Azure Active Directory (AAD) application.  You can create the application via the Azure Cloud Shell [here](https://shell.azure.com/powershell).
+Before you deploy the Render Hub portal you'll need to create an Azure Active Directory (AAD) application via the Azure Portal or Cloud Shell.
 
 ## Create an Azure AD Application
 
@@ -67,6 +67,8 @@ The following instructions allow you to restrict access to specific users in you
 In the Azure Portal navigate to Azure Active Directory -> Properties.  Note down the Directory ID, this is your Tenant ID that is required when you deploy the portal.
 
 ### Using Cloud Shell
+
+You can create the application via the Azure Cloud Shell [here](https://shell.azure.com/powershell).
 
 Simply copy the script snippet below, update the $webAppName variable and paste the script below into the cloud shell to create a new AAD application.  Keep in mind the Web App name must be globally unique and be a valid DNS name as it becomes the host in your website's URL, e.g. https://< webAppName >.azurewebsites.net.
 
