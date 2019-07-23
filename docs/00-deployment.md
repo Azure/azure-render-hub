@@ -68,7 +68,7 @@ In the Azure Portal navigate to Azure Active Directory -> Properties.  Note down
 
 ### Using Cloud Shell
 
-Simply copy the script snippet below, update the $webAppName variable and paste the script below into the cloud shell to create a new AAD application.  Keep in mind the Web App name must be globally unique and be a valid DNS name as it becomes the host in your website's URL, e.g. https://< webAppName >.azurewebsites.net.
+Simply copy the script snippet below, update the $webAppName variable and paste the script below into the cloud shell to create a new AAD application.  Keep in mind the Web App name must be globally unique and be a valid DNS name as it becomes the host in your website's URL, e.g. https://`[webAppName]`.azurewebsites.net.
 
 ```
 $webAppName = "MyAzureRenderHub"
