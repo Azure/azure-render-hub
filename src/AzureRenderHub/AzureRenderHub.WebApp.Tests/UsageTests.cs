@@ -17,8 +17,8 @@ namespace WebApp.Tests
             var usage1 = new Cost(period, new UsageResponse(new UsageResponseProperties(new List<Column>(), new List<List<object>>()), null));
             var usage2 = new Cost(period, new UsageResponse(new UsageResponseProperties(new List<Column>(), new List<List<object>>()), null));
 
-            Assert.NotNull(new Cost(usage1, usage2));
-            Assert.NotNull(new Cost(usage2, usage1));
+            Assert.NotNull(Cost.Aggregate(usage1, usage2));
+            Assert.NotNull(Cost.Aggregate(usage2, usage1));
         }
 
         [Fact]

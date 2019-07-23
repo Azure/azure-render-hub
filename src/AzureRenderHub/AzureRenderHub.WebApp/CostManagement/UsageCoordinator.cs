@@ -83,7 +83,7 @@ namespace WebApp.CostManagement
                 return new EnvironmentCost(env.Name, null);
             }
 
-            return new EnvironmentCost(env.Name, costs.Aggregate((x, y) => new Cost(x, y)));
+            return new EnvironmentCost(env.Name, costs.Aggregate(Cost.Aggregate));
         }
 
         private static UsageRequest CreateUsageRequest(RenderingEnvironment env, QueryTimePeriod period)
