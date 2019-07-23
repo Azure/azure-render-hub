@@ -126,11 +126,11 @@ namespace WebApp.Arm
             var classicAdmins = result.ToList();
             var user = GetUser();
 
-            _logger.LogWarning($"User {user.Identity.Name}");
+            _logger.LogDebug($"[UserClaimsAndRoles] User {user.Identity.Name}");
 
             foreach (var claim in user.Claims)
             {
-                _logger.LogWarning($"Claim type {claim.Type}={claim.Value}");
+                _logger.LogDebug($"[UserClaimsAndRoles] Claim type {claim.Type}={claim.Value}");
             }
 
             var names = user.Identities.Select(i => i.Claims.GetName()).ToList();
@@ -138,7 +138,9 @@ namespace WebApp.Arm
             var upns = user.Identities.Select(i => i.Claims.GetUpn()).ToList();
             foreach (var adminEmail in GetClassicAdministratorEmails(classicAdmins))
             {
-                if (names.Contains(adminEmail) || upns.Contains(adminEmail) || emails.Contains(adminEmail))
+                if (names.Any(e => e.Equals(adminEmail, StringComparison.InvariantCultureIgnoreCase))
+                    || upns.Any(e => e.Equals(adminEmail, StringComparison.InvariantCultureIgnoreCase))
+                    || emails.Any(e => e.Equals(adminEmail, StringComparison.InvariantCultureIgnoreCase)))
                 {
                     return true;
                 }
@@ -150,8 +152,9 @@ namespace WebApp.Arm
         {
             foreach(var admin in admins)
             {
-                _logger.LogWarning($"Admin email={admin.EmailAddress} Id={admin.Id} Name={admin.Name} Role={admin.Role} Type={admin.Type}");
+                _logger.LogDebug($"[UserClaimsAndRoles] Admin email={admin.EmailAddress} Id={admin.Id} Name={admin.Name} Role={admin.Role} Type={admin.Type}");
             }
+
             return admins.Where(a => a.Role.ToLower().Contains("ServiceAdministrator".ToLower())
                 || a.Role.ToLower().Contains("CoAdministrator".ToLower())).Select(a => a.EmailAddress);
         }
