@@ -28,7 +28,7 @@ namespace WebApp.Models.Reporting
         /// <summary>
         /// Merges two usages into one. They must be for the same time period.
         /// </summary>
-        public Cost(Cost left, Cost right)
+        public static Cost Aggregate(Cost left, Cost right)
         {
             if (left == null)
             {
@@ -55,10 +55,11 @@ namespace WebApp.Models.Reporting
                 // if one is null then there's no data in that side, and it's okay to merge
             }
 
-            Period = left.Period;
-            Currency = left.Currency ?? right.Currency;
-            Total = left.Total + right.Total;
-            Categorized = MergeData(left.Categorized, right.Categorized);
+            return new Cost(
+                left.Period,
+                left.Currency ?? right.Currency,
+                MergeData(left.Categorized, right.Categorized),
+                left.Total + right.Total);
         }
 
         /// <summary>

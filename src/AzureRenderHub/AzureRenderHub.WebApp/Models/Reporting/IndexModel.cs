@@ -20,7 +20,7 @@ namespace WebApp.Models.Reporting
 
             From = from;
             To = to;
-            SummaryUsage = squishedCosts.Any() ? squishedCosts.Aggregate((x, y) => new Cost(x, y)) : null;
+            SummaryUsage = squishedCosts.Any() ? squishedCosts.Aggregate(Cost.Aggregate) : null;
             UsagePerEnvironment = usages.OrderBy(eu => eu.EnvironmentId).ToList();
             NextMonthLink = nextMonth;
             CurrentMonthLink = currentMonth;
