@@ -81,7 +81,7 @@
                         <input asp-for="NewKeyVaultName" value="@Model.NewKeyVaultName" placeholder="New Key Vault name" />
                         <span asp-validation-for="NewKeyVaultName" class=""></span>
                     </div>
-                    <small class="form-text text-muted">Key Vault is a secure Azure service to store passwords and certificates. Each environment has it's own Key Vault to store secrets like service passwords, domain credentials and user passwords.</small>
+                    <small class="form-text text-muted">Key Vault is a secure Azure service to store passwords and certificates. Each environment has its own Key Vault to store secrets like service passwords, domain credentials and user passwords.</small>
                     <a id="newKeyVault" href="javascript:void(0);" onclick="showHideNew('keyVault', 'NewKeyVaultName', 'KeyVaultSpinner', this);">Select existing Key Vault</a>
                 </div>
 
@@ -156,7 +156,7 @@
                         <input asp-for="NewVnetName" value="@Model.NewVnetName" placeholder="New Virtual Network name" />
                         <span asp-validation-for="NewVnetName" class=""></span>
                     </div>
-                    <small>Virtual Machines will be deployed to this Subnet ensuring they have access to any cloud or on-premise storage. Ensure that the subnet has sufficient IP addresses for the number of virtual machines you plan to run.</small>
+                    <small>Virtual Machines will be deployed to this Subnet ensuring they have access to any cloud or on-premises storage. Ensure that the subnet has sufficient IP addresses for the number of virtual machines you plan to run.</small>
                     <a id="newVNet" href="javascript:void(0);" onclick="showHideNew('vNet', 'NewVnetName', 'SubnetSpinner', this);">Create new virtual network</a>
                 </div>
 
