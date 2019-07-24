@@ -488,7 +488,7 @@ namespace WebApp.Controllers
             if (!allowedVMSizes.Contains(model.VMSize.ToLowerInvariant()))
             {
                 ModelState.AddModelError(nameof(AddAvereClusterModel.VMSize),
-                    $"The Avere vFXT VM size must be one of {string.Join(', ', allowedVMSizes)}");
+                    $"The Avere vFXT VM size must be one of {string.Join(", ", allowedVMSizes)}");
             }
 
             if (model.CacheSizeInGB != 1024 && model.CacheSizeInGB != 4096)
