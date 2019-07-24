@@ -484,11 +484,11 @@ namespace WebApp.Controllers
                     "A controller SSH key must be specified.");
             }
 
-            var allowedVMSizes = new [] { "standard_e8s_v3", "standard_e16s_v3", "standard_e32s_v3" };
+            var allowedVMSizes = new [] { "standard_e8s_v3", "standard_e16s_v3", "standard_e32s_v3", "standard_d16s_v3" };
             if (!allowedVMSizes.Contains(model.VMSize.ToLowerInvariant()))
             {
                 ModelState.AddModelError(nameof(AddAvereClusterModel.VMSize),
-                    $"The Avere vFXT VM size must be one of {string.Join(',', allowedVMSizes)}");
+                    $"The Avere vFXT VM size must be one of {string.Join(', ', allowedVMSizes)}");
             }
 
             if (model.CacheSizeInGB != 1024 && model.CacheSizeInGB != 4096)

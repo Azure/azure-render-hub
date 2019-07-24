@@ -164,6 +164,7 @@
                         <input id="UseSSHKey" asp-for="UseControllerPasswordCredential" value="false" type="radio">
                         <label class="form-check-label" for="UseSSHKey">SSH Public Key</label>
                     </div>
+                    <small>This is the credential used to SSH to the Avere controller node.</small>
                 </div>
 
                 <div id="ControllerPasswordSection" hidden="@(Model.UseControllerPasswordCredential ? "" : "hidden")">
@@ -185,6 +186,7 @@
                     <label asp-for="AdminPassword">Management Admin Password</label>
                     <input asp-for="AdminPassword" type="password" />
                     <span asp-validation-for="AdminPassword"></span>
+                    <small>This is the password used to log into the Avere admin UI.</small>
                 </div>
 
                 <div class="form-element">
