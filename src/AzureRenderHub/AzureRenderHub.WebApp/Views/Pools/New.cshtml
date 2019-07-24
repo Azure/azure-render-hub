@@ -208,7 +208,10 @@
                         <label asp-for="AutoScalePolicy">Auto-scale policy</label>
                         <select asp-for="AutoScalePolicy" asp-items="Model.AutoScalePolicyItems"></select>
                         <span asp-validation-for="AutoScalePolicy" class=""></span>
-                        <small>The specific processes can be configured<a style="display: inline" asp-controller="Environments" asp-action="Config">here</a>.  By default the following processes are watched to indicate a node is busy:</small>
+                        @{ 
+                            var linkParams = new Dictionary<string, string> { { "envId", Model.EnvironmentName } };
+                        }
+                        <small>The specific processes can be configured <a style="display: inline; margin: 0" asp-controller="Environments" asp-action="Config" asp-all-route-data="linkParams">here</a>.  By default the following processes are watched to indicate a node is busy:</small>
                         <small>3dsmax.exe, 3dsmaxcmd.exe, 3dsmaxio.exe, 3dsmaxcmdio.exe, render.exe, kick.exe, commandline.exe, cinema 4d.exe, vray.exe, maya.exe, mayabatch.exe, blender.exe</small>
                     </div>
                     <div class="form-element">
