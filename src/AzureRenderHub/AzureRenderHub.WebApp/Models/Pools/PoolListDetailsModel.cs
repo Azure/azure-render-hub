@@ -12,7 +12,6 @@ namespace WebApp.Models.Pools
         public PoolListDetailsModel(Pool pool)
         {
             Name = pool.Name;
-            DisplayName = string.IsNullOrEmpty(pool.DisplayName) ? pool.Name : pool.DisplayName;
             CurrentDedicated = pool.CurrentDedicatedNodes ?? 0;
             TargetDedicated = pool.ScaleSettings.FixedScale.TargetDedicatedNodes ?? 0;
             TargetLowPriority = pool.ScaleSettings.FixedScale.TargetLowPriorityNodes ?? 0;
@@ -26,8 +25,6 @@ namespace WebApp.Models.Pools
         }
 
         public string Name { get; }
-
-        public string DisplayName { get; }
 
         public int CurrentDedicated { get; }
 
