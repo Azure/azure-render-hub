@@ -12,8 +12,8 @@
 }
 
 <div class="page-header">
-    <h2>@Model.EnvironmentName - pools</h2>
-    <p>Pools that have been created and are managed for the selected environment.</p>
+    <h2>@Model.EnvironmentName: Pools</h2>
+    <p>Pools that have been created by Azure Render Hub.</p>
 </div>
 @await Html.PartialAsync("Menu/EnvironmentMainMenu", Model, new ViewDataDictionary(ViewData) {{ "Step", "pools" }})
 <div asp-validation-summary="ModelOnly" class=""></div>
