@@ -146,8 +146,7 @@
             "type": "string",
             "defaultValue": "Standard_E8s_v3",
             "allowedValues": [
-                "Standard_E8s_v3",
-                "Standard_E16s_v3",
+                "Standard_D16s_v3",
                 "Standard_E32s_v3"
             ],
             "metadata": {
