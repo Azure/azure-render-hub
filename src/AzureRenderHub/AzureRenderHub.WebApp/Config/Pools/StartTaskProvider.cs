@@ -294,7 +294,7 @@ namespace WebApp.Config.Pools
             }
 
             // Leave the trailing space below!
-            return isWindows ? $"-{param}" : $"--{param} ";
+            return isWindows ? $"-{param} " : $"--{param} ";
         }
 
         private async Task AppendQubeSetupToStartTask(
