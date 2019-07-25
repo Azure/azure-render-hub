@@ -156,7 +156,7 @@
                         <input asp-for="NewVnetName" value="@Model.NewVnetName" placeholder="New Virtual Network name" />
                         <span asp-validation-for="NewVnetName" class=""></span>
                     </div>
-                    <small>Virtual Machines will be deployed to this Subnet ensuring they have access to any cloud or on-premises storage. Ensure that the subnet has sufficient IP addresses for the number of virtual machines you plan to run.</small>
+                    <small>Virtual Machines will be deployed to this Subnet ensuring they have access to any cloud or on-premises storage. Ensure that the subnet has sufficient IP addresses available for the number of virtual machines you plan to run.</small>
                     <a id="newVNet" href="javascript:void(0);" onclick="showHideNew('vNet', 'NewVnetName', 'SubnetSpinner', this);">Create new virtual network</a>
                 </div>
 
