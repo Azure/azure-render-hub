@@ -2,7 +2,7 @@
 
 Deploying the Azure Render Hub requires the following steps:
 
-* Create an Azure Active Directory (AAD) Appliation (used for authentication and to control access)
+* Create an Azure Active Directory (AAD) Application (used for authentication and to control access)
 * Deploying the hub from our Github Repo
 
 You can create the AAD application either using the Azure Portal, or using the [Azure Cloud Shell](#create-an-azure-ad-application-using-cloud-shell). Both approaches are described below.
@@ -36,7 +36,7 @@ We're going to create the AAD application required to host the Azure Render Hub 
  1. Press *New registration*
  2. Enter an application name, e.g. `AzureRenderHub`
 
-    - This name will be used as the name for your website, so it needs to be 20 characters or shorter.
+    - This name will be used as the name for your website, so it needs to be 60 characters or shorter.
 
  3. Under *Supported Account Types*, the default value ("Accounts in this organizational directory only*) should be correct.
  4. For application type select `Public client (mobile & desktop)`
@@ -102,7 +102,7 @@ Note: Once you navigate away from this screen, the key cannot be accessed again.
 
 #### Update the Redirect URI
 
-We need to ensure the Redirect URI configured for the application is correct - it must end with `/signin-oidc`.
+We should check the Redirect URI configured for the application is correct - it must end with `/signin-oidc`.
 
  1. Select *Authentication* from the sidebar
  2. If needed, modify the existing reply URL to append '/signin-oidc'
@@ -144,7 +144,7 @@ In the Azure Portal navigate to *Azure Active Directory* -> *Properties*.
 
 ![AAD Properties](images/00-properties-aad-directory-id.png)
 
-Note down the Directory ID, this is your Tenant ID that will be required when you deploy the portal.
+Note down the *Directory ID*, this is your "Tenant ID" that will be required when you deploy the portal.
 
 ### Create an Azure AD Application using Cloud Shell 
 
@@ -152,7 +152,9 @@ Note down the Directory ID, this is your Tenant ID that will be required when yo
 
 You can create the application via the Azure Cloud Shell [here](https://shell.azure.com/powershell).  After opening Cloud Shell ensure that it is set to the 'Powershell' environment.
 
-Simply copy the script snippet below, update the $webAppName variable and paste the script below into the cloud shell to create a new AAD application.  Keep in mind the Web App name must be globally unique, and be a valid DNS name as it becomes the host in your website's URL, e.g. `https://<webAppName>.azurewebsites.net`.
+Copy the script snippet shown below, update the `$webAppName` variable, and paste the script below into the cloud shell to create a new AAD application.
+
+Keep in mind the Web App name must be globally unique, and must be a valid DNS name as it becomes the host in your website's URL, e.g. `https://<webAppName>.azurewebsites.net`.
 
 ```
 $webAppName = "MyAzureRenderHub"
