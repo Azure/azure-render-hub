@@ -102,7 +102,7 @@ Note: Once you navigate away from this screen, the key cannot be accessed again.
 
 #### Update the Redirect URI
 
-We need to ensure the Redirect URI configured for the application is correct - it must end with `/signin-oidc`.
+We should check the Redirect URI configured for the application is correct - it must end with `/signin-oidc`.
 
  1. Select *Authentication* from the sidebar
  2. If needed, modify the existing reply URL to append '/signin-oidc'
