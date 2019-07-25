@@ -4,6 +4,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using AzureRenderHub.WebApp.Config.Pools;
+using AzureRenderHub.WebApp.Providers.Scripts;
 using Microsoft.Azure.Management.Batch.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.WindowsAzure.Storage.Blob;
@@ -16,11 +18,22 @@ namespace WebApp.Config.Pools
         private const string JoinDomainScript = "https://raw.githubusercontent.com/Azure/azure-qube/master/Scripts/join-domain.ps1";
 
         private readonly IConfiguration _configuration;
+        private readonly IScriptProvider _scriptProvider;
+        private readonly IPoolScriptPublisher _poolScriptPublisher;
+        private readonly IContainerNameGenerator _containerNameGenerator;
         private readonly CloudBlobClient _blobClient;
 
-        public StartTaskProvider(IConfiguration configuration, CloudBlobClient blobClient)
+        public StartTaskProvider(
+            IConfiguration configuration, 
+            IScriptProvider scriptProvider,
+            IPoolScriptPublisher poolScriptPublisher,
+            IContainerNameGenerator containerNameGenerator,
+            CloudBlobClient blobClient)
         {
             _configuration = configuration;
+            _scriptProvider = scriptProvider;
+            _poolScriptPublisher = poolScriptPublisher;
+            _containerNameGenerator = containerNameGenerator;
             _blobClient = blobClient;
         }
 
@@ -59,7 +72,10 @@ namespace WebApp.Config.Pools
             IEnumerable<InstallationPackage> generalPackages,
             bool isWindows)
         {
-            var resourceFiles = new List<ResourceFile>();
+            var resourceFiles = new List<ResourceFile>
+            {
+                await StageScripts(poolName, RenderManagerType.Qube70)
+            };
 
             var startTask = new StartTask(
                 "",
@@ -91,6 +107,14 @@ namespace WebApp.Config.Pools
             return startTask;
         }
 
+        private async Task<ResourceFile> StageScripts(string poolName, RenderManagerType renderManager)
+        {
+            var poolContainerName = _containerNameGenerator.GetContainerName(poolName);
+            var files = _scriptProvider.GetBundledScripts(renderManager);
+            await _poolScriptPublisher.UploadScripts(poolContainerName, files);
+            return GetContainerResourceFile(poolContainerName, null);
+        }
+
         public async Task<StartTask> GetDeadlineStartTask(
             string poolName,
             IEnumerable<string> additionalPools,
@@ -111,7 +135,10 @@ namespace WebApp.Config.Pools
                 throw new Exception("Wrong environment for Deadline.");
             }
 
-            var resourceFiles = new List<ResourceFile>();
+            var resourceFiles = new List<ResourceFile>
+            {
+                await StageScripts(poolName, RenderManagerType.Deadline)
+            };
 
             var startTask = new StartTask(
                 "",

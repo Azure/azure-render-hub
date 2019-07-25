@@ -5,7 +5,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
-
+using AzureRenderHub.WebApp.Config.Pools;
+using AzureRenderHub.WebApp.Providers.Scripts;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Azure.Management.Batch;
 using Microsoft.Azure.Management.Batch.Models;
@@ -30,17 +31,26 @@ namespace WebApp.Config.Coordinators
         private readonly IManagementClientProvider _managementClient;
         private readonly BatchClientMsiProvider _batchClient;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IContainerNameGenerator _containerNameGenerator;
+        private readonly IScriptProvider _scriptProvider;
+        private readonly IPoolScriptPublisher _poolScriptPublisher;
 
         public PoolCoordinator(
             IHttpContextAccessor httpContextAccessor,
             ITokenAcquisition tokenAcquisition,
             IManagementClientProvider managementClient,
+            IContainerNameGenerator containerNameGenerator,
+            IScriptProvider scriptProvider,
+            IPoolScriptPublisher poolScriptPublisher,
             BatchClientMsiProvider batchClient)
             : base(httpContextAccessor, tokenAcquisition)
         {
             _managementClient = managementClient;
             _batchClient = batchClient;
             _httpContextAccessor = httpContextAccessor;
+            _containerNameGenerator = containerNameGenerator;
+            _scriptProvider = scriptProvider;
+            _poolScriptPublisher = poolScriptPublisher;
         }
 
         public async Task CreatePool(RenderingEnvironment environment, Pool pool)

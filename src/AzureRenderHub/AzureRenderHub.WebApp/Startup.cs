@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using AzureRenderHub.WebApp.Config.Pools;
+using AzureRenderHub.WebApp.Providers.Scripts;
 using Microsoft.AspNetCore.Authentication.AzureAD.UI;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
@@ -201,6 +203,9 @@ namespace WebApp
             // more instances then we will need to add some named-lookup system...
             services.AddSingleton<AsyncAutoResetEvent>();
             services.AddSingleton<IHostedService, ScaleUpProcessorHost>();
+            services.AddSingleton<IScriptProvider, ScriptProvider>();
+            services.AddSingleton<IContainerNameGenerator, ContainerNameGenerator>();
+            services.AddSingleton<IPoolScriptPublisher, PoolScriptPublisher>();
         }
 
         private static IAssetRepoCoordinator CreateAssetRepoCoordinator(
