@@ -2,7 +2,7 @@
 
 Deploying the Azure Render Hub requires the following steps:
 
-* Create an Azure Active Directory (AAD) Appliation (used for authentication and to control access)
+* Create an Azure Active Directory (AAD) Application (used for authentication and to control access)
 * Deploying the hub from our Github Repo
 
 You can create the AAD application either using the Azure Portal, or using the [Azure Cloud Shell](#create-an-azure-ad-application-using-cloud-shell). Both approaches are described below.
