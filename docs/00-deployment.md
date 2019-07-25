@@ -36,7 +36,7 @@ We're going to create the AAD application required to host the Azure Render Hub 
  1. Press *New registration*
  2. Enter an application name, e.g. `AzureRenderHub`
 
-    - This name will be used as the name for your website, so it needs to be 20 characters or shorter.
+    - This name will be used as the name for your website, so it needs to be 60 characters or shorter.
 
  3. Under *Supported Account Types*, the default value ("Accounts in this organizational directory only*) should be correct.
  4. For application type select `Public client (mobile & desktop)`
