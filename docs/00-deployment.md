@@ -144,7 +144,7 @@ In the Azure Portal navigate to *Azure Active Directory* -> *Properties*.
 
 ![AAD Properties](images/00-properties-aad-directory-id.png)
 
-Note down the Directory ID, this is your Tenant ID that will be required when you deploy the portal.
+Note down the *Directory ID*, this is your "Tenant ID" that will be required when you deploy the portal.
 
 ### Create an Azure AD Application using Cloud Shell 
 
