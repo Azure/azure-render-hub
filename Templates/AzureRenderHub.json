@@ -195,7 +195,7 @@
                     "properties": {
                         "repoUrl": "[variables('repoURL')]",
                         "isManualIntegration": true,
-                        "branch": "bug-bash"
+                        "branch": "master"
                     },
                     "dependsOn": [
                         "[resourceId('Microsoft.Web/Sites', parameters('webSiteName'))]",
