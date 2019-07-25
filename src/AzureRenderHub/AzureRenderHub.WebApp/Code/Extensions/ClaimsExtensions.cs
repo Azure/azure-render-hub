@@ -28,6 +28,7 @@ namespace WebApp.Code.Extensions
             {
                 name = name.Split("#")[1];
             }
+
             return name;
         }
 
@@ -38,10 +39,12 @@ namespace WebApp.Code.Extensions
             {
                 email = claims.FirstOrDefault(c => c.Type == EmailAddressAdFsClaim)?.Value;
             }
+
             if (email == null)
             {
                 email = claims.FirstOrDefault(c => c.Type == PreferredUsernameClaim)?.Value;
             }
+
             return email;
         }
 
@@ -52,6 +55,7 @@ namespace WebApp.Code.Extensions
             {
                 upn = claims.FirstOrDefault(c => c.Type == UpnAdFsClaim)?.Value;
             }
+
             return upn;
         }
 
@@ -74,6 +78,7 @@ namespace WebApp.Code.Extensions
                     string.Format(CultureInfo.InvariantCulture, 
                     "The supplied principal does not contain a claim of type {0}", claimType));
             }
+
             return value;
         }
 
