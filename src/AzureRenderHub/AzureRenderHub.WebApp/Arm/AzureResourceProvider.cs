@@ -37,6 +37,8 @@ using WebApp.Authorization;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 using Microsoft.Identity.Web.Client;
+using WebApp.Models.Api;
+using Subnet = Microsoft.Azure.Management.Network.Models.Subnet;
 
 namespace WebApp.Arm
 {
@@ -123,12 +125,22 @@ namespace WebApp.Arm
             var result = await authClient.ClassicAdministrators.ListAsync();
             var classicAdmins = result.ToList();
             var user = GetUser();
-            var names = user.Identities.Select(i => i.Claims.GetName()).ToList();
-            var emails = user.Identities.Select(i => i.Claims.GetEmailAddress()).ToList();
-            var upns = user.Identities.Select(i => i.Claims.GetUpn()).ToList();
+
+            _logger.LogDebug($"[UserClaimsAndRoles] User {user.Identity.Name}");
+
+            foreach (var claim in user.Claims)
+            {
+                _logger.LogDebug($"[UserClaimsAndRoles] Claim type {claim.Type}={claim.Value}");
+            }
+
+            var names = user.Identities.Select(i => i.Claims.GetName()).Where(c => c != null).ToList();
+            var emails = user.Identities.Select(i => i.Claims.GetEmailAddress()).Where(c => c != null).ToList();
+            var upns = user.Identities.Select(i => i.Claims.GetUpn()).Where(c => c != null).ToList();
             foreach (var adminEmail in GetClassicAdministratorEmails(classicAdmins))
             {
-                if (names.Contains(adminEmail) || upns.Contains(adminEmail) || emails.Contains(adminEmail))
+                if (names.Any(e => e.Equals(adminEmail, StringComparison.InvariantCultureIgnoreCase))
+                    || upns.Any(e => e.Equals(adminEmail, StringComparison.InvariantCultureIgnoreCase))
+                    || emails.Any(e => e.Equals(adminEmail, StringComparison.InvariantCultureIgnoreCase)))
                 {
                     return true;
                 }
@@ -138,7 +150,13 @@ namespace WebApp.Arm
 
         private IEnumerable<string> GetClassicAdministratorEmails(List<ClassicAdministrator> admins)
         {
-            return admins.Where(a => a.Role.Contains("ServiceAdministrator") || a.Role.Contains("CoAdministrator")).Select(a => a.EmailAddress);
+            foreach(var admin in admins)
+            {
+                _logger.LogDebug($"[UserClaimsAndRoles] Admin email={admin.EmailAddress} Id={admin.Id} Name={admin.Name} Role={admin.Role} Type={admin.Type}");
+            }
+
+            return admins.Where(a => a.Role.ToLower().Contains("ServiceAdministrator".ToLower())
+                || a.Role.ToLower().Contains("CoAdministrator".ToLower())).Select(a => a.EmailAddress);
         }
 
         public async Task<bool> CanCreateRoleAssignments(
@@ -676,22 +694,64 @@ namespace WebApp.Arm
             {
                 AddressPrefix = subnetAddressRange,
                 Location = location,
-                ResourceId = vnet.Subnets.First().Id,
+                ResourceId = vnet.Subnets.FirstOrDefault(s => s.Name.Equals(subnetName, StringComparison.InvariantCultureIgnoreCase))?.Id,
                 ExistingResource = false,
             };
         }
 
-        public async Task<Config.Subnet> GetVnetAsync(Guid subscriptionId, string location, string resourceGroupName, string vnetName, string subnetName)
+        public async Task<Config.Subnet> CreateSubnetAsync(
+            Guid subscriptionId,
+            string location,
+            string resourceGroupName,
+            string vnetName,
+            string subnetName,
+            string subnetAddressRange,
+            string environmentName)
+        {
+            await RegisterProvider(subscriptionId, "Microsoft.Network");
+
+            var accessToken = await GetAccessToken();
+            var token = new TokenCredentials(accessToken);
+            var networkClient = new NetworkManagementClient(token) { SubscriptionId = subscriptionId.ToString() };
+
+            var newSubnet = new Microsoft.Azure.Management.Network.Models.Subnet(name: subnetName, addressPrefix: subnetAddressRange);
+            await networkClient.Subnets.CreateOrUpdateAsync(resourceGroupName, vnetName, subnetName, newSubnet);
+            var subnet = await GetSubnetAsync(subscriptionId, location, resourceGroupName, vnetName, subnetName);
+            subnet.ExistingResource = false;
+            return subnet;
+        }
+
+        public async Task<List<Config.Subnet>> GetSubnetsAsync(Guid subscriptionId, string location, string resourceGroupName, string vnetName)
         {
             var accessToken = await GetAccessToken();
             var token = new TokenCredentials(accessToken);
             var networkClient = new NetworkManagementClient(token) { SubscriptionId = subscriptionId.ToString() };
             var vnet = await networkClient.VirtualNetworks.GetAsync(resourceGroupName, vnetName);
+            return vnet.Subnets.Select(s => ParseSubnet(vnet, s)).ToList();
+        }
+
+        public async Task<Config.Subnet> GetSubnetAsync(Guid subscriptionId, string location, string resourceGroupName, string vnetName, string subnetName)
+        {
+            var accessToken = await GetAccessToken();
+            var token = new TokenCredentials(accessToken);
+            var networkClient = new NetworkManagementClient(token) { SubscriptionId = subscriptionId.ToString() };
+            var vnet = await networkClient.VirtualNetworks.GetAsync(resourceGroupName, vnetName);
+            return ParseSubnet(vnet, vnet.Subnets.First(s => s.Name == subnetName));
+        }
+
+        private Config.Subnet ParseSubnet(VirtualNetwork vnet, Subnet subnet)
+        {
+            if (vnet == null || subnet == null)
+            {
+                return null;
+            }
+
             return new Config.Subnet
             {
-                AddressPrefix = vnet.Subnets.First(s => s.Name == subnetName).AddressPrefix,
-                Location = location,
-                ResourceId = vnet.Subnets.First(s => s.Name == subnetName).Id,
+                VNetAddressPrefixes = string.Join(',', vnet.AddressSpace.AddressPrefixes),
+                AddressPrefix = subnet.AddressPrefix,
+                Location = vnet.Location,
+                ResourceId = subnet.Id,
                 ExistingResource = true,
             };
         }

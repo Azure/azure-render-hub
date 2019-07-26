@@ -45,7 +45,7 @@
             <div class="section-bar"></div>
             <div class="section-content">
                 <div class="form-element">
-                    <label asp-for="PowerStatus">State</label>
+                    <label asp-for="PowerStatus">Power Status</label>
                     <input asp-for="PowerStatus" readonly="readonly" />
                 </div>
                 <div class="form-element">
@@ -119,7 +119,7 @@
                 <a class="button" asp-action="PowerOperation" asp-route-repoId="@Model.Name" asp-route-operation="start">Start Server <i class="fa fa-play"></i></a>
             }
 
-            <a class="button" asp-action="Delete" asp-route-repoId="@Model.Name" onclick="return confirm('Are you sure you want to delete @Model.Name?')">Delete Server <i class="fa fa-trash"></i></a>
+                <a class="button" asp-action="Delete" asp-route-repoId="@Model.Name">Delete Server <i class="fa fa-trash"></i></a>
         </div>
     </div>
 </div>

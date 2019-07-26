@@ -83,7 +83,7 @@ namespace WebApp.CostManagement
                 return new EnvironmentCost(env.Name, null);
             }
 
-            return new EnvironmentCost(env.Name, costs.Aggregate((x, y) => new Cost(x, y)));
+            return new EnvironmentCost(env.Name, costs.Aggregate(Cost.Aggregate));
         }
 
         private static UsageRequest CreateUsageRequest(RenderingEnvironment env, QueryTimePeriod period)
@@ -99,7 +99,7 @@ namespace WebApp.CostManagement
                         },
                         new List<Grouping>
                         {
-                            new Grouping("MeterSubCategory", ColumnType.Dimension)
+                            new Grouping("ServiceName", ColumnType.Dimension)
                         },
                         FilterExpression.Tag("environment", Operator.In, new[] { env.Id })));
 

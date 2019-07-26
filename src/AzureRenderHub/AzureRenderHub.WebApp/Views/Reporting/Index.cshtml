@@ -49,6 +49,7 @@
         await Html.RenderPartialAsync("Cost/Chart", new EnvironmentCost("Total Costs", Model.SummaryUsage));
     }
 
+    <h2>Per-environment Costs</h2>
     @foreach (var envUsage in Model.UsagePerEnvironment)
     {
         await Html.RenderPartialAsync("Cost/Chart", envUsage);

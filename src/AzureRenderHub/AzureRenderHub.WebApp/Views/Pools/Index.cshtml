@@ -12,8 +12,8 @@
 }
 
 <div class="page-header">
-    <h2>@Model.EnvironmentName - pools</h2>
-    <p>Pools that have been created and are managed for the selected environment.</p>
+    <h2>@Model.EnvironmentName: Pools</h2>
+    <p>Pools that have been created by Azure Render Hub.</p>
 </div>
 @await Html.PartialAsync("Menu/EnvironmentMainMenu", Model, new ViewDataDictionary(ViewData) {{ "Step", "pools" }})
 <div asp-validation-summary="ModelOnly" class=""></div>
@@ -34,7 +34,7 @@
         @foreach (var pool in Model.Pools)
         {
             <tr class="@(pool.PoolAllocationState == AllocationState.Resizing ? "warning" : pool.PoolAllocationState == AllocationState.Stopping ? "danger" : "")">
-                <td><a asp-action="Overview" asp-route-envId="@Model.EnvironmentName" asp-route-poolId="@pool.Name">@pool.DisplayName</a></td>
+                <td><a asp-action="Overview" asp-route-envId="@Model.EnvironmentName" asp-route-poolId="@pool.Name">@pool.Name</a></td>
                 <td>
                     @if (pool.PoolAllocationState == AllocationState.Resizing && pool.CurrentDedicated != pool.TargetDedicated)
                     {

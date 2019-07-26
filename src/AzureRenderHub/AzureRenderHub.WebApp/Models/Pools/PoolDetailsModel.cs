@@ -21,7 +21,6 @@ namespace WebApp.Models.Pools
         public PoolDetailsModel(RenderingEnvironment environment, Pool pool, IList<PoolUsageMetric> poolUsageMetrics = null)
         {
             Name = pool.Name;
-            DisplayName = pool.DisplayName;
             EnvironmentName = environment.Name;
             RenderManagerType = environment.RenderManager;
 
@@ -71,8 +70,6 @@ namespace WebApp.Models.Pools
         public RenderManagerType RenderManagerType { get; set; }
 
         public string Name { get; set; }
-
-        public string DisplayName { get; set; }
 
         public string SelectedPackageId { get; set; }
 

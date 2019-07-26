@@ -39,3 +39,5 @@ Not Supported Yet
 The NVIDIA GPU driver is downloaded as an executable (exe).  Double click the .exe to extract the contents, or use 7zip and then ZIP the contents into a new package.  This step is required because the .exe cannot be silently installed.
 
 Windows: 398.75-tesla-desktop-winserver2016-international.zip
+
+Return to the Render Hub [docs](README.md).

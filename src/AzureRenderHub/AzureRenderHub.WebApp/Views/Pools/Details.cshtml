@@ -1,10 +1,9 @@
 ﻿@using WebApp.Code.Extensions
 @model WebApp.Models.Pools.PoolDetailsModel
 @{
-    var displayNameOrPoolId = Model.DisplayName ?? Model.Name;
     var redirectUrl = $"/Environments/{Model.EnvironmentName}/Pools";
     var deletePoolUrl = $"/Environments/{Model.EnvironmentName}/Pools/{Model.Name}";
-    ViewBag.Title = $"Pool '{displayNameOrPoolId}'";
+    ViewBag.Title = $"Pool '{Model.Name}'";
 
     // TODO: Show allocation status and any errors with the pool operations
 }
@@ -30,7 +29,7 @@
 }
 
 <div class="page-header">
-    <h2>@Model.EnvironmentName - @displayNameOrPoolId</h2>
+    <h2>@Model.EnvironmentName - @Model.Name</h2>
     <p>Viewing details of the selected pool.</p>
 </div>
 @await Html.PartialAsync("Menu/EnvironmentMainMenu", Model, new ViewDataDictionary(ViewData) { { "Step", "pools" } })
@@ -54,10 +53,6 @@
                     <div class="form-element">
                         <label asp-for="Name">Pool name</label>
                         <input asp-for="Name" readonly="readonly" />
-                    </div>
-                    <div class="form-element">
-                        <label asp-for="DisplayName">Display name</label>
-                        <input asp-for="DisplayName" readonly="readonly" />
                     </div>
                     <div class="form-element">
                         <label asp-for="SelectedPackageId">@Model.RenderManagerType.GetDescription() worker package</label>

@@ -12,6 +12,7 @@ namespace WebApp.Code.Extensions
         private const string NameClaim = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name";
         private const string ObjectIdClaim = "http://schemas.microsoft.com/identity/claims/objectidentifier";
         private const string TenantIdClaim = "http://schemas.microsoft.com/identity/claims/tenantid";
+        private const string PreferredUsernameClaim = "preferred_username";
         private const string EmailAddressClaim = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress";
         private const string EmailAddressAdFsClaim = "http://schemas.xmlsoap.org/claims/EmailAddress";
         private const string UpnClaim = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/upn";
@@ -27,6 +28,7 @@ namespace WebApp.Code.Extensions
             {
                 name = name.Split("#")[1];
             }
+
             return name;
         }
 
@@ -37,6 +39,12 @@ namespace WebApp.Code.Extensions
             {
                 email = claims.FirstOrDefault(c => c.Type == EmailAddressAdFsClaim)?.Value;
             }
+
+            if (email == null)
+            {
+                email = claims.FirstOrDefault(c => c.Type == PreferredUsernameClaim)?.Value;
+            }
+
             return email;
         }
 
@@ -47,6 +55,7 @@ namespace WebApp.Code.Extensions
             {
                 upn = claims.FirstOrDefault(c => c.Type == UpnAdFsClaim)?.Value;
             }
+
             return upn;
         }
 
@@ -69,6 +78,7 @@ namespace WebApp.Code.Extensions
                     string.Format(CultureInfo.InvariantCulture, 
                     "The supplied principal does not contain a claim of type {0}", claimType));
             }
+
             return value;
         }
 

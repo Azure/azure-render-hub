@@ -61,11 +61,7 @@ namespace WebApp.Code.Extensions
                         var currentUri = UriHelper.BuildAbsolute(request.Scheme, request.Host, request.PathBase, request.Path);
                         var credential = new Microsoft.IdentityModel.Clients.ActiveDirectory.ClientCredential(ctx.Options.ClientId, ctx.Options.ClientSecret);
 
-                        var memoryCache = ctx.HttpContext.RequestServices.GetRequiredService<IMemoryCache>();
-                        var cache = new SessionTokenCache(ctx.Principal, memoryCache);
-                        var tokenCache = cache.GetCacheInstance();
-                        var authContext = new AuthenticationContext(ctx.Options.Authority, true, tokenCache);
-
+                        var authContext = new AuthenticationContext(ctx.Options.Authority, true);
                         var result = await authContext.AcquireTokenByAuthorizationCodeAsync(
                             ctx.ProtocolMessage.Code, new Uri(currentUri), credential, ctx.Options.Resource);
 

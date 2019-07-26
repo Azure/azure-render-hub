@@ -98,6 +98,7 @@
 
 <div class="form-footer">
     <div class="button-bar">
+        <a class="button" asp-controller="Environments" asp-action="Step2" asp-route-envId="@Model.EnvironmentName">Edit Environment <i class="fa fa-edit"></i></a>
         <a class="button" asp-controller="Environments" asp-action="Delete" asp-route-envId="@Model.EnvironmentName">Delete Environment <i class="fa fa-trash"></i></a>
     </div>
 </div>

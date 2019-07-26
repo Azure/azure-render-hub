@@ -1,0 +1,177 @@
+﻿@using WebApp.Config.Storage
+@using AzureRenderHub.WebApp.Arm.Deploying
+@using AzureRenderHub.WebApp.Config.Storage
+@model WebApp.Models.Storage.DeleteStorageModel
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContext
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Xsrf
+@functions{
+    public string GetAntiXsrfRequestToken()
+    {
+        return Xsrf.GetAndStoreTokens(HttpContext.HttpContext).RequestToken;
+    }
+}
+@{
+    ViewBag.Title = Model.Name;
+}
+
+@section Breadcrumb
+    {
+    <a asp-controller="Storage" asp-action="Index">Storage Repositories</a> &gt;
+    <a asp-controller="Storage" asp-action="Deploying" asp-route-repoId="@Model.Name">@Model.Name</a> &gt;
+    <span>Delete</span>
+}
+
+<form method="post">
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(model => model.Name)
+    @Html.HiddenFor(model => model.SubscriptionId)
+    @Html.HiddenFor(model => model.LocationName)
+    @Html.HiddenFor(model => model.ResourceGroup)
+    <div class="page-header">
+        <h2>Delete Environment</h2>
+        <p>
+            Warning! Deleting the Storage "@Model.Name" and any of it's resources is irreversible.
+            The action you're about to take can't be undone. Going further will delete any resources you
+            select and any children of those resources permanently.
+        </p>
+        <p>
+            When a storage is created, we create a resource group in the specified Azure region that contains
+            any other resources we create for you as part of the setup process. This could possibly contain more resources than
+            those which we create; so be careful when you choose to delete the entire resource group that you are not
+            deleting anything you wish to keep.
+        </p>
+    </div>
+    <br />
+
+    @if (Model.HasResourceGroup)
+    {
+        <h4>As well as deleting the configured storage: "@Model.Name", the following can also be deleted:</h4>
+        <div asp-validation-summary="ModelOnly" class=""></div>
+        <div class="delete-environment">
+            <div id="rgSection" class="section">
+                <div class="header">
+                    <input id="DeleteResource" asp-for="DeleteResourceGroup" type="radio" value="true" />
+                    <label asp-for="DeleteResourceGroup">Delete the entire Azure resource group '@Model.ResourceGroup'</label>
+                </div>
+                <div class="resources">
+                    <h4>Affected resources</h4>
+                    @if (Model.ResourceCount > 0)
+                    {
+                        <p>There are @Model.ResourceCount resources in this resource group that will also be deleted.</p>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Type</th>
+                                    <th>Location</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var resource in Model.Resources)
+                                {
+                                    if (resource.Ignorable)
+                                    {
+                                        // continue;
+                                    }
+
+                                    <tr>
+                                        <td class="name">
+                                            <div class="image-container">
+                                                <div class="icon"><img src="~/images/@(resource.Icon)" width="18" height="18" alt="Azure" /></div>
+                                                <span>@(resource.Name)</span>
+                                            </div>
+                                        </td>
+                                        <td class="type">@(resource.TypeDesc)</td>
+                                        <td>@(resource.Location)</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else if (Model.ResourceLoadFailed)
+                    {
+                        <p>The call to list the resources in the resource group failed.</p>
+                    }
+                    else
+                    {
+                        <p>There are no other resources in this resource group. Deleting the environment will not affect any other resource in Azure.</p>
+                    }
+                </div>
+            </div>
+
+            <div id="vmSection" class="section">
+                <div class="header">
+                    <input id="DeleteVirtualMachines" asp-for="DeleteResourceGroup" type="radio" value="false" />
+                    <label asp-for="DeleteVirtualMachines">Delete just the Avere controller and vFXT VMs from the resource group?</label>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <div class="section-wrapper">
+                    <div class="section-content">
+                        <div class="form-element">
+                            <label asp-for="Confirmation">Delete confirmation</label>
+                            <input asp-for="Confirmation" Placeholder="Enter the environment name" />
+                            <span asp-validation-for="Confirmation" class=""></span>
+                            <small>Warning! Deleting the storage "@Model.Name" is irreversible. Please enter "@Model.Name" to confirm deletion.</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="form-footer">
+                <div class="button-bar">
+                    <button type="submit">Delete Storage <i class="fa fa-trash"></i></button>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <h4>There is no resource group associated with the storage: "@Model.Name".</h4>
+        <div asp-validation-summary="ModelOnly" class=""></div>
+        <div class="delete-environment">
+            <div class="section">
+                <div class="header">
+                    <label>This action will delete the partially created storage "@Model.Name" only.</label>
+                </div>
+            </div>
+            <div class="form-section">
+                <div class="section-wrapper">
+                    <div class="section-content">
+                        <div class="form-element">
+                            <label asp-for="Confirmation">Delete confirmation</label>
+                            <input asp-for="Confirmation" Placeholder="Enter the storage name" />
+                            <span asp-validation-for="Confirmation" class=""></span>
+                            <small>Warning! Deleting the storage "@Model.Name" is irreversible. Please enter "@Model.Name" to confirm deletion.</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="form-footer">
+                <div class="button-bar">
+                    <button type="submit">Delete Storage <i class="fa fa-trash"></i></button>
+                </div>
+            </div>
+        </div>
+    }
+</form>
+
+@section scripts
+    {
+    <script>
+    // TODO: Add JS to a shared validation script file that can be minified ....
+    // TODO: Is there an easier way to add these? Can can at least be shared
+    $.validator.addMethod("confirm-delete",
+        function (value, element, params) {
+            return value && value.toLowerCase() === "@Model.Name.ToLower()";
+        }
+    );
+
+    $.validator.unobtrusive.adapters.add("confirm-delete",
+        function (options) {
+            options.rules["confirm-delete"] = [];
+            options.messages["confirm-delete"] = options.message;
+        }
+    );
+    </script>
+}

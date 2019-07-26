@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 
@@ -20,35 +21,26 @@ namespace WebApp.Controllers
         {
         }
 
-        protected async Task<bool> ValidateResourceGroup(IResourceManagementClient client, string rgName)
+        protected async Task<bool> ValidateResourceGroup(
+            IResourceManagementClient client, 
+            string resourceGroupName,
+            string modelPropertyName)
         {
-            try
+            // check the resource group name is unique. this will change.
+            if (await client.ResourceGroups.CheckExistenceAsync(resourceGroupName))
             {
-                // check the resource group name is unique. this will change.
-                var currentResourceGroup = await client.ResourceGroups.GetAsync(rgName);
-                if (currentResourceGroup != null)
+                var resources = (await client.Resources.ListByResourceGroupAsync(resourceGroupName)).ToList();
+
+                if (resources.Any())
                 {
                     // NewResourceGroupName ties to the name in the model, change both if needed
-                    ModelState["NewResourceGroupName"].ValidationState = ModelValidationState.Invalid;
-                    ModelState["NewResourceGroupName"].Errors.Add("The Resource Group name currently exists in the associated Azure Subscription.");
+                    ModelState[modelPropertyName].ValidationState = ModelValidationState.Invalid;
+                    ModelState[modelPropertyName].Errors.Add("The Resource Group name currently exists in the associated Azure Subscription.");
 
                     return false;
                 }
             }
-            catch (CloudException cEx)
-            {
-                if (cEx.Response.StatusCode == HttpStatusCode.NotFound || cEx.Body.Code == "NotFound")
-                {
-                    // Pass - RG doesn't exist, and that's what we want
-                    return true;
-                }
-                else
-                {
-                    // TODO: Log or do something else ...
-                }
-            }
 
-            // TODO: This should set another error and return false ...
             return true;
         }
     }

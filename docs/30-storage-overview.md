@@ -20,3 +20,5 @@ For render farms with hundreds or thousands of virtual machines, Avere vFXT is t
 For more information on Avere vFXT see [here](https://azure.microsoft.com/en-au/services/storage/avere-vfxt/).
 
 For details on deploying an Avere vFXT cluster see [here](32-storage-avere-deploy.md).
+
+Return to the Render Hub [docs](README.md).

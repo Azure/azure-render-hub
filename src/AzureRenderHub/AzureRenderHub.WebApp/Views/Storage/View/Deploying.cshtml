@@ -1,6 +1,7 @@
 ﻿@using WebApp.Config.Storage
-@using WebApp.Models.Storage.Details
-@model WebApp.Models.Storage.Details.NfsFileServerOverviewModel
+@using AzureRenderHub.WebApp.Arm.Deploying
+@using AzureRenderHub.WebApp.Config.Storage
+@model WebApp.Models.Storage.Details.AssetRepositoryOverviewModel
 @inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContext
 @inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Xsrf
 @functions{
@@ -18,7 +19,7 @@
     <a asp-controller="Storage" asp-action="Index">Storage Repositories</a> &gt;
     <a asp-controller="Storage" asp-action="Deploying" asp-route-repoId="@Model.Name">@Model.Name</a> &gt;
     <span>
-    @(Model.ProvisioningState == ProvisioningState.Running || Model.ProvisioningState == ProvisioningState.Failed ? "Deploying" : "Deleting")
+    @(Model.State == StorageState.Creating || Model.State == StorageState.Failed ? "Deploying" : "Deleting")
     </span>
 }
 
@@ -27,56 +28,75 @@
         <div class="section-title">
             <span class="step-index">1</span>
             <div class="step-header">
-
-                @if (Model.ProvisioningState == ProvisioningState.Running)
+                @if (Model.State == StorageState.Creating)
                 {
                     <h3>Deploying the file server @Model.Name</h3>
-                    <p>The File Server deployment is in progress.</p>
+                    <p>The deployment is in progress.</p>
                 }
-                else if (Model.ProvisioningState == ProvisioningState.Deleting)
+                else if (Model.State == StorageState.Deleting)
                 {
-                    <h3>Deleting the file server @Model.Name</h3>
+                    <h3>Deleting the storage @Model.Name</h3>
                     <p></p>
                 }
-                else if (Model.ProvisioningState == ProvisioningState.Failed)
+                else if (Model.State == StorageState.Failed)
                 {
-                    <h3>Deployment of file server @Model.Name Failed</h3>
+                    <h3>Deployment of storage @Model.Name Failed</h3>
                     <p></p>
                 }
             </div>
         </div>
-        <div class="section-wrapper">
-            <div class="section-bar"></div>
-            <div class="section-content">
-                <div class="form-element half">
-                    <label asp-for="DeploymentName">Deployment Name</label>
-                    <a href="@Model.DeploymentUrl" target="_blank">@Model.DeploymentName <i class="fa fa-external-link"></i></a>
-                </div>
-                @if (Model.ProvisioningState != ProvisioningState.Deleting)
-                {
-                    <div class="form-element">
-                        <label asp-for="ProvisioningState">Status</label>
-                        <input asp-for="ProvisioningState" readonly="readonly" />
+        @if (Model.State == StorageState.Deleting)
+        {
+            <div class="section-wrapper">
+                <div class="section-bar"></div>
+                <div class="section-content">
+                    <div class="form-element half">
+                        <label asp-for="ResourceGroupName">Resource Group</label>
+                        <a href="@Model.ResourceGroupUrl" target="_blank">@Model.ResourceGroupName <i class="fa fa-external-link"></i></a>
                     </div>
-                }
+                </div>
             </div>
-        </div>
+        }
+
+        @if (Model.State != StorageState.Deleting)
+        {
+            <div class="section-wrapper">
+                <div class="section-bar"></div>
+                <div class="section-content">
+                    <div class="form-element half">
+                        <label asp-for="DeploymentName">Deployment Name</label>
+                        <a href="@Model.DeploymentUrl" target="_blank">@Model.DeploymentName <i class="fa fa-external-link"></i></a>
+                    </div>
+                    <div class="form-element half">
+                        <label asp-for="ResourceGroupName">Resource Group</label>
+                        <a href="@Model.ResourceGroupUrl" target="_blank">@Model.ResourceGroupName <i class="fa fa-external-link"></i></a>
+                    </div>
+                    <div class="form-element">
+                        <label asp-for="DeploymentState">Deployment State</label>
+                        <input asp-for="DeploymentState" readonly="readonly" />
+                    </div>
+                    <div class="form-element">
+                        <label asp-for="State">Storage State</label>
+                        <input asp-for="State" readonly="readonly" />
+                    </div>
+                </div>
+            </div>
+        }
     </div>
 </div>
 
-@if (Model.ProvisioningState == ProvisioningState.Failed)
+@if (Model.State == StorageState.Failed)
 {
     <div class="form-footer">
         <div class="button-bar">
-
-            <a class="button" asp-action="Delete" asp-route-repoId="@Model.Name" onclick="return confirm('Are you sure you want to delete @Model.Name?')">Delete File Server <i class="fa fa-trash"></i></a>
+            <a class="button" asp-action="Delete" asp-route-repoId="@Model.Name" >Delete Storage <i class="fa fa-trash"></i></a>
         </div>
     </div>
 }
 
 <p>&nbsp;</p>
 
-@if (Model.ProvisioningState != ProvisioningState.Failed)
+@if (Model.State != StorageState.Failed)
 {
 @section scripts
 {

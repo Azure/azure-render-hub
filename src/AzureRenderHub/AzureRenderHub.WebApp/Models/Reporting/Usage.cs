@@ -13,10 +13,22 @@ namespace WebApp.Models.Reporting
     /// </summary>
     public sealed class Cost
     {
+        public Cost(
+            QueryTimePeriod period,
+            string currency,
+            IReadOnlyDictionary<string, SortedDictionary<DateTimeOffset, double>> categorized,
+            double total)
+        {
+            Period = period;
+            Currency = currency;
+            Categorized = categorized;
+            Total = total;
+        }
+
         /// <summary>
         /// Merges two usages into one. They must be for the same time period.
         /// </summary>
-        public Cost(Cost left, Cost right)
+        public static Cost Aggregate(Cost left, Cost right)
         {
             if (left == null)
             {
@@ -43,10 +55,30 @@ namespace WebApp.Models.Reporting
                 // if one is null then there's no data in that side, and it's okay to merge
             }
 
-            Period = left.Period;
-            Currency = left.Currency ?? right.Currency;
-            Total = left.Total + right.Total;
-            Categorized = MergeData(left.Categorized, right.Categorized);
+            return new Cost(
+                left.Period,
+                left.Currency ?? right.Currency,
+                MergeData(left.Categorized, right.Categorized),
+                left.Total + right.Total);
+        }
+
+        /// <summary>
+        /// Merges all cost categories into one new category.
+        /// </summary>
+        public Cost Recategorize(string categoryName)
+        {
+            var squishedData = new SortedDictionary<DateTimeOffset, double>();
+            foreach (var category in Categorized.Values)
+            {
+                foreach (var kvp in category)
+                {
+                    var existing = squishedData.TryGetValue(kvp.Key, out var currentTotal) ? currentTotal : 0;
+                    squishedData[kvp.Key] = existing + kvp.Value;
+                }
+            }
+
+            var categorized = new Dictionary<string, SortedDictionary<DateTimeOffset, double>> { { categoryName, squishedData } };
+            return new Cost(Period, Currency, categorized, Total);
         }
 
         private static IReadOnlyDictionary<string, SortedDictionary<DateTimeOffset, double>> MergeData(
@@ -105,9 +137,9 @@ namespace WebApp.Models.Reporting
             var cols = response.Properties.Columns;
             var dateIndex = cols.FindIndex(col => col.Name == "UsageDate");
             var costIndex = cols.FindIndex(col => col.Name == "PreTaxCost");
-            var meterCategoryIndex = cols.FindIndex(col => col.Name == "MeterSubCategory");
+            var serviceNameIndex = cols.FindIndex(col => col.Name == "ServiceName");
 
-            foreach (var meterCategory in response.Properties.Rows.GroupBy(row => (string)row[meterCategoryIndex]))
+            foreach (var meterCategory in response.Properties.Rows.GroupBy(row => (string)row[serviceNameIndex]))
             {
                 var category = string.IsNullOrWhiteSpace(meterCategory.Key) ? "uncategorized" : meterCategory.Key;
                 result[category] = GenerateDataForCategory(category, meterCategory);

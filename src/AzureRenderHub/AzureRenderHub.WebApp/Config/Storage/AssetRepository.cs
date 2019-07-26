@@ -2,6 +2,9 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Collections.Generic;
+using AzureRenderHub.WebApp.Arm.Deploying;
+using AzureRenderHub.WebApp.Config.Storage;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using WebApp.Models;
@@ -23,23 +26,15 @@ namespace WebApp.Config.Storage
         public Subnet Subnet { get; set; }
 
         [JsonConverter(typeof(StringEnumConverter))]
-        public ProvisioningState ProvisioningState { get; set; }
+        public StorageState State { get; set; }
 
         public string ResourceGroupName { get; set; }
 
         public string ResourceGroupResourceId => $"/subscriptions/{SubscriptionId}/resourceGroups/{ResourceGroupName}";
 
-        public string DeploymentName { get; set; }
+        public Deployment Deployment { get; set; }
 
         public bool InProgress { get; set; }
-
-        // from ISubMenuItem
-
-        public virtual string Id => Name;
-
-        public virtual string DisplayName => Name;
-
-        public bool Enabled => !InProgress;
 
         /// <summary>
         /// TODO: Don't really like the domain model knowing about the view model, so
@@ -48,15 +43,17 @@ namespace WebApp.Config.Storage
         /// </summary>
         /// <param name="model"></param>
         public abstract void UpdateFromModel(AddAssetRepoBaseModel model);
-    }
 
-    public enum ProvisioningState
-    {
-        Unknown,
-        Creating, // Config creted, not deploying yet
-        Running, // ARM deployment
-        Succeeded, // Deployed and ready
-        Failed, // Something failed in the deployment
-        Deleting // Deleting
+        public abstract string GetTemplateName();
+
+        public abstract Dictionary<string, object> GetTemplateParameters();
+
+        // from ISubMenuItem
+        public virtual string Id => Name;
+
+        public virtual string DisplayName => Name;
+
+        public bool Enabled => !InProgress;
+        // end ISubMenuItem
     }
 }

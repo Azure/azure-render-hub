@@ -1425,7 +1425,7 @@ namespace WebApp.Controllers
 
                 if (environment.Subnet == null || environment.Subnet.ResourceId != subnet.ResourceId)
                 {
-                    environment.Subnet = await _azureResourceProvider.GetVnetAsync(
+                    environment.Subnet = await _azureResourceProvider.GetSubnetAsync(
                         model.SubscriptionId,
                         subnet.Location,
                         subnet.ResourceGroupName,

@@ -5,6 +5,7 @@ using Newtonsoft.Json.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Text;
 using WebApp.Controllers;
 using WebApp.CostManagement;
@@ -208,6 +209,46 @@ namespace WebApp.Tests
         {
             var model = new IndexModel(DateTimeOffset.Now, DateTimeOffset.Now, new EnvironmentCost[0], "", "", "");
             Assert.Null(model.SummaryUsage);
+        }
+
+        [Fact]
+        public void CanRecategorizeCosts()
+        {
+            var start = DateTimeOffset.UtcNow;
+            var mid = start + TimeSpan.FromMinutes(5);
+            var end = start + TimeSpan.FromMinutes(10);
+
+            var costs = new Cost(
+                new QueryTimePeriod(start, end),
+                "USD",
+                new Dictionary<string, SortedDictionary<DateTimeOffset, double>>
+                {
+                    { "category1",
+                      new SortedDictionary<DateTimeOffset, double>
+                      {
+                          { start, 1 },
+                          { mid, 2 },
+                      }
+                    },
+                    { "category2",
+                      new SortedDictionary<DateTimeOffset, double>
+                      {
+                          { mid, 3 },
+                          { end, 4 }
+                      }
+                    }
+                },
+                100);
+
+            var recattedCosts = costs.Recategorize("newCat");
+
+            var newCat = Assert.Single(recattedCosts.Categorized);
+            Assert.Equal("newCat", newCat.Key);
+
+            var values = newCat.Value.Select(kvp => (kvp.Key, kvp.Value)).ToList();
+            Assert.Equal(
+                new[] { (start, 1.0), (mid, 5), (end, 4) },
+                values);
         }
     }
 }

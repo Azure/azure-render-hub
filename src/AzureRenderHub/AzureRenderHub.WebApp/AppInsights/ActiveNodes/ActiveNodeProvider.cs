@@ -13,11 +13,12 @@ namespace WebApp.AppInsights.ActiveNodes
     {
         private const string ActiveProcessQueryFormat = @"customMetrics
 | where timestamp > ago({0}m)
-| where cloud_RoleName != """" and cloud_RoleInstance != """"
-| where name == ""Process CPU"" or name == ""Cpu usage"" or name == ""Gpu usage""
-| extend ProcessName = tostring(customDimensions[""Process Name""])
+| where cloud_RoleName != '' and cloud_RoleInstance != ''
+| where name == 'Process CPU' or name == 'Cpu usage' or name == 'Gpu usage'
+| extend ProcessName = tostring(customDimensions['Process Name'])
 | extend PoolName = cloud_RoleName, ComputeNodeName = cloud_RoleInstance
-| summarize CpuAvg = avg(value) by PoolName, ComputeNodeName, name, ProcessName, bin(timestamp, 5m)
+| extend SampleAvg = value / iff(isnull(valueCount), 1, valueCount)
+| summarize CpuAvg = avg(SampleAvg) by PoolName, ComputeNodeName, name, ProcessName, bin(timestamp, 5m)
 ";
 
         private readonly IAppInsightsQueryProvider _queryProvider;

@@ -66,5 +66,25 @@ namespace WebApp.Config.Storage
                 }
             });
         }
+
+        public override Dictionary<string, object> GetTemplateParameters()
+        {
+            return new Dictionary<string, object>
+            {
+                {"environmentTag", EnvironmentName ?? "Global"},
+                {"vmName", VmName},
+                {"adminUserName", Username},
+                {"adminPassword", Password},
+                {"vmSize", VmSize},
+                {"subnetResourceId", Subnet.ResourceId},
+                {"sharesToExport", Name ?? ""},
+                {"subnetAddressPrefix", string.Join(",", AllowedNetworks)},
+            };
+        }
+
+        public override string GetTemplateName()
+        {
+            return "linux-file-server.json";
+        }
     }
 }

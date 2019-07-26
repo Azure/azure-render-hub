@@ -40,20 +40,10 @@
                 <div class="form-element">
                     <label asp-for="RepositoryType">Storage Repository Type</label>
                     <select asp-for="RepositoryType" name="RepositoryType">
-                        <option value="NfsFileServer" selected>File Server</option>
-                        <option value="AvereCluster" disabled="disabled">Avere Cluster - Coming Soon</option>
+                        <option value="NfsFileServer" >File Server</option>
+                        <option value="AvereCluster" selected>Avere vFXT Cache</option>
                     </select>
                     <span asp-validation-for="RepositoryType" class=""></span>
-                </div>
-                <div class="form-element">
-                    <label asp-for="SubscriptionId">Subscription ID</label>
-                    <div id="SubSpinner" class="async-select">
-                        <select id="SubscriptionId" asp-for="SubscriptionId">
-                            <option disabled selected> -- Loading Subscriptions -- </option>
-                        </select>
-                        <i class="fa fa-spinner fa-spin"></i>
-                    </div>
-                    <span asp-validation-for="SubscriptionId" class=""></span>
                 </div>
                 <div class="form-element">
                     <label></label>
@@ -77,6 +67,16 @@
                     </div>
                 </div>
                 <div id="VNetSection" hidden="@Model.UseEnvironment">
+                    <div class="form-element">
+                        <label asp-for="SubscriptionId">Subscription ID</label>
+                        <div id="SubSpinner" class="async-select">
+                            <select id="SubscriptionId" asp-for="SubscriptionId">
+                                <option disabled selected> -- Loading Subscriptions -- </option>
+                            </select>
+                            <i class="fa fa-spinner fa-spin"></i>
+                        </div>
+                        <span asp-validation-for="SubscriptionId" class=""></span>
+                    </div>
                     <div class="form-element">
                         <label asp-for="SubnetResourceIdLocationAndAddressPrefix">VNet and Subnet</label>
                         <div id="SubetSpinner" class="async-select">
@@ -139,7 +139,9 @@
             $.get(`/api/subscriptions/${subscriptionId}/subnets`,
                 function (subnets) {
                     var dropDownItems = $.map(subnets, function (subnet) {
-                        return `<option value="${subnet.id};${subnet.location};${subnet.addressPrefix}">${subnet.vNetName} - ${subnet.location} - ${subnet.name} (${subnet.addressPrefix})</option>`;
+                        var value = `${subnet.id};${subnet.location};${subnet.addressPrefix};${subnet.vNetAddressPrefixes}`;
+                        var text = `${subnet.vNetName} - ${subnet.location} - ${subnet.name} (${subnet.addressPrefix})`;
+                        return `<option value="${value}">${text}</option>`;
                     });
 
                     $("#Subnets").empty().append(dropDownItems);
@@ -156,8 +158,6 @@
         $(document).ready(function () {
             $("#SubscriptionId").change(function () {
                 var subscription = $("#SubscriptionId :selected").val();
-                // TODO: Remove log
-                console.log("Subscription changed: to " + subscription );
                 loadSubnets(subscription);
             });
 

@@ -21,6 +21,7 @@ namespace WebApp.Models.Api
             AddressPrefix = inner.AddressPrefix;
             Name = inner.Name;
             VNetName = vNet.Name;
+            VNetAddressPrefixes = string.Join(',', vNet.AddressSpace.AddressPrefixes);
             Location = vNet.Location;
         }
 
@@ -31,6 +32,8 @@ namespace WebApp.Models.Api
         public string AddressPrefix { get; set; }
 
         public string VNetName { get; set; }
+
+        public string VNetAddressPrefixes { get; set; }
 
         public string Location { get; set; }
     }

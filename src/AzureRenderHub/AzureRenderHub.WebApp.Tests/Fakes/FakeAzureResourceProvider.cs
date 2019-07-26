@@ -10,6 +10,7 @@ using Microsoft.Azure.Management.ResourceManager.Models;
 using WebApp.Arm;
 using WebApp.Config;
 using WebApp.Identity;
+using WebApp.Models.Api;
 using WebApp.Models.Environments;
 
 namespace WebApp.Tests.Fakes
@@ -123,7 +124,7 @@ namespace WebApp.Tests.Fakes
             return Task.FromResult(UserPermissions.Where(p => p.Scope == scope || scope.Contains(p.Scope)).ToList());
         }
 
-        public Task<Subnet> GetVnetAsync(Guid subscriptionId, string location, string resourceGroupName, string vnetName, string subnetName)
+        public Task<Subnet> GetSubnetAsync(Guid subscriptionId, string location, string resourceGroupName, string vnetName, string subnetName)
         {
             throw new NotImplementedException();
         }
@@ -151,6 +152,21 @@ namespace WebApp.Tests.Fakes
         }
 
         public Task<CheckNameAvailabilityResult> ValidateKeyVaultName(Guid subscriptionId, string resourceGroupName, string keyVaultName)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<Subnet> CreateSubnetAsync(Guid subscriptionId, string location, string resourceGroupName, string vnetName, string subnetName, string subnetAddressRange, string environmentName)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task CreateSubnetServiceEndpointAsync(Guid subscriptionId, string location, string resourceGroupName, string vnetName, string subnetName, string service)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<List<Subnet>> GetSubnetsAsync(Guid subscriptionId, string location, string resourceGroupName, string vnetName)
         {
             throw new NotImplementedException();
         }

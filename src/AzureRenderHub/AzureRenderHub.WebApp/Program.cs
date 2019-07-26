@@ -17,6 +17,7 @@ namespace WebApp
 
         public static IWebHost CreateWebHost(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
+                .UseApplicationInsights()
                 .ConfigureAppConfiguration((context, config) =>
                 {
                     var builtConfig = config.Build();

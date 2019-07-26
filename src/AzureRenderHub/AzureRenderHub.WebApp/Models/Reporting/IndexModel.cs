@@ -16,11 +16,11 @@ namespace WebApp.Models.Reporting
             string currentMonth,
             string prevMonth)
         {
-            var costs = usages.Select(x => x.Cost).Where(c => c != null).ToList();
+            var squishedCosts = usages.Where(u => u.Cost != null).Select(u => u.Cost.Recategorize(u.EnvironmentId));
 
             From = from;
             To = to;
-            SummaryUsage = costs.Any() ? costs.Aggregate((x, y) => new Cost(x, y)) : null;
+            SummaryUsage = squishedCosts.Any() ? squishedCosts.Aggregate(Cost.Aggregate) : null;
             UsagePerEnvironment = usages.OrderBy(eu => eu.EnvironmentId).ToList();
             NextMonthLink = nextMonth;
             CurrentMonthLink = currentMonth;

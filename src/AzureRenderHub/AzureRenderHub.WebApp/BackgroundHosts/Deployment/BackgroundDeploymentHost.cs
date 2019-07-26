@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using AzureRenderHub.WebApp.Arm.Deploying;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Rest.Azure;
@@ -71,7 +72,7 @@ namespace WebApp.BackgroundHosts.Deployment
 
         private async Task MonitorDeployment(ActiveDeployment activeDeployment)
         {
-            _logger.LogDebug($"Waiting for file server {activeDeployment.FileServerName} deployment to complete");
+            _logger.LogDebug($"Waiting for storage {activeDeployment.StorageName} deployment to complete");
 
             using (var cts = new CancellationTokenSource())
             {
@@ -84,13 +85,18 @@ namespace WebApp.BackgroundHosts.Deployment
 
                     while (deploymentState == ProvisioningState.Running)
                     {
-                        var fileServer = (NfsFileServer)await _assetRepoCoordinator.GetRepository(activeDeployment.FileServerName);
+                        var fileServer = (NfsFileServer)await _assetRepoCoordinator.GetRepository(activeDeployment.StorageName);
                         if (fileServer == null)
                         {
                             break;
                         }
 
-                        deploymentState = await _assetRepoCoordinator.UpdateRepositoryFromDeploymentAsync(fileServer);
+                        await _assetRepoCoordinator.UpdateRepositoryFromDeploymentAsync(fileServer);
+
+                        deploymentState = fileServer.Deployment.ProvisioningState;
+
+                        _logger.LogDebug($"[MonitorDeployment={activeDeployment.StorageName}] " +
+                            $"Deployment returned state {deploymentState}");
 
                         if (deploymentState == ProvisioningState.Running)
                         {
@@ -100,6 +106,10 @@ namespace WebApp.BackgroundHosts.Deployment
                 }
                 finally
                 {
+                    _logger.LogDebug($"[MonitorDeployment={activeDeployment.StorageName}] " +
+                        $"Deleting queue message {activeDeployment.MessageId} " +
+                        $"with receipt {activeDeployment.PopReceipt}");
+
                     await _deploymentQueue.Delete(activeDeployment.MessageId, activeDeployment.PopReceipt);
 
                     cts.Cancel();
@@ -115,28 +125,30 @@ namespace WebApp.BackgroundHosts.Deployment
             }
         }
 
-        private async Task DeleteDeployment(ActiveDeployment activeDeployment)
+        private async Task DeleteDeployment(ActiveDeployment storageDeployment)
         {
-            _logger.LogDebug($"Deleting file server {activeDeployment.FileServerName}");
+            _logger.LogDebug($"[DeleteStorage={storageDeployment.StorageName}] Deleting storage");
 
             using (var cts = new CancellationTokenSource())
             {
                 // runs in background
-                var renewer = _leaseMaintainer.MaintainLease(activeDeployment, cts.Token);
+                var renewer = _leaseMaintainer.MaintainLease(storageDeployment, cts.Token);
 
                 try
                 {
-                    var repository = await _assetRepoCoordinator.GetRepository(activeDeployment.FileServerName);
+                    var repository = await _assetRepoCoordinator.GetRepository(storageDeployment.StorageName);
                     if (repository != null)
                     {
-                        await _assetRepoCoordinator.DeleteRepositoryResourcesAsync(repository);
+                        await _assetRepoCoordinator.DeleteRepositoryResourcesAsync(repository, storageDeployment.DeleteResourceGroup);
                     }
 
-                    await _deploymentQueue.Delete(activeDeployment.MessageId, activeDeployment.PopReceipt);
+                    _logger.LogDebug($"[DeleteStorage={storageDeployment.StorageName}] Deleting queue message {storageDeployment.MessageId} with receipt {storageDeployment.PopReceipt}");
+
+                    await _deploymentQueue.Delete(storageDeployment.MessageId, storageDeployment.PopReceipt);
                 }
                 catch (CloudException e)
                 {
-                    _logger.LogError(e, $"Error deleting file server {activeDeployment.FileServerName}");
+                    _logger.LogError(e, $"[DeleteStorage={storageDeployment.StorageName}]");
                 }
                 finally
                 {

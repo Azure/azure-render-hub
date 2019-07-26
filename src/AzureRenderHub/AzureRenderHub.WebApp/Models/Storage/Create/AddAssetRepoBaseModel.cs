@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 using WebApp.Code;
+using WebApp.Config;
 using WebApp.Config.Storage;
 
 namespace WebApp.Models.Storage.Create
@@ -19,11 +20,23 @@ namespace WebApp.Models.Storage.Create
         [EnumDataType(typeof(AssetRepositoryType))]
         public AssetRepositoryType RepositoryType { get; set; }
 
+        public Subnet Subnet { get; set; }
+
         /// <summary>
-        /// Semi-colon delimited resource id, location and address prefix
+        /// Semi-colon delimited resource id, location, address prefix, VNet address prefix
         /// </summary>
-        [Required]
-        public string SubnetResourceIdLocationAndAddressPrefix { get; set; }
+        public string SubnetResourceIdLocationAndAddressPrefix
+        {
+            get
+            {
+                return Subnet?.ToString();
+            }
+
+            set
+            {
+                Subnet = new Subnet(value);
+            }
+        }
 
         public bool UseEnvironment { get; set; } = true;
 
@@ -31,7 +44,6 @@ namespace WebApp.Models.Storage.Create
 
         public string SelectedEnvironmentName { get; set; }
 
-        [Required]
         public Guid? SubscriptionId { get; set; }
 
         public string Error { get; set; }
