@@ -18,6 +18,7 @@ using Newtonsoft.Json.Linq;
 using WebApp.Arm;
 using WebApp.BackgroundHosts.Deployment;
 using WebApp.Code.Contract;
+using WebApp.Code.Extensions;
 using WebApp.Config.Storage;
 using WebApp.Identity;
 using WebApp.Models.Storage.Create;
@@ -274,7 +275,7 @@ namespace WebApp.Config.Coordinators
                         vmName);
                 }
             }
-            catch (CloudException ex) when (ResourceNotFound(ex))
+            catch (CloudException ex) when (ex.ResourceNotFound())
             {
                 // RG doesn't exist
             }
@@ -330,7 +331,7 @@ namespace WebApp.Config.Coordinators
                         pip = nic.IpConfigurations[0].PublicIPAddress?.Id.Split("/").Last();
                         nsg = nic.NetworkSecurityGroup?.Id.Split("/").Last();
                     }
-                    catch (CloudException ex) when (ResourceNotFound(ex))
+                    catch (CloudException ex) when (ex.ResourceNotFound())
                     {
                         // NIC doesn't exist
                     }
@@ -370,7 +371,7 @@ namespace WebApp.Config.Coordinators
                         await IgnoreNotFound(() => computeClient.AvailabilitySets.DeleteAsync(resourceGroupName, avSetName));
                     }
                 }
-                catch (CloudException ex) when (ResourceNotFound(ex))
+                catch (CloudException ex) when (ex.ResourceNotFound())
                 {
                     // VM doesn't exist
                 }
@@ -389,7 +390,7 @@ namespace WebApp.Config.Coordinators
                         await resourceClient.ResourceGroups.DeleteAsync(resourceGroupName);
                     }
                 }
-                catch (CloudException ex) when (ResourceNotFound(ex))
+                catch (CloudException ex) when (ex.ResourceNotFound())
                 {
                     // RG doesn't exist
                 }
@@ -434,9 +435,9 @@ namespace WebApp.Config.Coordinators
                         assetRepo.ResourceGroupName,
                         assetRepo.Deployment.DeploymentName);
                 }
-                catch (CloudException e)
+                catch (CloudException ex)
                 {
-                    if (ResourceNotFound(e))
+                    if (ex.ResourceNotFound())
                     {
                         return null;
                     }
@@ -501,18 +502,13 @@ namespace WebApp.Config.Coordinators
             {
                 await action();
             }
-            catch (CloudException e)
+            catch (CloudException ex)
             {
-                if (!ResourceNotFound(e))
+                if (!ex.ResourceNotFound())
                 {
                     throw;
                 }
             }
-        }
-
-        private static bool ResourceNotFound(CloudException ce)
-        {
-            return ce.Response.StatusCode == HttpStatusCode.NotFound;
         }
     }
 }

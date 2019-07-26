@@ -18,6 +18,7 @@ using Microsoft.Rest.Azure;
 using WebApp.Arm;
 using WebApp.Code.Attributes;
 using WebApp.Code.Contract;
+using WebApp.Code.Extensions;
 using WebApp.Config;
 using WebApp.Config.Resources;
 using WebApp.Config.Storage;
@@ -91,13 +92,13 @@ namespace WebApp.Controllers
 
                 model.Resources.AddRange(mapped);
             }
-            catch (CloudException cEx)
+            catch (CloudException ex)
             {
-                if (cEx.Body?.Code != "ResourceGroupNotFound")
+                if (!ex.ResourceNotFound())
                 {
                     model.ResourceLoadFailed = true;
                 }
-                ModelState.AddModelError("", $"Failed to list resources from the Resource Group with error: {cEx.Message}");
+                ModelState.AddModelError("", $"Failed to list resources from the Resource Group with error: {ex.Message}");
             }
 
             return View("View/Delete", model);

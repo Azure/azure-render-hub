@@ -221,14 +221,14 @@ namespace WebApp.Arm
             {
                 await resourceClient.ResourceGroups.BeginDeleteAsync(resourceGroupName);
             }
-            catch (CloudException cEx)
+            catch (CloudException ex)
             {
-                if (cEx.Response?.StatusCode != HttpStatusCode.NotFound && cEx.Body?.Code != "ResourceGroupNotFound")
+                if (!ex.ResourceNotFound())
                 {
-                    _logger.LogError(cEx,
+                    _logger.LogError(ex,
                         $"Exception deleting resource group {resourceGroupName} " +
                         $"in subscription {subscriptionId} " +
-                        $"with request {cEx.RequestId}");
+                        $"with request {ex.RequestId}");
                     throw;
                 }
             }
@@ -254,7 +254,7 @@ namespace WebApp.Arm
                 }
                 catch (CloudException ce)
                 {
-                    if (ce.Body.Code != "NotFound" && ce.Body.Code != "ResourceNotFound")
+                    if (!ce.ResourceNotFound())
                     {
                         _logger.LogError(ce,
                             $"Exception validating Key Vault {keyVaultName} " +
