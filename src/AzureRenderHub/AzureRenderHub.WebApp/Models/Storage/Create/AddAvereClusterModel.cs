@@ -32,12 +32,6 @@ namespace WebApp.Models.Storage.Create
             ControllerPassword = cluster.UseControllerPasswordCredential ? cluster.ControllerPasswordOrSshKey : null;
             ControllerSshKey = cluster.UseControllerPasswordCredential ? null : cluster.ControllerPasswordOrSshKey;
             AdminPassword = cluster.ManagementAdminPassword;
-            Subnet = cluster.Subnet;
-            SelectedVNetName = cluster.Subnet?.VNetName;
-            SelectedSubnetName = $"{cluster.Subnet?.VNetName} - {cluster.Subnet?.Name} ({cluster.Subnet?.AddressPrefix})";
-            SelectedSubnetAddressPrefix = cluster.Subnet?.AddressPrefix;
-            VNetAddressSpace = cluster.Subnet?.VNetAddressPrefixes;
-            CreateSubnet = true;
         }
 
         [Required(ErrorMessage = Validation.Errors.Required.ResourceGroup)]
@@ -74,26 +68,5 @@ namespace WebApp.Models.Storage.Create
         [Range(1024, 4096)]
         [Display(Name = "Avere Cache Size in GB", Description = "The cache size in GB to use for each Avere vFXT VM.")]
         public int CacheSizeInGB { get; set; }
-
-        public bool CreateSubnet { get; set; }
-
-        public string SelectedVNetName { get; set; }
-
-        public string SelectedSubnetName { get; set; }
-
-        public string SelectedSubnetAddressPrefix { get; set; }
-
-        public string VNetAddressSpace { get; set; }
-
-        public List<Subnet> ExistingSubnets { get; set; }
-
-        [RegularExpression(Validation.RegularExpressions.ResourceGroup, ErrorMessage = Validation.Errors.Regex.Subnet)]
-        [StringLength(Validation.MaxLength.ResourceGroupName)]
-        public string NewSubnetName { get; set; }
-
-        // e.g. CIDR 10.2.0.0/24
-        [RegularExpression(@"^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/(3[0-2]|[1-2][0-9]|[0-9]))$",
-            ErrorMessage = Validation.Errors.Regex.SubnetAddressRange)]
-        public string NewSubnetAddressPrefix { get; set; }
     }
 }

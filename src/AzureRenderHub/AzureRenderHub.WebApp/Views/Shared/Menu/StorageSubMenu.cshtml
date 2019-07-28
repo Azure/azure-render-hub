@@ -2,25 +2,35 @@
     var step = ViewBag.Step;
     var showLinks = ViewBag.Type == "view";
 }
-<div class="nav-table sub-menu">
-    <span class="@(step == 1 ? "current" : "")">
-        @await Html.PartialAsync("Menu/SubMenuItemLink", Model, new ViewDataDictionary(ViewData)
-        {
-            { "Id", ViewBag.RepoId },
-            { "LinkText", "Overview" },
-            { "Controller", "Storage" },
-            { "Action", "Overview" },
-            { "IsLink", showLinks }
-        })
-    </span>
-    <span class="@(step == 2 ? "current" : "")">
-        @await Html.PartialAsync("Menu/SubMenuItemLink", Model, new ViewDataDictionary(ViewData)
-        {
-            { "Id", ViewBag.RepoId },
-            { "LinkText", "Resources" },
-            { "Controller", "Storage" },
-            { "Action", "Resources" },
-            { "IsLink", showLinks }
-        })
-    </span>
-</div>
+    <div class="nav-table sub-menu">
+        <span class="@(step == 1 ? "current" : "")">
+            @await Html.PartialAsync("Menu/SubMenuItemLink", Model, new ViewDataDictionary(ViewData)
+            {
+                { "Id", ViewBag.RepoId },
+                { "LinkText", "Subscription" },
+                { "Controller", "Storage" },
+                { "Action", "Step1" },
+                { "IsLink", showLinks }
+            })
+        </span>
+        <span class="@(step == 2 ? "current" : "")">
+            @await Html.PartialAsync("Menu/SubMenuItemLink", Model, new ViewDataDictionary(ViewData)
+            {
+                { "Id", ViewBag.RepoId },
+                { "LinkText", "Networking" },
+                { "Controller", "Storage" },
+                { "Action", "Step2" },
+                { "IsLink", showLinks }
+            })
+        </span>
+        <span class="@(step == 3 ? "current" : "")">
+            @await Html.PartialAsync("Menu/SubMenuItemLink", Model, new ViewDataDictionary(ViewData)
+            {
+                { "Id", ViewBag.RepoId },
+                { "LinkText", "Configuration" },
+                { "Controller", "Storage" },
+                { "Action", "Step3" },
+                { "IsLink", showLinks }
+            })
+        </span>
+    </div>

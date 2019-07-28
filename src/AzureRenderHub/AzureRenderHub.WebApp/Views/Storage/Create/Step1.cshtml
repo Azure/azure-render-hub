@@ -40,8 +40,8 @@
                 <div class="form-element">
                     <label asp-for="RepositoryType">Storage Repository Type</label>
                     <select asp-for="RepositoryType" name="RepositoryType">
-                        <option value="NfsFileServer" >File Server</option>
-                        <option value="AvereCluster" selected>Avere vFXT Cache</option>
+                        <option value="NfsFileServer">File Server</option>
+                        <option value="AvereCluster">Avere vFXT Cache</option>
                     </select>
                     <span asp-validation-for="RepositoryType" class=""></span>
                 </div>
@@ -50,7 +50,7 @@
                     <div class="form-check">
                         <input id="UseEnvironment" asp-for="UseEnvironment" value="true" type="radio">
                         <label class="form-check-label" for="UseEnvironment">Deploy Storage to specific Environment</label>
-                        <small>Storage that's part of an environment will be tagged and appear in the environments cost reporting.</small>
+                        <small>Storage that's part of an environment will be deployed to the same VNet, tagged and appear in the environments cost reporting.</small>
                     </div>
                     <div class="form-check">
                         <input id="UseVNet" asp-for="UseEnvironment" value="false" type="radio">
@@ -58,15 +58,14 @@
                         <small>Storage that isn't part of an environment will be tagged as Global and appear in the top level cost reporting.</small>
                     </div>
                 </div>
-                <div id="EnvironmentSection" hidden="@(!Model.UseEnvironment)">
+                <div id="EnvironmentSection" style="@(Model.UseEnvironment ? "display:block" : "display:none")">
                     <div class="form-element">
                         <label asp-for="SelectedEnvironmentName">Environment</label>
-                        <select asp-for="SelectedEnvironmentName" asp-items="@(new SelectList(Model.Environments))">
-                        </select>
+                        <select asp-for="SelectedEnvironmentName" asp-items="@(new SelectList(Model.Environments))"></select>
                         <span asp-validation-for="SelectedEnvironmentName" class=""></span>
                     </div>
                 </div>
-                <div id="VNetSection" hidden="@Model.UseEnvironment">
+                <div id="VNetSection" style="@(Model.UseEnvironment ? "display:none" : "display:block")">
                     <div class="form-element">
                         <label asp-for="SubscriptionId">Subscription ID</label>
                         <div id="SubSpinner" class="async-select">
@@ -78,14 +77,14 @@
                         <span asp-validation-for="SubscriptionId" class=""></span>
                     </div>
                     <div class="form-element">
-                        <label asp-for="SubnetResourceIdLocationAndAddressPrefix">VNet and Subnet</label>
-                        <div id="SubetSpinner" class="async-select">
-                            <select id="Subnets" asp-for="SubnetResourceIdLocationAndAddressPrefix">
-                                <option disabled selected> -- Loading Subnets -- </option>
+                        <label asp-for="VNetIdLocationAndAddressPrefixes">VNets</label>
+                        <div id="VNetSpinner" class="async-select">
+                            <select id="VNets" asp-for="VNetIdLocationAndAddressPrefixes">
+                                <option disabled selected> -- Loading VNets -- </option>
                             </select>
                             <i class="fa fa-spinner fa-spin"></i>
                         </div>
-                        <span asp-validation-for="SubnetResourceIdLocationAndAddressPrefix" class=""></span>
+                        <span asp-validation-for="VNetIdLocationAndAddressPrefixes" class=""></span>
                     </div>
                 </div>
             </div>
@@ -94,7 +93,7 @@
     <div class="form-footer">
         <div class="summary"></div>
         <div class="button-bar">
-            <input type="submit" class="btn btn-primary" value="Next : Configuration" formaction="Step1" />
+            <input type="submit" class="btn btn-primary" value="Next : Networking" formaction="Step1" />
         </div>
     </div>
 </form>
@@ -135,23 +134,23 @@
         }
 
         function loadSubnets(subscriptionId) {
-            $("#SubetSpinner").addClass("loading");
-            $.get(`/api/subscriptions/${subscriptionId}/subnets`,
-                function (subnets) {
-                    var dropDownItems = $.map(subnets, function (subnet) {
-                        var value = `${subnet.id};${subnet.location};${subnet.addressPrefix};${subnet.vNetAddressPrefixes}`;
-                        var text = `${subnet.vNetName} - ${subnet.location} - ${subnet.name} (${subnet.addressPrefix})`;
+            $("#VNetSpinner").addClass("loading");
+            $.get(`/api/subscriptions/${subscriptionId}/virtualnetworks`,
+                function (vnets) {
+                    var dropDownItems = $.map(vnets, function (vnet) {
+                        var value = `${vnet.id};${vnet.location};${vnet.addressPrefixes}`;
+                        var text = `${vnet.name} - ${vnet.location}`;
                         return `<option value="${value}">${text}</option>`;
                     });
 
-                    $("#Subnets").empty().append(dropDownItems);
-                    var valueFromModel = "@Model.SubnetResourceIdLocationAndAddressPrefix";
+                    $("#VNets").empty().append(dropDownItems);
+                    var valueFromModel = "@Model.VNetIdLocationAndAddressPrefixes";
                     var selectedValue = !valueFromModel || valueFromModel.length === 0
-                        ? $("#Subnets option:first").val()
+                        ? $("#VNets option:first").val()
                         : valueFromModel;
 
-                    $("#Subnets").val(selectedValue).change();
-                    $("#SubetSpinner").removeClass("loading");
+                    $("#VNets").val(selectedValue).change();
+                    $("#VNetSpinner").removeClass("loading");
                 });
         }
 
@@ -165,6 +164,7 @@
 
             $('input[type=radio][name=UseEnvironment]').change(function () {
                 var useEnvironment = this.value;
+                console.log(useEnvironment);
                 if (useEnvironment === 'true') {
                     $('#EnvironmentSection').show();
                     $('#VNetSection').hide();

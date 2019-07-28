@@ -11,7 +11,7 @@
 
 @await Html.PartialAsync("Storage/Create/CreateFormHeaderPartial")
 
-<form asp-controller="Storage" asp-action="Step2Nfs" method="post">
+<form asp-controller="Storage" asp-action="Step3FileServer" asp-route-repoId="@Model.RepositoryName" method="post">
     @await Html.PartialAsync("Menu/StorageSubMenu", Model, new ViewDataDictionary(ViewData)
     {
         { "Step", 3 },
@@ -109,7 +109,7 @@
     <div class="form-footer">
         <div class="summary"></div>
         <div class="button-bar">
-            <a class="button" asp-controller="Storage" asp-action="Step1" asp-route-envId="@Model.RepositoryName">Previous</a>
+            <a class="button" asp-controller="Storage" asp-action="Step2" asp-route-repoId="@Model.RepositoryName">Previous</a>
             <button id="createbtn" type="submit">Create <i class="fa fa-save"></i></button>
         </div>
     </div>

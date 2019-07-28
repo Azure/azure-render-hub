@@ -17,19 +17,12 @@
     {
     <a asp-controller="Storage" asp-action="Index">Storage Repositories</a> &gt;
     <a asp-controller="Storage" asp-action="Details" asp-route-repoId="@Model.Name">@Model.Name</a> &gt;
-    <span>Details</span>
+    <span>Overview</span>
 }
 
 @await Html.PartialAsync("Storage/Details/DetailsHeaderPartial", Model, new ViewDataDictionary(ViewData)
 {
-    { "StepName", "details" }
-})
-
-@await Html.PartialAsync("Menu/StorageSubMenu", Model, new ViewDataDictionary(ViewData)
-{
-    { "Step", 1 },
-    { "RepoId", Model.Name },
-    { "Type", "view" }
+    { "StepName", "Overview" }
 })
 
 <div class="storage-details">
@@ -119,7 +112,7 @@
                 <a class="button" asp-action="PowerOperation" asp-route-repoId="@Model.Name" asp-route-operation="start">Start Server <i class="fa fa-play"></i></a>
             }
 
-                <a class="button" asp-action="Delete" asp-route-repoId="@Model.Name">Delete Server <i class="fa fa-trash"></i></a>
+            <a class="button" asp-action="Delete" asp-route-repoId="@Model.Name">Delete Server <i class="fa fa-trash"></i></a>
         </div>
     </div>
 </div>

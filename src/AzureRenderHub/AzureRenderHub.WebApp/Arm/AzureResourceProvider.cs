@@ -39,6 +39,7 @@ using System.Diagnostics;
 using Microsoft.Identity.Web.Client;
 using WebApp.Models.Api;
 using Subnet = Microsoft.Azure.Management.Network.Models.Subnet;
+using VirtualNetwork = Microsoft.Azure.Management.Network.Models.VirtualNetwork;
 
 namespace WebApp.Arm
 {
@@ -714,8 +715,8 @@ namespace WebApp.Arm
             var token = new TokenCredentials(accessToken);
             var networkClient = new NetworkManagementClient(token) { SubscriptionId = subscriptionId.ToString() };
 
-            var newSubnet = new Microsoft.Azure.Management.Network.Models.Subnet(name: subnetName, addressPrefix: subnetAddressRange);
-            await networkClient.Subnets.CreateOrUpdateAsync(resourceGroupName, vnetName, subnetName, newSubnet);
+            var newSubnet = new Subnet(name: subnetName, addressPrefix: subnetAddressRange);
+            var subnetResult = await networkClient.Subnets.CreateOrUpdateAsync(resourceGroupName, vnetName, subnetName, newSubnet);
             var subnet = await GetSubnetAsync(subscriptionId, location, resourceGroupName, vnetName, subnetName);
             subnet.ExistingResource = false;
             return subnet;

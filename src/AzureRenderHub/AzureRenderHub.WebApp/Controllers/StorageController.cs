@@ -22,6 +22,7 @@ using WebApp.Code.Extensions;
 using WebApp.Config;
 using WebApp.Config.Resources;
 using WebApp.Config.Storage;
+using WebApp.Identity;
 using WebApp.Models.Storage;
 using WebApp.Models.Storage.Create;
 using WebApp.Models.Storage.Details;
@@ -37,6 +38,7 @@ namespace WebApp.Controllers
         private readonly IManagementClientProvider _managementClientProvider;
         private readonly IAzureResourceProvider _azureResourceProvider;
         private readonly IDeploymentCoordinator _deploymentCoordinator;
+        private readonly IIdentityProvider _identityProvider;
         private readonly ILogger _logger;
 
         public StorageController(
@@ -47,6 +49,7 @@ namespace WebApp.Controllers
             IPackageCoordinator packageCoordinator,
             IAzureResourceProvider azureResourceProvider,
             IDeploymentCoordinator deploymentCoordinator,
+            IIdentityProvider identityProvider,
             ITokenAcquisition tokenAcquisition,
             ILogger<StorageController> logger) : base(
                 environmentCoordinator,
@@ -58,6 +61,7 @@ namespace WebApp.Controllers
             _azureResourceProvider = azureResourceProvider;
             _managementClientProvider = managementClientProvider;
             _deploymentCoordinator = deploymentCoordinator;
+            _identityProvider = identityProvider;
             _logger = logger;
         }
 
@@ -318,12 +322,12 @@ namespace WebApp.Controllers
                 {
                     repository.SubscriptionId = environment.SubscriptionId;
                     repository.EnvironmentName = model.SelectedEnvironmentName;
-                    repository.Subnet = await GetAndVerifySubnet(environment.Subnet);
+                    repository.SelectedVNet = await GetAndVerifyVNet(environment.Subnet);
                 }
                 else
                 {
                     repository.SubscriptionId = model.SubscriptionId.Value;
-                    repository.Subnet = await GetAndVerifySubnet(model.Subnet);
+                    repository.SelectedVNet = model.SelectedVirtualNetwork;
                 }
 
                 // pass in the original name in case we have updated it.
@@ -338,7 +342,7 @@ namespace WebApp.Controllers
             return RedirectToAction("Step2", new { repoId = repository.Name });
         }
 
-        private async Task<Subnet> GetAndVerifySubnet(Subnet specifiedSubnet)
+        private async Task<VirtualNetwork> GetAndVerifyVNet(Subnet specifiedSubnet)
         {
             var subnet = await _azureResourceProvider.GetSubnetAsync(
                 specifiedSubnet.SubscriptionId,
@@ -353,7 +357,12 @@ namespace WebApp.Controllers
                     $"was not found in Subscription {specifiedSubnet.SubscriptionId}");
             }
 
-            return subnet;
+            return new VirtualNetwork
+            {
+                ResourceId = subnet.VnetResourceId,
+                Location = subnet.Location,
+                AddressPrefixes = subnet.VNetAddressPrefixes,
+            };
         }
 
         [HttpGet]
@@ -364,7 +373,7 @@ namespace WebApp.Controllers
             if (repository == null)
             {
                 // redirect to Step1 if no config.
-                return RedirectToAction("Step1", new { repoId });
+                return RedirectToAction("Index");
             }
 
             if (repository.Enabled)
@@ -376,7 +385,19 @@ namespace WebApp.Controllers
             string error = null;
             string errorMessage = null;
 
-            var canCreate = await _azureResourceProvider.CanCreateResources(repository.SubscriptionId);
+            var canCreateTask = _azureResourceProvider.CanCreateResources(repository.SubscriptionId);
+            var canAssignTask = _azureResourceProvider.CanCreateRoleAssignments(
+                repository.SubscriptionId,
+                repository.ResourceGroupName);
+
+            var subnets = await _azureResourceProvider.GetSubnetsAsync(
+                repository.SubscriptionId,
+                repository.SelectedVNet.Location,
+                repository.SelectedVNet.ResourceGroupName,
+                repository.SelectedVNet.Name);
+
+            var canCreate = await canCreateTask;
+            var canAssign = await canAssignTask;
             if (!canCreate)
             {
                 error = "You don't have the required permissions to create resources";
@@ -385,9 +406,161 @@ namespace WebApp.Controllers
             }
             else
             {
-                var canAssign = await _azureResourceProvider.CanCreateRoleAssignments(
-                    repository.SubscriptionId,
-                    repository.ResourceGroupName);
+                if (!canAssign)
+                {
+                    error = "You don't have the required permissions to assign roles to users";
+                    errorMessage = "In order to complete this step which involves creating role assignments, you must have the Owner or User Access Administrator role for the specified Subscription. " +
+                                   "Either request someone with this role to complete the step, or ask your admin to make you an Owner or User Access Administrator for the Subscription or Resource Group.";
+                }
+            }
+
+            return View("Create/Step2", new AddNetworkingModel(repository, subnets)
+            {
+                Error = error,
+                ErrorMessage = errorMessage,
+            });
+        }
+
+
+        [HttpPost]
+        [Route("Storage/{repoId}/Step2")]
+        public async Task<ActionResult> Step2(string repoId, AddNetworkingModel model)
+        {
+            if (model.CreateSubnet)
+            {
+                if (string.IsNullOrWhiteSpace(model.NewSubnetName))
+                {
+                    ModelState.AddModelError(nameof(AddNetworkingModel.NewSubnetName),
+                        $"When Create Subnet is specified, a subnet name must be specified.");
+                }
+
+                if (string.IsNullOrWhiteSpace(model.NewSubnetAddressPrefix))
+                {
+                    ModelState.AddModelError(nameof(AddNetworkingModel.NewSubnetAddressPrefix),
+                        $"When Create Subnet is specified, a subnet address prefix (CIDR block) must be specified.");
+                }
+
+                if (model.ExistingSubnets != null 
+                    && model.ExistingSubnets.Any(subnet => 
+                    subnet.Name.Equals(model.NewSubnetName, StringComparison.InvariantCultureIgnoreCase)))
+                {
+                    ModelState.AddModelError(nameof(AddNetworkingModel.NewSubnetAddressPrefix),
+                        $"Create Subnet was specified but the Subnet {model.NewSubnetName} already exists.");
+                }
+            }
+            else
+            {
+                if (string.IsNullOrWhiteSpace(model.SubnetResourceIdLocationAndAddressPrefix))
+                {
+                    ModelState.AddModelError(nameof(AddNetworkingModel.SubnetResourceIdLocationAndAddressPrefix),
+                        $"No subnet was specified.");
+                }
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return View("Create/Step2", model);
+            }
+
+            var repository = await _assetRepoCoordinator.GetRepository(model.RepositoryName);
+            if (repository == null)
+            {
+                return RedirectToAction("Index");
+            }
+
+            try
+            {
+                if (model.CreateSubnet)
+                {
+                    // We create the subnet here, it's faster and we get an immediate failure
+                    // if there's validation or permission issues.
+                    repository.Subnet = await _azureResourceProvider.CreateSubnetAsync(
+                        repository.SelectedVNet.SubscriptionId,
+                        repository.SelectedVNet.Location,
+                        repository.SelectedVNet.ResourceGroupName,
+                        repository.SelectedVNet.Name,
+                        model.NewSubnetName,
+                        model.NewSubnetAddressPrefix,
+                        repository.EnvironmentName);
+
+                    await _assetRepoCoordinator.UpdateRepository(repository);
+
+                    if (repository.RepositoryType == AssetRepositoryType.AvereCluster)
+                    {
+                        // Here we update the subnet we just created with 
+                        // Storage service endpoints, required for Avere.
+                        var deploymentSpec = new Deployment(
+                            repository.SubscriptionId,
+                            repository.Subnet.Location,
+                            repository.Subnet.ResourceGroupName,
+                            $"subnet-{Guid.NewGuid()}");
+
+                        var subnetDeployment = new SubnetDeployment(
+                            deploymentSpec,
+                            repository.Subnet.VNetName,
+                            repository.Subnet.Name,
+                            repository.Subnet.AddressPrefix);
+
+                        await _deploymentCoordinator.BeginDeploymentAsync(subnetDeployment);
+
+                        var deploymentStatus = await _deploymentCoordinator.WaitForCompletionAsync(subnetDeployment);
+
+                        if (deploymentStatus.ProvisioningState != ProvisioningState.Succeeded)
+                        {
+                            throw new Exception($"Subnet deployment {deploymentSpec.DeploymentName} failed with error {deploymentStatus.Error}");
+                        }
+                    }
+                }
+                else
+                {
+                    repository.Subnet = model.Subnet;
+                    await _assetRepoCoordinator.UpdateRepository(repository);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Failed to create subnet {repository.Name} in subscription {repository.SubscriptionId}");
+                ModelState.AddModelError("", $"Failed to create repository: {ex.Message}");
+                return View("Create/Step2", model);
+            }
+
+            return RedirectToAction("Step3", new { repoId = repository.Name });
+        }
+
+        [HttpGet]
+        [Route("Storage/{repoId}/Step3")]
+        public async Task<ActionResult> Step3(string repoId)
+        {
+            var repository = await _assetRepoCoordinator.GetRepository(repoId);
+            if (repository == null)
+            {
+                // redirect to Step1 if no config.
+                return RedirectToAction("Index");
+            }
+
+            if (repository.Enabled)
+            {
+                // not allowed to edit an existing enabled config
+                return RedirectToAction("Overview", new { repoId });
+            }
+
+            string error = null;
+            string errorMessage = null;
+
+            var canCreateTask = _azureResourceProvider.CanCreateResources(repository.SubscriptionId);
+            var canAssign = await _azureResourceProvider.CanCreateRoleAssignments(
+                repository.SubscriptionId,
+                repository.ResourceGroupName);
+
+            var canCreate = await canCreateTask;
+            if (!canCreate)
+            {
+                error = "You don't have the required permissions to create resources";
+                errorMessage = "In order to complete this step which involves creating resources, you must have the Owner or Contributor role for the specified Subscription. " +
+                                     "Either request someone with this role to complete the step, or ask your admin to make you an Owner or Contributor for the Subscription.";
+            }
+            else
+            {
                 if (!canAssign)
                 {
                     error = "You don't have the required permissions to assign roles to users";
@@ -399,7 +572,7 @@ namespace WebApp.Controllers
             switch (repository)
             {
                 case NfsFileServer nfs:
-                    return View("Create/Step2Nfs", new AddNfsFileServerModel(nfs)
+                    return View("Create/Step3FileServer", new AddNfsFileServerModel(nfs)
                     {
                         VmName = "FileServer",
                         UserName = "fileserver",
@@ -412,16 +585,11 @@ namespace WebApp.Controllers
                 case AvereCluster avere:
                     var model = new AddAvereClusterModel(avere)
                     {
-                        ExistingSubnets = await _azureResourceProvider.GetSubnetsAsync(
-                            avere.Subnet.SubscriptionId,
-                            avere.Subnet.Location,
-                            avere.Subnet.ResourceGroupName,
-                            avere.Subnet.VNetName),
                         Error = error,
                         ErrorMessage = errorMessage
                     };
 
-                    return View("Create/Step2Avere", model);
+                    return View("Create/Step3Avere", model);
 
                 default:
                     throw new NotSupportedException("Unknown type of repository");
@@ -429,7 +597,8 @@ namespace WebApp.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> Step2Nfs(AddNfsFileServerModel model)
+        [Route("Storage/{repoId}/Step3FileServer")]
+        public async Task<ActionResult> Step3FileServer(string repoId, AddNfsFileServerModel model)
         {
             // Validate that the share isn't a root share
             if (model.FileShareName.StartsWith("/") &&
@@ -440,19 +609,28 @@ namespace WebApp.Controllers
 
             if (!ModelState.IsValid)
             {
-                return View("Create/Step2Nfs", model);
+                return View("Create/Step3FileServer", model);
             }
 
-            var repository = await _assetRepoCoordinator.GetRepository(model.RepositoryName);
+            var repository = await _assetRepoCoordinator.GetRepository(repoId);
             if (repository == null)
             {
-                return BadRequest("No new storage repository configuration in progress");
+                return RedirectToAction("Overview");
+            }
+
+            // validate the resource group doesn't exist or is empty
+            var client = await _managementClientProvider.CreateResourceManagementClient(repository.SubscriptionId);
+            if (!await ValidateResourceGroup(client, model.NewResourceGroupName, nameof(model.NewResourceGroupName)))
+            {
+                if (!ModelState.IsValid)
+                {
+                    return View("Create/Step3FileServer", model);
+                }
             }
 
             if (repository.Enabled)
             {
-                // not allowed to edit an existing enabled config
-                return RedirectToAction("Overview", new { repoId = repository.Name });
+                return RedirectToAction("Overview");
             }
 
             try
@@ -464,14 +642,15 @@ namespace WebApp.Controllers
             {
                 model.Error = "Failed to create repository with error";
                 model.ErrorMessage = ex.ToString();
-                return View("Create/Step2Nfs", model);
+                return View("Create/Step3FileServer", model);
             }
 
-            return RedirectToAction("Deploying", new { repoId = repository.Name });
+            return RedirectToAction("Overview", new { repoId = repository.Name });
         }
 
         [HttpPost]
-        public async Task<ActionResult> Step2Avere(AddAvereClusterModel model)
+        [Route("Storage/{repoId}/Step3Avere")]
+        public async Task<ActionResult> Step3Avere(string repoId, AddAvereClusterModel model)
         {
             if (model.UseControllerPasswordCredential && string.IsNullOrWhiteSpace(model.ControllerPassword))
             {
@@ -498,30 +677,15 @@ namespace WebApp.Controllers
                     $"The Avere vFXT cache size must be either 1024 or 4096.");
             }
 
-            if (model.CreateSubnet)
-            {
-                if (string.IsNullOrWhiteSpace(model.NewSubnetName))
-                {
-                    ModelState.AddModelError(nameof(AddAvereClusterModel.NewSubnetName),
-                        $"When Create Subnet is specified, a subnet name must be specified.");
-                }
-
-                if (string.IsNullOrWhiteSpace(model.NewSubnetAddressPrefix))
-                {
-                    ModelState.AddModelError(nameof(AddAvereClusterModel.NewSubnetAddressPrefix),
-                        $"When Create Subnet is specified, a subnet address prefix (CIDR block) must be specified.");
-                }
-            }
-
             if (!ModelState.IsValid)
             {
-                return View("Create/Step2Avere", model);
+                return View("Create/Step3Avere", model);
             }
 
-            var repository = await _assetRepoCoordinator.GetRepository(model.RepositoryName);
+            var repository = await _assetRepoCoordinator.GetRepository(repoId);
             if (repository == null)
             {
-                return BadRequest("No new storage repository configuration in progress");
+                return RedirectToAction("Index");
             }
 
             if (repository.Enabled)
@@ -530,11 +694,14 @@ namespace WebApp.Controllers
                 return RedirectToAction("Overview", new { repoId = repository.Name });
             }
 
-            // validate the resource group doesn't exist
-            var client = await _managementClientProvider.CreateResourceManagementClient(model.SubscriptionId.Value);
+            // validate the resource group doesn't exist or is empty
+            var client = await _managementClientProvider.CreateResourceManagementClient(repository.SubscriptionId);
             if (!await ValidateResourceGroup(client, model.NewResourceGroupName, nameof(model.NewResourceGroupName)))
             {
-                return View("Create/Step2Avere", model);
+                if (!ModelState.IsValid)
+                {
+                    return View("Create/Step3Avere", model);
+                }
             }
 
             try
@@ -542,50 +709,13 @@ namespace WebApp.Controllers
                 // update and save the model before we deploy as we can always retry the create
                 repository.UpdateFromModel(model);
 
-                if (model.CreateSubnet)
-                {
-                    // We create the subnet here, it's faster and we get an immediate failure
-                    // if there's validation or permission issues.
-                    repository.Subnet = await _azureResourceProvider.CreateSubnetAsync(
-                        repository.Subnet.SubscriptionId,
-                        repository.Subnet.Location,
-                        repository.Subnet.ResourceGroupName,
-                        repository.Subnet.VNetName,
-                        repository.Subnet.Name,
-                        repository.Subnet.AddressPrefix,
-                        repository.EnvironmentName);
-
-                    // Here we update the subnet we just created with 
-                    // Storage service endpoints, required for Avere.
-                    var deploymentSpec = new Deployment(
-                        repository.SubscriptionId,
-                        repository.Subnet.Location,
-                        repository.Subnet.ResourceGroupName,
-                        $"subnet-{Guid.NewGuid()}");
-
-                    var subnetDeployment = new SubnetDeployment(
-                        deploymentSpec,
-                        repository.Subnet.VNetName,
-                        repository.Subnet.Name,
-                        repository.Subnet.AddressPrefix);
-
-                    await _deploymentCoordinator.BeginDeploymentAsync(subnetDeployment);
-
-                    var deploymentStatus = await _deploymentCoordinator.WaitForCompletionAsync(subnetDeployment);
-
-                    if (deploymentStatus.ProvisioningState != ProvisioningState.Succeeded)
-                    {
-                        throw new Exception($"Subnet deployment {deploymentSpec.DeploymentName} failed with error {deploymentStatus.Error}");
-                    }
-                }
-
                 await _assetRepoCoordinator.BeginRepositoryDeploymentAsync(repository);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Failed to create repository {repository.Name} in subscription {repository.SubscriptionId}");
                 ModelState.AddModelError("", $"Failed to create repository: {ex.Message}");
-                return View("Create/Step2Avere", model);
+                return View("Create/Step3Avere", model);
             }
 
             return RedirectToAction("Overview", new { repoId = repository.Name });

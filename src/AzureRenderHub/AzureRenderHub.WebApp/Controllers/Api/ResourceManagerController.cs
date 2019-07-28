@@ -92,6 +92,19 @@ namespace WebApp.Controllers.Api
                 .ToList();
         }
 
+        [Route("api/subscriptions/{subscriptionId}/virtualnetworks/{location?}"), HttpGet]
+        public async Task<List<AzureVirtualNetwork>> GetVirtualNetworks(string subscriptionId, string location)
+        {
+            var accessToken = await GetAccessToken();
+            var token = new TokenCredentials(accessToken);
+            var networkClient = new NetworkManagementClient(token) { SubscriptionId = subscriptionId };
+            var vNets = await networkClient.VirtualNetworks.ListAllAsync();
+            return vNets
+                .Where(vnet => string.IsNullOrWhiteSpace(location) || vnet.Location.Equals(location, StringComparison.OrdinalIgnoreCase))
+                .Select(vnet => new AzureVirtualNetwork(vnet))
+                .OrderBy(vnet => vnet.Name)
+                .ToList();
+        }
 
         [Route("api/subscriptions/{subscriptionId}/subnets/{location?}"), HttpGet]
         public async Task<List<AzureSubnet>> GetSubnets(string subscriptionId, string location)

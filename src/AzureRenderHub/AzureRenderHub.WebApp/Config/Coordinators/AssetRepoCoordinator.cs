@@ -233,9 +233,16 @@ namespace WebApp.Config.Coordinators
         {
             if (deleteResourceGroup)
             {
-                using (var resourceClient = await _clientProvider.CreateResourceManagementClient(repository.SubscriptionId))
+                try
                 {
-                    await resourceClient.ResourceGroups.DeleteAsync(repository.ResourceGroupName);
+                    using (var resourceClient = await _clientProvider.CreateResourceManagementClient(repository.SubscriptionId))
+                    {
+                        await resourceClient.ResourceGroups.DeleteAsync(repository.ResourceGroupName);
+                    }
+                }
+                catch (CloudException ex) when (ex.ResourceNotFound())
+                {
+                    // RG doesn't exist
                 }
             }
             else

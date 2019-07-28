@@ -29,13 +29,7 @@ namespace WebApp.Config.Storage
                 throw new ArgumentException("View model was not of type: AddNfsFileServerModel");
             }
 
-            SubscriptionId = model.SubscriptionId.GetValueOrDefault();
             ResourceGroupName = model.NewResourceGroupName;
-            CreateSubnet = model.CreateSubnet;
-            if (CreateSubnet)
-            {
-                Subnet = Subnet.CreateNewSubnet(model.NewSubnetName, model.NewSubnetAddressPrefix);
-            }
             UseControllerPasswordCredential = model.UseControllerPasswordCredential;
             ControllerPasswordOrSshKey = model.UseControllerPasswordCredential 
                 ? model.ControllerPassword 
