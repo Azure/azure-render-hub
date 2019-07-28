@@ -724,33 +724,33 @@ namespace WebApp.Controllers
         }
 
         [HttpGet]
-        [Route("Storage/{repoId}/PowerOperation/{operation}")]
-        public async Task<ActionResult> PowerOperation(string repoId, string operation)
+        [Route("Storage/{repoId}/Start")]
+        public async Task<ActionResult> Start(string repoId)
         {
-            var fileServer = await _assetRepoCoordinator.GetRepository(repoId) as NfsFileServer;
-            if (fileServer == null)
+            var repository = await _assetRepoCoordinator.GetRepository(repoId);
+            if (repository == null)
             {
-                return NotFound($"No NFS File Server found with the name: {repoId}");
+                return RedirectToAction("Index");
             }
 
-            if (operation != "start" && operation != "shutdown")
+            await _assetRepoCoordinator.Start(repository);
+
+            return RedirectToAction("Overview", new { repoId });
+        }
+
+        [HttpGet]
+        [Route("Storage/{repoId}/Stop")]
+        public async Task<ActionResult> Stop(string repoId)
+        {
+            var repository = await _assetRepoCoordinator.GetRepository(repoId);
+            if (repository == null)
             {
-                return BadRequest("Action must be 'start' or 'shutdown'");
+                return RedirectToAction("Index");
             }
 
-            using (var computeClient = await _managementClientProvider.CreateComputeManagementClient(fileServer.SubscriptionId))
-            {
-                if (operation == "start")
-                {
-                    await computeClient.VirtualMachines.BeginStartWithHttpMessagesAsync(fileServer.ResourceGroupName, fileServer.VmName);
-                }
-                else if (operation == "shutdown")
-                {
-                    await computeClient.VirtualMachines.BeginDeallocateAsync(fileServer.ResourceGroupName, fileServer.VmName);
-                }
-            }
+            await _assetRepoCoordinator.Stop(repository);
 
-            return RedirectToAction("Overview", new { repoId = repoId });
+            return RedirectToAction("Overview", new { repoId });
         }
 
         private AssetRepositoryOverviewModel GetOverviewViewModel(AssetRepository repo)

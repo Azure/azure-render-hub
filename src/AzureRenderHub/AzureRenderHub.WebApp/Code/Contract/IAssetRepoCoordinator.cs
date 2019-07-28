@@ -30,5 +30,9 @@ namespace WebApp.Code.Contract
         Task<bool> RemoveRepository(AssetRepository repository);
 
         Task<List<VirtualMachineStatus>> GetVirtualMachineStatus(AssetRepository repository);
+
+        Task Start(AssetRepository repository);
+
+        Task Stop(AssetRepository repository);
     }
 }

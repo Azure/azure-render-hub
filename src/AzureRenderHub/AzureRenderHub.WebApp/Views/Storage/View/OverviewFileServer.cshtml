@@ -118,17 +118,15 @@
                     @foreach (var vmStatus in Model.VirtualMachineStatus)
                     {
                         <div>
-                            <div>
-                                <a href="@vmStatus.PortalLink" target="_blank" ref="">@vmStatus.VirtualMachineName <i class="fa fa-external-link"></i></a>
-                                @if (vmStatus.IsRunning())
-                                {
-                                    <span style="color: green"><i class="fa fa-check"></i></span>
-                                }
-                                else
-                                {
-                                    <span style="color: red"><i class="fa fa-stop"></i></span>
-                                }
-                            </div>
+                            @if (vmStatus.IsRunning())
+                            {
+                                <span style="color: green"><i class="fa fa-check"></i></span>
+                            }
+                            else
+                            {
+                                <span style="color: black"><i class="fa fa-times"></i></span>
+                            }
+                            <a href="@vmStatus.PortalLink" target="_blank" ref="">@vmStatus.VirtualMachineName (@vmStatus.PowerStatus) <i class="fa fa-external-link"></i></a>
                         </div>
                     }
                 }

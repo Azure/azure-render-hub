@@ -584,5 +584,89 @@ namespace WebApp.Config.Coordinators
                 VirtualMachineName = vmName,
                 PowerStatus = status };
         }
+
+        public async Task Start(AssetRepository repository)
+        {
+            if (repository is NfsFileServer fileServer)
+            {
+                await StartVirtualMachine(repository.SubscriptionId, repository.ResourceGroupName, fileServer.VmName);
+            }
+            else if (repository is AvereCluster avereCluster)
+            {
+                var tasks = new List<Task>();
+                var vmNames = await GetAvereVMNames(avereCluster);
+                foreach (var vmName in vmNames)
+                {
+                    tasks.Add(StartVirtualMachine(repository.SubscriptionId, repository.ResourceGroupName, vmName));
+                }
+                await Task.WhenAll(tasks);
+            }
+        }
+
+        private async Task StartVirtualMachine(Guid subscriptionId, string resourceGroupName, string vmName)
+        {
+            using (var computeClient = await _clientProvider.CreateComputeManagementClient(subscriptionId))
+            {
+                try
+                {
+                    await computeClient.VirtualMachines.BeginStartAsync(resourceGroupName, vmName);
+                }
+                catch (CloudException cEx)
+                {
+                    if (cEx.ResourceNotFound())
+                    {
+                        // Ignore
+                        _logger.LogDebug($"Failed to start {vmName}, VM was not found.");
+                    }
+                    else
+                    {
+                        _logger.LogError(cEx, $"Failed to start VM with error: {cEx.Message}");
+                        throw;
+                    }
+                }
+            }
+        }
+
+        public async Task Stop(AssetRepository repository)
+        {
+            if (repository is NfsFileServer fileServer)
+            {
+                await StopVirtualMachine(repository.SubscriptionId, repository.ResourceGroupName, fileServer.VmName);
+            }
+            else if (repository is AvereCluster avereCluster)
+            {
+                var tasks = new List<Task>();
+                var vmNames = await GetAvereVMNames(avereCluster);
+                foreach (var vmName in vmNames)
+                {
+                    tasks.Add(StopVirtualMachine(repository.SubscriptionId, repository.ResourceGroupName, vmName));
+                }
+                await Task.WhenAll(tasks);
+            }
+        }
+
+        private async Task StopVirtualMachine(Guid subscriptionId, string resourceGroupName, string vmName)
+        {
+            using (var computeClient = await _clientProvider.CreateComputeManagementClient(subscriptionId))
+            {
+                try
+                {
+                    await computeClient.VirtualMachines.BeginDeallocateAsync(resourceGroupName, vmName);
+                }
+                catch (CloudException cEx)
+                {
+                    if (cEx.ResourceNotFound())
+                    {
+                        // Ignore
+                        _logger.LogDebug($"Failed to stop {vmName}, VM was not found.");
+                    }
+                    else
+                    {
+                        _logger.LogError(cEx, $"Failed to stop VM with error: {cEx.Message}");
+                        throw;
+                    }
+                }
+            }
+        }
     }
 }
