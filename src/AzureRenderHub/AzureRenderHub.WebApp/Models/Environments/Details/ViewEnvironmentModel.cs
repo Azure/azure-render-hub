@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Azure.Management.ResourceManager.Models;
 using System;
 using System.Collections.Generic;
 using WebApp.AppInsights.PoolUsage;
@@ -37,6 +38,7 @@ namespace WebApp.Models.Environments.Details
                 ResourceGroup = environment.ResourceGroupName;
                 KeyVaultName = environment.KeyVault?.Name;
                 KeyVaultUrl = environment.KeyVault?.Uri;
+                KeyVaultResourceId = environment.KeyVault?.ResourceId;
 
                 if (environment.KeyVaultServicePrincipal != null)
                 {
@@ -158,6 +160,8 @@ namespace WebApp.Models.Environments.Details
 
         public string KeyVaultName { get; set; }
 
+        public string KeyVaultResourceId { get; set; }
+
         public string KeyVaultUrl{ get; set; }
 
         // Identity
@@ -242,5 +246,20 @@ namespace WebApp.Models.Environments.Details
         public IList<PoolUsageResult> PoolUsageResults { get; set; }
 
         public EnvironmentCost EnvironmentCost { get; set; }
+
+        // Links
+        private const string PortalPrefix = "https://portal.azure.com/#resource";
+
+        public string ResourceGroupPortalLink => $"{PortalPrefix}/subscriptions/{SubscriptionId}/resourceGroups/{ResourceGroup}";
+
+        public string BatchAccountPortalLink => $"{PortalPrefix}{BatchAccountResourceId}";
+
+        public string KeyVaultPortalLink => $"{PortalPrefix}{KeyVaultResourceId}";
+
+        public string StorageAccountPortalLink => $"{PortalPrefix}{StorageAccountResourceId}";
+
+        public string AppInsightsComponentPortalLink => $"{PortalPrefix}{AppInsightsResourceId}";
+
+        public string SubnetPortalLink => $"{PortalPrefix}{SubnetResourceId}";
     }
 }

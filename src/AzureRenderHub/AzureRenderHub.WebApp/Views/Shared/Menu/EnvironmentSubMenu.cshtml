@@ -21,23 +21,13 @@
         @await Html.PartialAsync("Menu/SubMenuItemLink", Model, new ViewDataDictionary(ViewData)
         {
             {"Id", Model.EnvironmentName},
-            {"LinkText", "Details"},
+            {"LinkText", "Azure Resources"},
             {"Controller", "Environments"},
-            {"Action", "Details"},
+            {"Action", "AzureResources"},
             {"IsLink", showLinks}
         })
     </span>
     <span class="@(step == 3 ? "current" : "")">
-        @await Html.PartialAsync("Menu/SubMenuItemLink", Model, new ViewDataDictionary(ViewData)
-        {
-            {"Id", Model.EnvironmentName},
-            {"LinkText", "Resources"},
-            {"Controller", "Environments"},
-            {"Action", "Resources"},
-            {"IsLink", showLinks}
-        })
-    </span>
-    <span class="@(step == 4 ? "current" : "")">
         @await Html.PartialAsync("Menu/SubMenuItemLink", Model, new ViewDataDictionary(ViewData)
         {
             {"Id", Model.EnvironmentName},
@@ -47,7 +37,7 @@
             {"IsLink", showLinks}
         })
     </span>
-    <span class="@(step == 5 ? "current" : "")">
+    <span class="@(step == 4 ? "current" : "")">
         @await Html.PartialAsync("Menu/SubMenuItemLink", Model, new ViewDataDictionary(ViewData)
         {
             {"Id", Model.EnvironmentName},

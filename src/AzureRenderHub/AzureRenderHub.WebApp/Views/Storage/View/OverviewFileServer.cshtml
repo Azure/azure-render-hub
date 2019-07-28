@@ -20,10 +20,10 @@
 <span>Overview</span>
 }
 
-@await Html.PartialAsync("Storage/Details/DetailsHeaderPartial", Model, new ViewDataDictionary(ViewData)
-{
-    { "StepName", "Overview" }
-})
+<div class="page-header">
+    <h2>@Model.Name - Overview</h2>
+    <p></p>
+</div>
 
 <div class="storage-details">
     <div class="form-section">

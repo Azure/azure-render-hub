@@ -24,76 +24,71 @@
 
 <div class="page-header">
 
-<div class="form-section">
-    <div class="section-title">
-        <span class="step-index">1</span>
-        <div class="step-header">
-            <h1>Compute Usage</h1>
-            <p></p>
-        </div>
-    </div>
-    <div class="section-wrapper">
-        <div class="section-bar"></div>
-        <div class="section-content">
-            <div class="form-element">
-                <label>Time Range</label>
-                <select id="ChartRange" class="half">
-                    <option value="1">Last Day</option>
-                    <option value="3" selected>Last 3 Days</option>
-                    <option value="7">Last Week</option>
-                    <option value="14">Last 2 Weeks</option>
-                </select>
+    <div class="form-section">
+        <div class="section-title">
+            <span class="step-index">1</span>
+            <div class="step-header">
+                <h1>Environment</h1>
+                <p></p>
             </div>
-            <div id="canvas-container">
-                <canvas id="env-usage"></canvas>
+        </div>
+        <div class="section-wrapper">
+            <div class="section-bar"></div>
+            <div class="section-content">
+                <div class="form-element">
+                    <label asp-for="EnvironmentName">Environment name</label>
+                    <input asp-for="EnvironmentName" readonly="readonly" />
+                </div>
+                <div class="form-element">
+                    <label asp-for="RenderManager">Render Manager</label>
+                    <input asp-for="RenderManager" readonly="readonly" />
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-<div class="form-section">
-    <div class="section-title">
-        <span class="step-index">2</span>
-        <div class="step-header">
-            <h3>Batch Account Quotas</h3>
-            <p>All quotas below can be increased by creating a support ticket in the <a href="https://portal.azure.com/" target="_blank">Azure Portal</a>.  Navigate to the Batch account -> Quotas.</p>
-        </div>
-    </div>
-    <div class="section-wrapper">
-        <div class="section-bar"></div>
-        <div class="section-content">
-            <div class="form-element">
-                <label asp-for="BatchDedicatedCoreQuota">Dedicated Core Quota</label>
-                <input asp-for="BatchDedicatedCoreQuota" readonly="readonly" />
-            </div>
-            <div class="form-element">
-                <label asp-for="BatchLowPriorityCoreQuota">Low Priority Core Quota</label>
-                <input asp-for="BatchLowPriorityCoreQuota" readonly="readonly" />
-            </div>
-            <div class="form-element">
-                <label asp-for="BatchPoolQuota">Pool Quota</label>
-                <input asp-for="BatchPoolQuota" readonly="readonly" />
+    <div class="form-section">
+        <div class="section-title">
+            <span class="step-index">2</span>
+            <div class="step-header">
+                <h1>Compute Usage</h1>
+                <p></p>
             </div>
         </div>
+        <div class="section-wrapper">
+            <div class="section-bar"></div>
+            <div class="section-content">
+                <div class="form-element">
+                    <label>Time Range</label>
+                    <select id="ChartRange" class="half">
+                        <option value="1">Last Day</option>
+                        <option value="3" selected>Last 3 Days</option>
+                        <option value="7">Last Week</option>
+                        <option value="14">Last 2 Weeks</option>
+                    </select>
+                </div>
+                <div id="canvas-container">
+                    <canvas id="env-usage"></canvas>
+                </div>
+            </div>
+        </div>
     </div>
-</div>
 
-<div class="form-section">
-    <div class="section-title">
-        <span class="step-index">3</span>
-        <div class="step-header">
-            <h3>Monthly Cost</h3>
-            <p>For more costs please see the <a href="@Url.Action("Index", "Reporting")">reporting page</a>.</p>
+    <div class="form-section">
+        <div class="section-title">
+            <span class="step-index">3</span>
+            <div class="step-header">
+                <h3>Monthly Cost</h3>
+                <p>For more costs please see the <a href="@Url.Action("Index", "Reporting")">reporting page</a>.</p>
+            </div>
+        </div>
+        <div class="section-wrapper">
+            <div class="section-bar"></div>
+            <div class="section-content">
+                @{ await Html.RenderPartialAsync("Cost/Chart", Model.EnvironmentCost); }
+            </div>
         </div>
     </div>
-    <div class="section-wrapper">
-        <div class="section-bar"></div>
-        <div class="section-content">
-            @{ await Html.RenderPartialAsync("Cost/Chart", Model.EnvironmentCost); }
-        </div>
-    </div>
-</div>
-
 </div>
 
 <div class="form-footer">
