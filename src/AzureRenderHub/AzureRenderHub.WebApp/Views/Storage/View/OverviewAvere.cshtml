@@ -28,7 +28,7 @@
 <div class="storage-details">
     <div class="form-section">
         <div class="section-title">
-            <span class="step-index">1.1</span>
+            <span class="step-index">1</span>
             <div class="step-header">
                 <h3>Connection Details</h3>
                 <p></p>
@@ -37,10 +37,6 @@
         <div class="section-wrapper">
             <div class="section-bar"></div>
             <div class="section-content">
-                <div class="form-element">
-                    <label asp-for="PowerStatus">Power Status</label>
-                    <input asp-for="PowerStatus" readonly="readonly" />
-                </div>
                 <div class="form-element">
                     <label asp-for="ManagementIP">Management IP</label>
                     <input asp-for="ManagementIP" readonly="readonly" />
@@ -57,15 +53,57 @@
         </div>
     </div>
 
+    <div class="form-section">
+        <div class="section-title">
+            <span class="step-index">2</span>
+            <div class="step-header">
+                <h3>Power Status</h3>
+                <p></p>
+            </div>
+        </div>
+        <div class="section-wrapper">
+            <div class="section-bar"></div>
+            <div class="section-content">
+                <div class="form-element">
+                    <label asp-for="PowerStatus">Power Status</label>
+                    <input asp-for="PowerStatus" readonly="readonly" />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-section">
+        <div class="section-title">
+            <span class="step-index">3</span>
+            <div class="step-header">
+                <h3>Azure Resources</h3>
+                <p></p>
+            </div>
+        </div>
+        <div class="section-wrapper">
+            <div class="section-bar"></div>
+            <div class="section-content">
+                <div class="form-element half">
+                    <label asp-for="ResourceGroupName">Resource Group</label>
+                    <a href="@Model.ResourceGroupUrl" target="_blank">@Model.ResourceGroupName <i class="fa fa-external-link"></i></a>
+                </div>
+                <div class="form-element half">
+                    <label asp-for="DeploymentName">Deployment Name</label>
+                    <a href="@Model.DeploymentUrl" target="_blank">@Model.DeploymentName <i class="fa fa-external-link"></i></a>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="form-footer">
         <div class="button-bar">
             @if (Model.PowerStatus == "VM running")
             {
-            <a class="button" asp-action="PowerOperation" asp-route-repoId="@Model.Name" asp-route-operation="shutdown">Shutdown Cluster <i class="fa fa-stop"></i></a>
+                <a class="button" asp-action="PowerOperation" asp-route-repoId="@Model.Name" asp-route-operation="shutdown">Shutdown Cluster <i class="fa fa-stop"></i></a>
             }
             else
             {
-            <a class="button" asp-action="PowerOperation" asp-route-repoId="@Model.Name" asp-route-operation="start">Start Cluster <i class="fa fa-play"></i></a>
+                <a class="button" asp-action="PowerOperation" asp-route-repoId="@Model.Name" asp-route-operation="start">Start Cluster <i class="fa fa-play"></i></a>
             }
 
             <a class="button" asp-action="Delete" asp-route-repoId="@Model.Name">Delete Cluster <i class="fa fa-trash"></i></a>

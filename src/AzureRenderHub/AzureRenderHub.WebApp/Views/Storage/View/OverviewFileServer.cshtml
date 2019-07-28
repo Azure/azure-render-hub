@@ -28,7 +28,7 @@
 <div class="storage-details">
     <div class="form-section">
         <div class="section-title">
-            <span class="step-index">1.1</span>
+            <span class="step-index">1</span>
             <div class="step-header">
                 <h3>Connection Details</h3>
                 <p></p>
@@ -62,7 +62,7 @@
     </div>
     <div class="form-section">
         <div class="section-title">
-            <span class="step-index">1.2</span>
+            <span class="step-index">2</span>
             <div class="step-header">
                 <h3>File Shares</h3>
                 <p>File shares associated with this File Server</p>
@@ -96,6 +96,47 @@
                     {
                         <p><b>No file shares have been configured</b></p>
                     }
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="form-section">
+        <div class="section-title">
+            <span class="step-index">3</span>
+            <div class="step-header">
+                <h3>Power Status</h3>
+                <p></p>
+            </div>
+        </div>
+        <div class="section-wrapper">
+            <div class="section-bar"></div>
+            <div class="section-content">
+                <div class="form-element">
+                    <label asp-for="PowerStatus">Power Status</label>
+                    <input asp-for="PowerStatus" readonly="readonly" />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-section">
+        <div class="section-title">
+            <span class="step-index">4</span>
+            <div class="step-header">
+                <h3>Azure Resources</h3>
+                <p></p>
+            </div>
+        </div>
+        <div class="section-wrapper">
+            <div class="section-bar"></div>
+            <div class="section-content">
+                <div class="form-element half">
+                    <label asp-for="ResourceGroupName">Resource Group</label>
+                    <a href="@Model.ResourceGroupUrl" target="_blank">@Model.ResourceGroupName <i class="fa fa-external-link"></i></a>
+                </div>
+                <div class="form-element half">
+                    <label asp-for="DeploymentName">Deployment Name</label>
+                    <a href="@Model.DeploymentUrl" target="_blank">@Model.DeploymentName <i class="fa fa-external-link"></i></a>
                 </div>
             </div>
         </div>
