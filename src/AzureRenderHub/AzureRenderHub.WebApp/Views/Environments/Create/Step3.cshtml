@@ -57,6 +57,7 @@
                     <label asp-for="KeyVaultServicePrincipalCertificateName">Azure Key Vault certificate name</label>
                     <input asp-for="KeyVaultServicePrincipalCertificateName" value="@Model.KeyVaultServicePrincipalCertificateName"/>
                     <span asp-validation-for="KeyVaultServicePrincipalCertificateName" class=""></span>
+                    <small>This is the certificate name in Key Vault where the service principal certificate is stored. If you change the name in the command above you should also change this.</small>
                 </div>
             </div>
         </div>
