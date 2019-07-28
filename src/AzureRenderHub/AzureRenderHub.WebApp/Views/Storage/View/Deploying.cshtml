@@ -18,9 +18,7 @@
     {
     <a asp-controller="Storage" asp-action="Index">Storage Repositories</a> &gt;
     <a asp-controller="Storage" asp-action="Deploying" asp-route-repoId="@Model.Name">@Model.Name</a> &gt;
-    <span>
-    @(Model.State == StorageState.Creating || Model.State == StorageState.Failed ? "Deploying" : "Deleting")
-    </span>
+    <span>Deploying</span>
 }
 
 <div class="storage-details">
@@ -33,11 +31,6 @@
                     <h3>Deploying the file server @Model.Name</h3>
                     <p>The deployment is in progress.</p>
                 }
-                else if (Model.State == StorageState.Deleting)
-                {
-                    <h3>Deleting the storage @Model.Name</h3>
-                    <p></p>
-                }
                 else if (Model.State == StorageState.Failed)
                 {
                     <h3>Deployment of storage @Model.Name Failed</h3>
@@ -45,43 +38,27 @@
                 }
             </div>
         </div>
-        @if (Model.State == StorageState.Deleting)
-        {
-            <div class="section-wrapper">
-                <div class="section-bar"></div>
-                <div class="section-content">
-                    <div class="form-element half">
-                        <label asp-for="ResourceGroupName">Resource Group</label>
-                        <a href="@Model.ResourceGroupUrl" target="_blank">@Model.ResourceGroupName <i class="fa fa-external-link"></i></a>
-                    </div>
+        <div class="section-wrapper">
+            <div class="section-bar"></div>
+            <div class="section-content">
+                <div class="form-element half">
+                    <label asp-for="DeploymentName">Deployment Name</label>
+                    <a href="@Model.DeploymentUrl" target="_blank">@Model.DeploymentName <i class="fa fa-external-link"></i></a>
+                </div>
+                <div class="form-element half">
+                    <label asp-for="ResourceGroupName">Resource Group</label>
+                    <a href="@Model.ResourceGroupUrl" target="_blank">@Model.ResourceGroupName <i class="fa fa-external-link"></i></a>
+                </div>
+                <div class="form-element">
+                    <label asp-for="DeploymentState">Deployment State</label>
+                    <input asp-for="DeploymentState" readonly="readonly" />
+                </div>
+                <div class="form-element">
+                    <label asp-for="State">Storage State</label>
+                    <input asp-for="State" readonly="readonly" />
                 </div>
             </div>
-        }
-
-        @if (Model.State != StorageState.Deleting)
-        {
-            <div class="section-wrapper">
-                <div class="section-bar"></div>
-                <div class="section-content">
-                    <div class="form-element half">
-                        <label asp-for="DeploymentName">Deployment Name</label>
-                        <a href="@Model.DeploymentUrl" target="_blank">@Model.DeploymentName <i class="fa fa-external-link"></i></a>
-                    </div>
-                    <div class="form-element half">
-                        <label asp-for="ResourceGroupName">Resource Group</label>
-                        <a href="@Model.ResourceGroupUrl" target="_blank">@Model.ResourceGroupName <i class="fa fa-external-link"></i></a>
-                    </div>
-                    <div class="form-element">
-                        <label asp-for="DeploymentState">Deployment State</label>
-                        <input asp-for="DeploymentState" readonly="readonly" />
-                    </div>
-                    <div class="form-element">
-                        <label asp-for="State">Storage State</label>
-                        <input asp-for="State" readonly="readonly" />
-                    </div>
-                </div>
-            </div>
-        }
+        </div>
     </div>
 </div>
 

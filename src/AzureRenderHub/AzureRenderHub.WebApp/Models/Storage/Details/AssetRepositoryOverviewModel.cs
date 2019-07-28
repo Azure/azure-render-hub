@@ -19,6 +19,7 @@ namespace WebApp.Models.Storage.Details
             if (storage != null)
             {
                 Name = storage.Name;
+                EnvironmentName = storage.EnvironmentName;
                 RepositoryType = storage.RepositoryType;
                 SubscriptionId = storage.SubscriptionId;
                 ResourceGroupName = storage.ResourceGroupName;
@@ -43,6 +44,8 @@ namespace WebApp.Models.Storage.Details
         }
 
         public string Name { get; set; }
+
+        public string EnvironmentName { get; set; }
 
         public AssetRepositoryType RepositoryType { get; protected set; }
 

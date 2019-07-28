@@ -165,6 +165,9 @@
     <Content Update="Views\Storage\View\Delete.cshtml">
       <Pack>$(IncludeRazorContentInPack)</Pack>
     </Content>
+    <Content Update="Views\Storage\View\Deleting.cshtml">
+      <Pack>$(IncludeRazorContentInPack)</Pack>
+    </Content>
     <Content Update="Views\Storage\View\OverviewFileServer.cshtml">
       <Pack>$(IncludeRazorContentInPack)</Pack>
     </Content>

@@ -14,10 +14,10 @@
 }
 
 @section Breadcrumb
-    {
-    <a asp-controller="Storage" asp-action="Index">Storage Repositories</a> &gt;
-    <a asp-controller="Storage" asp-action="Details" asp-route-repoId="@Model.Name">@Model.Name</a> &gt;
-    <span>Overview</span>
+{
+<a asp-controller="Storage" asp-action="Index">Storage Repositories</a> &gt;
+<a asp-controller="Storage" asp-action="Details" asp-route-repoId="@Model.Name">@Model.Name</a> &gt;
+<span>Overview</span>
 }
 
 @await Html.PartialAsync("Storage/Details/DetailsHeaderPartial", Model, new ViewDataDictionary(ViewData)
@@ -145,11 +145,22 @@
         <div class="section-wrapper">
             <div class="section-bar"></div>
             <div class="section-content">
-                <div class="form-element half">
+                @if (Model.EnvironmentName != null)
+                {
+                    <div class="form-element">
+                        <label asp-for="EnvironmentName">Environment Name</label>
+                        <a asp-controller="Environments" asp-action="Overview" asp-route-envId="@Model.EnvironmentName">@Model.EnvironmentName</a>
+                    </div>
+                }
+                <div class="form-element">
+                    <label asp-for="SubnetName">VNet and Subnet</label>
+                    <input  asp-for="SubnetName" value="@Model.SubnetVNetName - @Model.SubnetName (@Model.SubnetPrefix)" readonly="readonly" />
+                </div>
+                <div class="form-element">
                     <label asp-for="ResourceGroupName">Resource Group</label>
                     <a href="@Model.ResourceGroupUrl" target="_blank">@Model.ResourceGroupName <i class="fa fa-external-link"></i></a>
                 </div>
-                <div class="form-element half">
+                <div class="form-element">
                     <label asp-for="DeploymentName">Deployment Name</label>
                     <a href="@Model.DeploymentUrl" target="_blank">@Model.DeploymentName <i class="fa fa-external-link"></i></a>
                 </div>

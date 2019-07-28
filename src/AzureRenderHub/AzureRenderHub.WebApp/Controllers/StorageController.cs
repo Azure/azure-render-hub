@@ -136,7 +136,7 @@ namespace WebApp.Controllers
 
             await _assetRepoCoordinator.BeginDeleteRepositoryAsync(repository, model.DeleteResourceGroup);
 
-            return RedirectToAction("Deploying", new { repoId });
+            return RedirectToAction("Deleting", new { repoId });
         }
 
         [HttpGet]
@@ -157,19 +157,31 @@ namespace WebApp.Controllers
                 return RedirectToAction("Overview", new { repoId });
             }
 
-            if (repo.State != AzureRenderHub.WebApp.Config.Storage.StorageState.Deleting)
-            {
-                await _assetRepoCoordinator.UpdateRepositoryFromDeploymentAsync(repo);
+            await _assetRepoCoordinator.UpdateRepositoryFromDeploymentAsync(repo);
 
-                if (repo.State == AzureRenderHub.WebApp.Config.Storage.StorageState.Ready)
-                {
-                    return RedirectToAction("Overview", new { repoId });
-                }
+            if (repo.State == AzureRenderHub.WebApp.Config.Storage.StorageState.Ready)
+            {
+                return RedirectToAction("Overview", new { repoId });
             }
 
             var model = GetOverviewViewModel(repo);
 
             return View("View/Deploying", model);
+        }
+
+        [HttpGet]
+        [Route("Storage/{repoId}/Deleting")]
+        public async Task<ActionResult> Deleting(string repoId)
+        {
+            var repo = await _assetRepoCoordinator.GetRepository(repoId);
+            if (repo == null)
+            {
+                return RedirectToAction("Index");
+            }
+
+            var model = GetOverviewViewModel(repo);
+
+            return View("View/Deleting", model);
         }
 
         [HttpGet]
