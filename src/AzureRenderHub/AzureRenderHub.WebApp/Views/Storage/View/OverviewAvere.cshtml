@@ -57,17 +57,38 @@
         <div class="section-title">
             <span class="step-index">2</span>
             <div class="step-header">
-                <h3>Power Status</h3>
+                <h3>VM Power Status</h3>
                 <p></p>
             </div>
         </div>
         <div class="section-wrapper">
             <div class="section-bar"></div>
             <div class="section-content">
-                <div class="form-element">
-                    <label asp-for="PowerStatus">Power Status</label>
-                    <input asp-for="PowerStatus" readonly="readonly" />
-                </div>
+                @if (Model.VirtualMachineStatus == null || !Model.VirtualMachineStatus.Any())
+                {
+                    <div class="form-element">
+                        <p>No Virtual Machines Found</p>
+                    </div>
+                }
+                else
+                {
+                    @foreach (var vmStatus in Model.VirtualMachineStatus)
+                    {
+                        <div >
+                            <div>
+                                <a href="@vmStatus.PortalLink" target="_blank" ref="">@vmStatus.VirtualMachineName <i class="fa fa-external-link"></i></a>
+                                @if (vmStatus.IsRunning())
+                                {
+                                    <span style="color: green"><i class="fa fa-check"></i></span>
+                                }
+                                else
+                                {
+                                    <span style="color: red"><i class="fa fa-stop"></i></span>
+                                }
+                            </div>
+                        </div>
+                    }
+                }
             </div>
         </div>
     </div>
@@ -97,15 +118,11 @@
 
     <div class="form-footer">
         <div class="button-bar">
-            @if (Model.PowerStatus == "VM running")
+            @if (!Model.IsRunning())
             {
-                <a class="button" asp-action="PowerOperation" asp-route-repoId="@Model.Name" asp-route-operation="shutdown">Shutdown Cluster <i class="fa fa-stop"></i></a>
+                <a class="button" asp-action="Start" asp-route-repoId="@Model.Name">Start Cluster <i class="fa fa-play"></i></a>
             }
-            else
-            {
-                <a class="button" asp-action="PowerOperation" asp-route-repoId="@Model.Name" asp-route-operation="start">Start Cluster <i class="fa fa-play"></i></a>
-            }
-
+            <a class="button" asp-action="Stop" asp-route-repoId="@Model.Name">Shutdown Cluster <i class="fa fa-stop"></i></a>
             <a class="button" asp-action="Delete" asp-route-repoId="@Model.Name">Delete Cluster <i class="fa fa-trash"></i></a>
         </div>
     </div>

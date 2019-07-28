@@ -1,14 +1,17 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using AzureRenderHub.WebApp.Arm.Deploying;
+using AzureRenderHub.WebApp.Code.Contract;
 using AzureRenderHub.WebApp.Config.Storage;
 using Microsoft.Azure.Management.Compute;
+using Microsoft.Azure.Management.Compute.Models;
 using Microsoft.Azure.Management.Network;
 using Microsoft.Azure.Management.ResourceManager;
 using Microsoft.Azure.Management.ResourceManager.Models;
@@ -516,6 +519,70 @@ namespace WebApp.Config.Coordinators
                     throw;
                 }
             }
+        }
+
+        public async Task<List<VirtualMachineStatus>> GetVirtualMachineStatus(AssetRepository repository)
+        {
+            if (repository.RepositoryType == AssetRepositoryType.NfsFileServer)
+            {
+                return await GetVirtualMachineStatus(repository as NfsFileServer);
+            }
+
+            return await GetVirtualMachineStatus(repository as AvereCluster);
+        }
+
+        private async Task<List<VirtualMachineStatus>> GetVirtualMachineStatus(AvereCluster avereCluster)
+        {
+            var avereVmNames = await GetAvereVMNames(avereCluster);
+            var tasks = avereVmNames.Select(vmName => 
+                GetVirtualMachineStatus(avereCluster.SubscriptionId, avereCluster.ResourceGroupName, vmName));
+            await Task.WhenAll(tasks);
+            return tasks.Select(t => t.Result).ToList();
+        }
+
+        private async Task<List<VirtualMachineStatus>> GetVirtualMachineStatus(NfsFileServer fileServer)
+        {
+            return new List<VirtualMachineStatus>
+            {
+                await GetVirtualMachineStatus(
+                    fileServer.SubscriptionId, 
+                    fileServer.ResourceGroupName,
+                    fileServer.VmName)
+            };
+        }
+
+        private async Task<VirtualMachineStatus> GetVirtualMachineStatus(Guid subscriptionId, string rgName, string vmName)
+        {
+            var status = "Unknown";
+            if (!string.IsNullOrEmpty(rgName) && !string.IsNullOrEmpty(vmName))
+            {
+                using (var computeClient = await _clientProvider.CreateComputeManagementClient(subscriptionId))
+                {
+                    try
+                    {
+                        var node = await computeClient.VirtualMachines.GetAsync(rgName, vmName, InstanceViewTypes.InstanceView);
+                        status = node?.InstanceView?.Statuses?.FirstOrDefault(s => s.Code.StartsWith("PowerState/"))?.DisplayStatus;
+                    }
+                    catch (CloudException cEx)
+                    {
+                        if (cEx.ResourceNotFound())
+                        {
+                            // Ignore
+                            _logger.LogDebug($"Failed to get VM status as VM: {vmName} was not found.");
+                        }
+                        else
+                        {
+                            _logger.LogError(cEx, $"Failed to get VM status with error: {cEx.Message}");
+                        }
+                    }
+                }
+            }
+
+            return new VirtualMachineStatus {
+                SubscriptionId = subscriptionId,
+                ResourceGroupName = rgName,
+                VirtualMachineName = vmName,
+                PowerStatus = status };
         }
     }
 }

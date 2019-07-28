@@ -46,8 +46,6 @@ namespace WebApp.Models.Storage.Details
         public string VmSize { get; set; }
 
         // overrides
-        public override string PowerStatus { get; set; }
-
         public override string DisplayName => "File Server";
 
         public override string Description => "Details about the File Server";

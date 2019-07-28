@@ -167,7 +167,7 @@ namespace WebApp.Controllers
                 }
             }
 
-            var model = await GetOverviewViewModel(repo);
+            var model = GetOverviewViewModel(repo);
 
             return View("View/Deploying", model);
         }
@@ -193,14 +193,16 @@ namespace WebApp.Controllers
             if (repo is NfsFileServer nfs) {
                 var model = new NfsFileServerOverviewModel(nfs)
                 {
-                    PowerStatus = await GetVirtualMachineStatus(nfs.SubscriptionId.ToString(), nfs.ResourceGroupName, nfs.VmName),
+                    VirtualMachineStatus = await _assetRepoCoordinator.GetVirtualMachineStatus(nfs),
                 };
                 return View("View/OverviewFileServer", model);
             }
             else if (repo is AvereCluster avere)
             {
-                var model = new AvereClusterOverviewModel(avere);
-                // TODO: Get Avere status of each cluster node
+                var model = new AvereClusterOverviewModel(avere)
+                {
+                    VirtualMachineStatus = await _assetRepoCoordinator.GetVirtualMachineStatus(avere),
+                };
                 return View("View/OverviewAvere", model);
             }
             else
@@ -219,7 +221,7 @@ namespace WebApp.Controllers
                 return RedirectToAction("Step1", new { repoId });
             }
 
-            var model = await GetOverviewViewModel(repo);
+            var model = GetOverviewViewModel(repo);
             return View("View/Resources", model);
         }
 
@@ -751,48 +753,12 @@ namespace WebApp.Controllers
             return RedirectToAction("Overview", new { repoId = repoId });
         }
 
-        private async Task<string> GetVirtualMachineStatus(string subscriptionId, string rgName, string vmName)
-        {
-            var status = "Unknown";
-            if (string.IsNullOrEmpty(rgName) || string.IsNullOrEmpty(vmName))
-            {
-                return status;
-            }
-
-            using (var computeClient = await _managementClientProvider.CreateComputeManagementClient(Guid.Parse(subscriptionId)))
-            {
-                try
-                {
-                    var node = await computeClient.VirtualMachines.GetAsync(rgName, vmName, InstanceViewTypes.InstanceView);
-                    status = node?.InstanceView?.Statuses?.FirstOrDefault(s => s.Code.StartsWith("PowerState/"))?.DisplayStatus;
-                }
-                catch (CloudException cEx)
-                {
-                    if (cEx.Response.StatusCode == HttpStatusCode.NotFound || cEx.Body.Code == "NotFound")
-                    {
-                        // Ignore
-                        Console.WriteLine($"Failed to get VM status as VM: {vmName} was not found.");
-                    }
-                    else
-                    {
-                        // TODO: Log or do something else ...
-                        Console.WriteLine($"Failed to get VM status with error: {cEx.Message}.\n{cEx.StackTrace}");
-                    }
-                }
-            }
-
-            return status;
-        }
-
-        private async Task<AssetRepositoryOverviewModel> GetOverviewViewModel(AssetRepository repo)
+        private AssetRepositoryOverviewModel GetOverviewViewModel(AssetRepository repo)
         {
             switch (repo)
             {
                 case NfsFileServer nfs:
-                    return new NfsFileServerOverviewModel(nfs)
-                    {
-                        PowerStatus = await GetVirtualMachineStatus(nfs.SubscriptionId.ToString(), nfs.ResourceGroupName, nfs.VmName),
-                    };
+                    return new NfsFileServerOverviewModel(nfs);
                 case AvereCluster avere:
                     return new AvereClusterOverviewModel(avere);
                 default:
