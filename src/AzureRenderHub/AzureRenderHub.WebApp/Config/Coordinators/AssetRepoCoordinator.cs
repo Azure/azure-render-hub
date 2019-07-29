@@ -537,7 +537,7 @@ namespace WebApp.Config.Coordinators
             var tasks = avereVmNames.Select(vmName => 
                 GetVirtualMachineStatus(avereCluster.SubscriptionId, avereCluster.ResourceGroupName, vmName));
             await Task.WhenAll(tasks);
-            return tasks.Select(t => t.Result).ToList();
+            return (await Task.WhenAll(tasks)).ToList();
         }
 
         private async Task<List<VirtualMachineStatus>> GetVirtualMachineStatus(NfsFileServer fileServer)

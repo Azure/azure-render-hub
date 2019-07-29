@@ -16,9 +16,9 @@ namespace WebApp.Code.Extensions
         public static bool ResourceNotFound(this CloudException ce)
         {
             return ce.Response.StatusCode == HttpStatusCode.NotFound
-                || ce.Body?.Code != "ResourceGroupNotFound"
-                || ce.Body?.Code != "ResourceNotFound"
-                || ce.Body?.Code != "NotFound";
+                || ce.Body?.Code == "ResourceGroupNotFound"
+                || ce.Body?.Code == "ResourceNotFound"
+                || ce.Body?.Code == "NotFound";
         }
 
         public static string ToFriendlyString(this CloudException ex, bool includeStack = true)
