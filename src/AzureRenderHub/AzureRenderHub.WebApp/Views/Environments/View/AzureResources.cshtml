@@ -1,0 +1,96 @@
+﻿@model WebApp.Models.Environments.Details.ViewEnvironmentModel
+@{
+    ViewBag.Title = Model.EnvironmentName;
+}
+
+@section Breadcrumb
+{
+    <a asp-controller="Environments" asp-action="Index">Environments</a> &gt;
+    <a asp-controller="Environments" asp-action="Details" asp-route-envId="@Model.EnvironmentName">@Model.EnvironmentName</a> &gt;
+    <span>Resources</span>
+}
+
+<h2>@Model.EnvironmentName - resources</h2>
+<p>View the details of a pre-configured render farm environment.</p>
+
+@await Html.PartialAsync("Menu/EnvironmentMainMenu", Model, new ViewDataDictionary(ViewData) {{ "Step", "env" }})
+@await Html.PartialAsync("Menu/EnvironmentSubMenu", Model, new ViewDataDictionary(ViewData)
+{
+    { "Step", 2 },
+    { "Type", "view" }
+})
+
+<div class="form-section">
+    <div class="section-title">
+        <span class="step-index">1</span>
+        <div class="step-header">
+            <h3>Azure Resources</h3>
+            <p>The Environment Azure Resource names and links</p>
+        </div>
+    </div>
+    <div class="section-wrapper">
+        <div class="section-bar"></div>
+        <div class="section-content">
+            <div class="form-element">
+                <label asp-for="SubscriptionId">Subscription ID</label>
+                <input asp-for="SubscriptionId" readonly="readonly" />
+            </div>
+            <div class="form-element">
+                <label asp-for="LocationName">Location</label>
+                <input asp-for="LocationName" readonly="readonly" />
+            </div>
+            <div class="form-element">
+                <label asp-for="ResourceGroup">Resource Group</label>
+                <a href="@Model.ResourceGroupPortalLink" target="_blank">@Model.ResourceGroup <i class="fa fa-external-link"></i></a>
+            </div>
+            <div class="form-element">
+                <label asp-for="BatchAccountName">Batch Account</label>
+                <a href="@Model.BatchAccountPortalLink" target="_blank">@Model.BatchAccountName <i class="fa fa-external-link"></i></a>
+            </div>
+            <div class="form-element">
+                <label asp-for="StorageAccountName">Storage Account</label>
+                <a href="@Model.StorageAccountPortalLink" target="_blank">@Model.StorageAccountName <i class="fa fa-external-link"></i></a>
+            </div>
+            <div class="form-element">
+                <label asp-for="KeyVaultName">Key Vault</label>
+                <a href="@Model.KeyVaultPortalLink" target="_blank">@Model.KeyVaultName <i class="fa fa-external-link"></i></a>
+            </div>
+            <div class="form-element">
+                <label asp-for="AppInsightsName">Application Insights</label>
+                <a href="@Model.AppInsightsComponentPortalLink" target="_blank">@Model.AppInsightsName <i class="fa fa-external-link"></i></a>
+            </div>
+            <div class="form-element">
+                <label asp-for="SubnetName">VNet and Subnet</label>
+                <a href="@Model.SubnetPortalLink" target="_blank">@Model.SubnetVNetName - @Model.SubnetName (@Model.SubnetPrefix) <i class="fa fa-external-link"></i></a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="form-section">
+    <div class="section-title">
+        <span class="step-index">2</span>
+        <div class="step-header">
+            <h3>Batch Account Quotas</h3>
+            <p>All quotas below can be increased by creating a support ticket in the <a href="https://portal.azure.com/" target="_blank">Azure Portal</a>.  Navigate to the Batch account -> Quotas.</p>
+        </div>
+    </div>
+    <div class="section-wrapper">
+        <div class="section-bar"></div>
+        <div class="section-content">
+            <div class="form-element">
+                <label asp-for="BatchDedicatedCoreQuota">Dedicated Core Quota</label>
+                <input asp-for="BatchDedicatedCoreQuota" readonly="readonly" />
+            </div>
+            <div class="form-element">
+                <label asp-for="BatchLowPriorityCoreQuota">Low Priority Core Quota</label>
+                <input asp-for="BatchLowPriorityCoreQuota" readonly="readonly" />
+            </div>
+            <div class="form-element">
+                <label asp-for="BatchPoolQuota">Pool Quota</label>
+                <input asp-for="BatchPoolQuota" readonly="readonly" />
+            </div>
+        </div>
+    </div>
+</div>
+<p>&nbsp;</p>

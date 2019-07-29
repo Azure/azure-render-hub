@@ -25,5 +25,8 @@ namespace WebApp.BackgroundHosts.Deployment
 
         [JsonIgnore]
         public string PopReceipt { get; set; }
+
+        [JsonIgnore]
+        public int DequeueCount { get; set; }
     }
 }

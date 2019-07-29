@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 using AzureRenderHub.WebApp.Arm.Deploying;
+using AzureRenderHub.WebApp.Code.Contract;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using WebApp.Config.Storage;
@@ -27,5 +28,11 @@ namespace WebApp.Code.Contract
         Task UpdateRepository(AssetRepository repository, string originalName = null);
 
         Task<bool> RemoveRepository(AssetRepository repository);
+
+        Task<List<VirtualMachineStatus>> GetVirtualMachineStatus(AssetRepository repository);
+
+        Task Start(AssetRepository repository);
+
+        Task Stop(AssetRepository repository);
     }
 }

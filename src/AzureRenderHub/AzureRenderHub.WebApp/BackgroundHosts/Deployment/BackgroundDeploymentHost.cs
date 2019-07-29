@@ -60,7 +60,14 @@ namespace WebApp.BackgroundHosts.Deployment
 
         private async Task ExecuteMessage(ActiveDeployment activeDeployment)
         {
-            if (activeDeployment.Action == "DeleteVM")
+            if (activeDeployment.DequeueCount > 10)
+            {
+                _logger.LogWarning(
+                    $"Deleting background task for {activeDeployment.StorageName} as it has exceeded the " +
+                    $"maximum dequeue count.");
+                await _deploymentQueue.Delete(activeDeployment.MessageId, activeDeployment.PopReceipt);
+            }
+            else if (activeDeployment.Action == "DeleteVM")
             {
                 await DeleteDeployment(activeDeployment);
             }

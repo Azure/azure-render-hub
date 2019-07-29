@@ -75,16 +75,13 @@
     <Content Update="Views\Environments\View\Storage.cshtml">
       <Pack>$(IncludeRazorContentInPack)</Pack>
     </Content>
-    <Content Update="Views\Environments\View\Resources.cshtml">
+    <Content Update="Views\Environments\View\AzureResources.cshtml">
       <Pack>$(IncludeRazorContentInPack)</Pack>
     </Content>
     <Content Update="Views\Environments\View\Identity.cshtml">
       <Pack>$(IncludeRazorContentInPack)</Pack>
     </Content>
     <Content Update="Views\Environments\View\Manager.cshtml">
-      <Pack>$(IncludeRazorContentInPack)</Pack>
-    </Content>
-    <Content Update="Views\Environments\View\Details.cshtml">
       <Pack>$(IncludeRazorContentInPack)</Pack>
     </Content>
     <Content Update="Views\Environments\Create\Step2.cshtml">
@@ -135,37 +132,22 @@
     <Content Update="Views\Shared\Menu\StorageSubMenu.cshtml">
       <Pack>$(IncludeRazorContentInPack)</Pack>
     </Content>
-    <Content Update="Views\Shared\Storage\Create\CreateFormHeaderPartial.cshtml">
+    <Content Update="Views\Storage\Create\Step2.cshtml">
       <Pack>$(IncludeRazorContentInPack)</Pack>
     </Content>
-    <Content Update="Views\Shared\Storage\Details\AvereClusterPartial.cshtml">
+    <Content Update="Views\Storage\Create\Step3Avere.cshtml">
       <Pack>$(IncludeRazorContentInPack)</Pack>
     </Content>
-    <Content Update="Views\Shared\Storage\Details\AvereFooterPartial.cshtml">
-      <Pack>$(IncludeRazorContentInPack)</Pack>
-    </Content>
-    <Content Update="Views\Shared\Storage\Details\NfsFooterPartial.cshtml">
-      <Pack>$(IncludeRazorContentInPack)</Pack>
-    </Content>
-    <Content Update="Views\Shared\Storage\Details\DetailsHeaderPartial.cshtml">
-      <Pack>$(IncludeRazorContentInPack)</Pack>
-    </Content>
-    <Content Update="Views\Shared\Storage\Details\NfsFileServerPartial.cshtml">
-      <Pack>$(IncludeRazorContentInPack)</Pack>
-    </Content>
-    <Content Update="Views\Storage\Create\Step2Avere.cshtml">
-      <Pack>$(IncludeRazorContentInPack)</Pack>
-    </Content>
-    <Content Update="Views\Storage\Create\Step2Nfs.cshtml">
+    <Content Update="Views\Storage\Create\Step3FileServer.cshtml">
       <Pack>$(IncludeRazorContentInPack)</Pack>
     </Content>
     <Content Update="Views\Storage\View\Delete.cshtml">
       <Pack>$(IncludeRazorContentInPack)</Pack>
     </Content>
-    <Content Update="Views\Storage\View\OverviewFileServer.cshtml">
+    <Content Update="Views\Storage\View\Deleting.cshtml">
       <Pack>$(IncludeRazorContentInPack)</Pack>
     </Content>
-    <Content Update="Views\Storage\View\Resources.cshtml">
+    <Content Update="Views\Storage\View\OverviewFileServer.cshtml">
       <Pack>$(IncludeRazorContentInPack)</Pack>
     </Content>
     <Content Update="Views\Storage\View\Deploying.cshtml">

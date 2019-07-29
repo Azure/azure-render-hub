@@ -24,9 +24,6 @@ namespace WebApp.Models.Storage.Details
         }
 
         // overrides
-
-        public override string PowerStatus { get; set; }
-
         public override string DisplayName => "Avere Cluster";
 
         public override string Description => "Details about the Avere Cluster";

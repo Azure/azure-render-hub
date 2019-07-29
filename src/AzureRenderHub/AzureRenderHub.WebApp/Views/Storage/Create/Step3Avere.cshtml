@@ -9,20 +9,20 @@
     <span>New</span>
 }
 
-@await Html.PartialAsync("Storage/Create/CreateFormHeaderPartial")
+<div class="page-header">
+    <h2>Add a new storage Repository</h2>
+    <p>Setup a storage repository to manage assets in an Avere Cluster, NFS or SMB File Server.</p>
+</div>
 
-<form asp-controller="Storage" asp-action="Step2Avere" method="post">
+<form asp-controller="Storage" asp-action="Step3Avere" asp-route-repoId="@Model.RepositoryName" method="post">
     @await Html.PartialAsync("Menu/StorageSubMenu", Model, new ViewDataDictionary(ViewData)
     {
-        { "Step", 2 },
+        { "Step", 3 },
         { "RepoId", Model.RepositoryName }
     })
 
     @Html.AntiForgeryToken()
     @Html.HiddenFor(model => model.RepositoryName)
-    @Html.HiddenFor(model => model.RepositoryType)
-    @Html.HiddenFor(model => model.SubnetResourceIdLocationAndAddressPrefix)
-    @Html.HiddenFor(model => model.SubscriptionId)
 
     <div asp-validation-summary="ModelOnly" class=""></div>
     <div class="form-section">
@@ -31,7 +31,7 @@
             <div class="step-header">
                 <h3>Accept Marketplace T's & C's</h3>
                 <p>The first time you deploy Avere into a Subscription you'll need to accept the Avere Azure Marketplace Terms & Conditions.</p>
-                <p>You can do this from Cloud Shell by navigating to <a href="https://shell.azure.com/powershell" target="_blank">Azure Cloud Shell</a> and paste in the following powershell script.</p>
+                <p>You can do this from <a href="https://shell.azure.com/powershell" target="_blank">Azure Cloud Shell</a> by copying and pasting the following powershell script.</p>
                 <p>Please read the Avere vFXT Terms and Conditions and accept with the final command below.</p>
             </div>
         </div>
@@ -56,90 +56,6 @@
     <div class="form-section">
         <div class="section-title">
             <span class="step-index">2</span>
-            <div class="step-header">
-                <h3>Specify Avere Subnet</h3>
-                <p>Avere should always be deployed to a dedicated Subnet within the selected VNet.</p>
-            </div>
-        </div>
-        <div class="section-wrapper">
-            <div class="section-bar"></div>
-            <div class="section-content">
-                <div class="form-element">
-                    <div class="form-check">
-                        <input id="CreateSubnet" asp-for="CreateSubnet" value="true" type="radio">
-                        <label class="form-check-label" for="CreateSubnet">Create new Subnet in the VNet '@Model.SelectedVNetName'</label>
-                    </div>
-                    <div class="form-check">
-                        <input id="UseExistingSubnet" asp-for="CreateSubnet" value="false" type="radio">
-                        <label class="form-check-label" for="UseExistingSubnet">Use Existing Subnet</label>
-                    </div>
-                </div>
-
-                <div id="CreateSubnetSection" hidden="@(Model.CreateSubnet ? "" : "hidden")">
-
-                    <hr class="form-element" />
-
-                    <div class="form-element">
-                        <label>Selected VNet: @Model.SelectedVNetName</label>
-                    </div>
-                    <div class="form-element">
-                        <label>VNet Address Space: @Model.VNetAddressSpace</label>
-                    </div>
-                    <div class="form-element">
-                        <label>Existing Subnets</label>
-                    </div>
-                    <div class="pool-details half">
-                        <table>
-                            <tr>
-                                <th>Subnet</th>
-                                <th>Address Prefix</th>
-                            </tr>
-                            @if (Model.ExistingSubnets != null)
-                            {
-                                @foreach (var subnet in Model.ExistingSubnets)
-                                {
-                                    <tr>
-                                        <td>@subnet.Name</td>
-                                        <td>@subnet.AddressPrefix</td>
-                                    </tr>
-                                }
-                            }
-                        </table>
-                    </div>
-                    <hr class="form-element" />
-                    <div class="form-element">
-                        <label asp-for="NewSubnetName">New Subnet Name</label>
-                        <input asp-for="NewSubnetName" value="avere-subnet" />
-                        <span asp-validation-for="NewSubnetName"></span>
-                    </div>
-                    <div class="form-element">
-                        <label asp-for="NewSubnetAddressPrefix">Subnet Address Prefix</label>
-                        <input asp-for="NewSubnetAddressPrefix" />
-                        <span asp-validation-for="NewSubnetAddressPrefix"></span>
-                        <small>The subnet address prefix must be within the Virtual Network address space and must not overlap with any existing subnets.</small>
-                        <small>For example, if your VNet address space is 10.2.0.0/16 and you have a subnet with an address prefix of 10.2.0.0/24 then the next subnet would be 10.2.1.0/24.</small>
-                    </div>
-                </div>
-
-                    <div id="UseExistingSubnetSection" hidden="@(Model.CreateSubnet ? "hidden" : "")">
-                        <div class="form-element">
-                            <label asp-for="SelectedSubnetName">Subnet Name</label>
-                            <input asp-for="SelectedSubnetName" readonly="readonly" />
-                        </div>
-
-                        <div class="form-element">
-                            <label asp-for="SelectedSubnetAddressPrefix">Subnet Address Prefix</label>
-                            <input asp-for="SelectedSubnetAddressPrefix" readonly="readonly" />
-                        </div>
-
-                        <p>*Using an existing, utilized, subnet is not recommended.</p>
-                    </div>
-                </div>
-        </div>
-    </div>
-    <div class="form-section">
-        <div class="section-title">
-            <span class="step-index">3</span>
             <div class="step-header">
                 <h3>Avere Configuration</h3>
                 <p>Set up the details specific to the Avere cluster</p>
@@ -218,7 +134,7 @@
     <div class="form-footer">
         <div class="summary"></div>
         <div class="button-bar">
-            <a class="button" asp-controller="Storage" asp-action="Step1" asp-route-repoId="@Model.RepositoryName">Previous</a>
+            <a class="button" asp-controller="Storage" asp-action="Step2" asp-route-repoId="@Model.RepositoryName">Previous</a>
             <button type="submit">Create <i class="fa fa-save"></i></button>
         </div>
     </div>

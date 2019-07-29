@@ -1,0 +1,124 @@
+﻿@model WebApp.Models.Storage.Create.AddNetworkingModel
+@{
+    ViewBag.Title = "Add Storage networking configuration";
+}
+
+@section Breadcrumb
+    {
+    <a asp-controller="Storage" asp-action="Index">Storage Repositories</a> &gt;
+    <span>New</span>
+}
+
+<div class="page-header">
+    <h2>Add a new storage repository</h2>
+    <p>Setup a storage repository to manage assets in an Avere Cluster, NFS or SMB File Server.</p>
+</div>
+
+<form asp-controller="Storage" asp-action="Step2" method="post">
+    @await Html.PartialAsync("Menu/StorageSubMenu", Model, new ViewDataDictionary(ViewData)
+    {
+        { "Step", 2 },
+        { "RepoId", Model.RepositoryName }
+    })
+
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(model => model.RepositoryName)
+    @Html.HiddenFor(model => model.RepositoryType)
+    @Html.HiddenFor(model => model.VirtualNetworkName)
+    @Html.HiddenFor(model => model.VirtualNetworkAddressPrefixes)
+    @Html.HiddenFor(model => model.SerializedSubnetList)
+
+    <div asp-validation-summary="ModelOnly" class=""></div>
+    <div class="form-section">
+        <div class="section-title">
+            <span class="step-index">1</span>
+            <div class="step-header">
+                <h3>VNet and Subnet Configuration</h3>
+                <p>Avere should always be deployed to a dedicated Subnet within the selected VNet.</p>
+            </div>
+        </div>
+        <div class="section-wrapper">
+            <div class="section-bar"></div>
+            <div class="section-content">
+                <div class="form-element">
+                    <div class="form-check">
+                        <input id="CreateSubnet" asp-for="CreateSubnet" value="true" type="radio">
+                        <label class="form-check-label" for="CreateSubnet">Create new Subnet in the VNet '@Model.VirtualNetworkName'</label>
+                    </div>
+                    <div class="form-check">
+                        <input id="UseExistingSubnet" asp-for="CreateSubnet" value="false" type="radio">
+                        <label class="form-check-label" for="UseExistingSubnet">Use existing Subnet *</label>
+                        <small>*Using an existing, utilized subnet is not recommended for Avere.</small>
+                    </div>
+                </div>
+
+                <div id="CreateSubnetSection" hidden="@(Model.CreateSubnet ? "" : "hidden")">
+
+                    <hr class="form-element" />
+
+                    <div class="form-element">
+                        <label>Virtual Network</label>
+                        <p>@Model.VirtualNetworkName</p>
+                    </div>
+                    <div class="form-element">
+                        <label>Address Space</label>
+                        <p>@Model.VirtualNetworkAddressPrefixes</p>
+                    </div>
+                    <div class="form-element">
+                        <label>Current Subnets</label>
+                        <p>@(Model.ExistingSubnets == null ? "None" : string.Join(", ", Model.ExistingSubnets.Select(subnet => $"{subnet.Name} ({subnet.AddressPrefix})")))</p>
+                    </div>
+                    <hr class="form-element" />
+                    <div class="form-element">
+                        <label asp-for="NewSubnetName">New Subnet Name</label>
+                        <input asp-for="NewSubnetName" value="@Model.NewSubnetName" />
+                        <span asp-validation-for="NewSubnetName"></span>
+                    </div>
+                    <div class="form-element">
+                        <label asp-for="NewSubnetAddressPrefix">Subnet Address Prefix</label>
+                        <input asp-for="NewSubnetAddressPrefix" />
+                        <span asp-validation-for="NewSubnetAddressPrefix"></span>
+                        <small>The subnet address prefix must be within the Virtual Network address space and must not overlap with any existing subnets.</small>
+                        <small>For example, if your VNet address space is 10.2.0.0/16 and you have a subnet with an address prefix of 10.2.0.0/24 then the next subnet would be 10.2.1.0/24.</small>
+                    </div>
+                </div>
+
+                <div id="UseExistingSubnetSection" hidden="@(Model.CreateSubnet ? "hidden" : "")">
+                    <div class="form-element">
+                        <label asp-for="SubnetResourceIdLocationAndAddressPrefix">Subnets</label>
+                        <select id="VNets" asp-for="SubnetResourceIdLocationAndAddressPrefix" asp-items="Model.ExistingSubnetsSelectList"></select>
+                        <span asp-validation-for="SubnetResourceIdLocationAndAddressPrefix" class=""></span>
+                        <small>*Avere vFXT Cluster subnets <strong>must</strong> have the Microsoft.Storage service endpoint enabled.</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="form-footer">
+        <div class="summary"></div>
+        <div class="button-bar">
+            <a class="button" asp-controller="Storage" asp-action="Step1" asp-route-repoId="@Model.RepositoryName">Previous</a>
+            <input type="submit" class="btn btn-primary" value="Next : Configuration" formaction="Step2" />
+        </div>
+    </div>
+    <p>&nbsp;</p>
+</form>
+
+@section scripts
+    {
+    <script>
+        $(document).ready(function () {
+            $('input[type=radio][name=CreateSubnet]').change(function () {
+                if ($('#CreateSubnet').is(':checked')) {
+                    $('#UseExistingSubnetSection').hide();
+                    $('#CreateSubnetSection').show();
+                } else {
+                    $('#CreateSubnetSection').hide();
+                    $('#UseExistingSubnetSection').show();
+                }
+            });
+
+            $('input[type=radio][name=CreateSubnet]').change();
+        });
+    </script>
+}

@@ -2,8 +2,12 @@
 // Licensed under the MIT License.
 
 using AzureRenderHub.WebApp.Arm.Deploying;
+using AzureRenderHub.WebApp.Code.Contract;
 using AzureRenderHub.WebApp.Config.Storage;
+using Microsoft.Azure.Management.Compute.Models;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using WebApp.Config.Storage;
 
 namespace WebApp.Models.Storage.Details
@@ -12,11 +16,10 @@ namespace WebApp.Models.Storage.Details
     {
         public AssetRepositoryOverviewModel(AssetRepository storage = null)
         {
-
-
             if (storage != null)
             {
                 Name = storage.Name;
+                EnvironmentName = storage.EnvironmentName;
                 RepositoryType = storage.RepositoryType;
                 SubscriptionId = storage.SubscriptionId;
                 ResourceGroupName = storage.ResourceGroupName;
@@ -41,6 +44,8 @@ namespace WebApp.Models.Storage.Details
         }
 
         public string Name { get; set; }
+
+        public string EnvironmentName { get; set; }
 
         public AssetRepositoryType RepositoryType { get; protected set; }
 
@@ -73,7 +78,12 @@ namespace WebApp.Models.Storage.Details
 
         public StorageState State { get; set; }
 
-        public abstract string PowerStatus { get; set; }
+        public IEnumerable<VirtualMachineStatus> VirtualMachineStatus { get; set; }
+
+        public bool IsRunning()
+        {
+            return VirtualMachineStatus != null && VirtualMachineStatus.All(vms => vms.IsRunning());
+        }
 
         public abstract string DisplayName { get; }
 

@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 using System;
+using WebApp.Config;
 using WebApp.Config.Storage;
 
 namespace WebApp.Models.Storage.Create
@@ -19,7 +20,7 @@ namespace WebApp.Models.Storage.Create
                 RepositoryName = repository.Name;
                 RepositoryType = repository.RepositoryType;
                 SubscriptionId = repository.SubscriptionId;
-                Subnet = repository.Subnet;
+                SelectedVirtualNetwork = repository.SelectedVNet;
                 UseEnvironment = !string.IsNullOrEmpty(repository.EnvironmentName);
                 SelectedEnvironmentName = repository.EnvironmentName;
             }
@@ -29,5 +30,20 @@ namespace WebApp.Models.Storage.Create
         /// In the form, keep hold of the initially set name in case we change it.
         /// </summary>
         public string OriginalName { get; set; }
+
+        public VirtualNetwork SelectedVirtualNetwork { get; set; }
+
+        public string VNetIdLocationAndAddressPrefixes
+        {
+            get
+            {
+                return SelectedVirtualNetwork?.ToString();
+            }
+
+            set
+            {
+                SelectedVirtualNetwork = new VirtualNetwork(value);
+            }
+        }
     }
 }

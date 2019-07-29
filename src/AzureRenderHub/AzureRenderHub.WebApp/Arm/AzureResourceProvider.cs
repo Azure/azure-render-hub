@@ -39,6 +39,7 @@ using System.Diagnostics;
 using Microsoft.Identity.Web.Client;
 using WebApp.Models.Api;
 using Subnet = Microsoft.Azure.Management.Network.Models.Subnet;
+using VirtualNetwork = Microsoft.Azure.Management.Network.Models.VirtualNetwork;
 
 namespace WebApp.Arm
 {
@@ -221,14 +222,14 @@ namespace WebApp.Arm
             {
                 await resourceClient.ResourceGroups.BeginDeleteAsync(resourceGroupName);
             }
-            catch (CloudException cEx)
+            catch (CloudException ex)
             {
-                if (cEx.Response?.StatusCode != HttpStatusCode.NotFound && cEx.Body?.Code != "ResourceGroupNotFound")
+                if (!ex.ResourceNotFound())
                 {
-                    _logger.LogError(cEx,
+                    _logger.LogError(ex,
                         $"Exception deleting resource group {resourceGroupName} " +
                         $"in subscription {subscriptionId} " +
-                        $"with request {cEx.RequestId}");
+                        $"with request {ex.RequestId}");
                     throw;
                 }
             }
@@ -254,7 +255,7 @@ namespace WebApp.Arm
                 }
                 catch (CloudException ce)
                 {
-                    if (ce.Body.Code != "NotFound" && ce.Body.Code != "ResourceNotFound")
+                    if (!ce.ResourceNotFound())
                     {
                         _logger.LogError(ce,
                             $"Exception validating Key Vault {keyVaultName} " +
@@ -714,8 +715,8 @@ namespace WebApp.Arm
             var token = new TokenCredentials(accessToken);
             var networkClient = new NetworkManagementClient(token) { SubscriptionId = subscriptionId.ToString() };
 
-            var newSubnet = new Microsoft.Azure.Management.Network.Models.Subnet(name: subnetName, addressPrefix: subnetAddressRange);
-            await networkClient.Subnets.CreateOrUpdateAsync(resourceGroupName, vnetName, subnetName, newSubnet);
+            var newSubnet = new Subnet(name: subnetName, addressPrefix: subnetAddressRange);
+            var subnetResult = await networkClient.Subnets.CreateOrUpdateAsync(resourceGroupName, vnetName, subnetName, newSubnet);
             var subnet = await GetSubnetAsync(subscriptionId, location, resourceGroupName, vnetName, subnetName);
             subnet.ExistingResource = false;
             return subnet;

@@ -1,14 +1,17 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using AzureRenderHub.WebApp.Arm.Deploying;
+using AzureRenderHub.WebApp.Code.Contract;
 using AzureRenderHub.WebApp.Config.Storage;
 using Microsoft.Azure.Management.Compute;
+using Microsoft.Azure.Management.Compute.Models;
 using Microsoft.Azure.Management.Network;
 using Microsoft.Azure.Management.ResourceManager;
 using Microsoft.Azure.Management.ResourceManager.Models;
@@ -18,6 +21,7 @@ using Newtonsoft.Json.Linq;
 using WebApp.Arm;
 using WebApp.BackgroundHosts.Deployment;
 using WebApp.Code.Contract;
+using WebApp.Code.Extensions;
 using WebApp.Config.Storage;
 using WebApp.Identity;
 using WebApp.Models.Storage.Create;
@@ -232,9 +236,16 @@ namespace WebApp.Config.Coordinators
         {
             if (deleteResourceGroup)
             {
-                using (var resourceClient = await _clientProvider.CreateResourceManagementClient(repository.SubscriptionId))
+                try
                 {
-                    await resourceClient.ResourceGroups.DeleteAsync(repository.ResourceGroupName);
+                    using (var resourceClient = await _clientProvider.CreateResourceManagementClient(repository.SubscriptionId))
+                    {
+                        await resourceClient.ResourceGroups.DeleteAsync(repository.ResourceGroupName);
+                    }
+                }
+                catch (CloudException ex) when (ex.ResourceNotFound())
+                {
+                    // RG doesn't exist
                 }
             }
             else
@@ -274,7 +285,7 @@ namespace WebApp.Config.Coordinators
                         vmName);
                 }
             }
-            catch (CloudException ex) when (ResourceNotFound(ex))
+            catch (CloudException ex) when (ex.ResourceNotFound())
             {
                 // RG doesn't exist
             }
@@ -330,7 +341,7 @@ namespace WebApp.Config.Coordinators
                         pip = nic.IpConfigurations[0].PublicIPAddress?.Id.Split("/").Last();
                         nsg = nic.NetworkSecurityGroup?.Id.Split("/").Last();
                     }
-                    catch (CloudException ex) when (ResourceNotFound(ex))
+                    catch (CloudException ex) when (ex.ResourceNotFound())
                     {
                         // NIC doesn't exist
                     }
@@ -370,7 +381,7 @@ namespace WebApp.Config.Coordinators
                         await IgnoreNotFound(() => computeClient.AvailabilitySets.DeleteAsync(resourceGroupName, avSetName));
                     }
                 }
-                catch (CloudException ex) when (ResourceNotFound(ex))
+                catch (CloudException ex) when (ex.ResourceNotFound())
                 {
                     // VM doesn't exist
                 }
@@ -389,7 +400,7 @@ namespace WebApp.Config.Coordinators
                         await resourceClient.ResourceGroups.DeleteAsync(resourceGroupName);
                     }
                 }
-                catch (CloudException ex) when (ResourceNotFound(ex))
+                catch (CloudException ex) when (ex.ResourceNotFound())
                 {
                     // RG doesn't exist
                 }
@@ -434,9 +445,9 @@ namespace WebApp.Config.Coordinators
                         assetRepo.ResourceGroupName,
                         assetRepo.Deployment.DeploymentName);
                 }
-                catch (CloudException e)
+                catch (CloudException ex)
                 {
-                    if (ResourceNotFound(e))
+                    if (ex.ResourceNotFound())
                     {
                         return null;
                     }
@@ -501,18 +512,161 @@ namespace WebApp.Config.Coordinators
             {
                 await action();
             }
-            catch (CloudException e)
+            catch (CloudException ex)
             {
-                if (!ResourceNotFound(e))
+                if (!ex.ResourceNotFound())
                 {
                     throw;
                 }
             }
         }
 
-        private static bool ResourceNotFound(CloudException ce)
+        public async Task<List<VirtualMachineStatus>> GetVirtualMachineStatus(AssetRepository repository)
         {
-            return ce.Response.StatusCode == HttpStatusCode.NotFound;
+            if (repository.RepositoryType == AssetRepositoryType.NfsFileServer)
+            {
+                return await GetVirtualMachineStatus(repository as NfsFileServer);
+            }
+
+            return await GetVirtualMachineStatus(repository as AvereCluster);
+        }
+
+        private async Task<List<VirtualMachineStatus>> GetVirtualMachineStatus(AvereCluster avereCluster)
+        {
+            var avereVmNames = await GetAvereVMNames(avereCluster);
+            var tasks = avereVmNames.Select(vmName => 
+                GetVirtualMachineStatus(avereCluster.SubscriptionId, avereCluster.ResourceGroupName, vmName));
+            await Task.WhenAll(tasks);
+            return (await Task.WhenAll(tasks)).ToList();
+        }
+
+        private async Task<List<VirtualMachineStatus>> GetVirtualMachineStatus(NfsFileServer fileServer)
+        {
+            return new List<VirtualMachineStatus>
+            {
+                await GetVirtualMachineStatus(
+                    fileServer.SubscriptionId, 
+                    fileServer.ResourceGroupName,
+                    fileServer.VmName)
+            };
+        }
+
+        private async Task<VirtualMachineStatus> GetVirtualMachineStatus(Guid subscriptionId, string rgName, string vmName)
+        {
+            var status = "Unknown";
+            if (!string.IsNullOrEmpty(rgName) && !string.IsNullOrEmpty(vmName))
+            {
+                using (var computeClient = await _clientProvider.CreateComputeManagementClient(subscriptionId))
+                {
+                    try
+                    {
+                        var node = await computeClient.VirtualMachines.GetAsync(rgName, vmName, InstanceViewTypes.InstanceView);
+                        status = node?.InstanceView?.Statuses?.FirstOrDefault(s => s.Code.StartsWith("PowerState/"))?.DisplayStatus;
+                    }
+                    catch (CloudException cEx)
+                    {
+                        if (cEx.ResourceNotFound())
+                        {
+                            // Ignore
+                            _logger.LogDebug($"Failed to get VM status as VM: {vmName} was not found.");
+                        }
+                        else
+                        {
+                            _logger.LogError(cEx, $"Failed to get VM status with error: {cEx.Message}");
+                        }
+                    }
+                }
+            }
+
+            return new VirtualMachineStatus {
+                SubscriptionId = subscriptionId,
+                ResourceGroupName = rgName,
+                VirtualMachineName = vmName,
+                PowerStatus = status };
+        }
+
+        public async Task Start(AssetRepository repository)
+        {
+            if (repository is NfsFileServer fileServer)
+            {
+                await StartVirtualMachine(repository.SubscriptionId, repository.ResourceGroupName, fileServer.VmName);
+            }
+            else if (repository is AvereCluster avereCluster)
+            {
+                var tasks = new List<Task>();
+                var vmNames = await GetAvereVMNames(avereCluster);
+                foreach (var vmName in vmNames)
+                {
+                    tasks.Add(StartVirtualMachine(repository.SubscriptionId, repository.ResourceGroupName, vmName));
+                }
+                await Task.WhenAll(tasks);
+            }
+        }
+
+        private async Task StartVirtualMachine(Guid subscriptionId, string resourceGroupName, string vmName)
+        {
+            using (var computeClient = await _clientProvider.CreateComputeManagementClient(subscriptionId))
+            {
+                try
+                {
+                    await computeClient.VirtualMachines.BeginStartAsync(resourceGroupName, vmName);
+                }
+                catch (CloudException cEx)
+                {
+                    if (cEx.ResourceNotFound())
+                    {
+                        // Ignore
+                        _logger.LogDebug($"Failed to start {vmName}, VM was not found.");
+                    }
+                    else
+                    {
+                        _logger.LogError(cEx, $"Failed to start VM with error: {cEx.Message}");
+                        throw;
+                    }
+                }
+            }
+        }
+
+        public async Task Stop(AssetRepository repository)
+        {
+            if (repository is NfsFileServer fileServer)
+            {
+                await StopVirtualMachine(repository.SubscriptionId, repository.ResourceGroupName, fileServer.VmName);
+            }
+            else if (repository is AvereCluster avereCluster)
+            {
+                var tasks = new List<Task>();
+                var vmNames = await GetAvereVMNames(avereCluster);
+                foreach (var vmName in vmNames)
+                {
+                    tasks.Add(StopVirtualMachine(repository.SubscriptionId, repository.ResourceGroupName, vmName));
+                }
+                await Task.WhenAll(tasks);
+            }
+        }
+
+        private async Task StopVirtualMachine(Guid subscriptionId, string resourceGroupName, string vmName)
+        {
+            using (var computeClient = await _clientProvider.CreateComputeManagementClient(subscriptionId))
+            {
+                try
+                {
+                    await computeClient.VirtualMachines.BeginDeallocateAsync(resourceGroupName, vmName);
+                }
+                catch (CloudException cEx)
+                {
+                    if (cEx.ResourceNotFound())
+                    {
+                        // Ignore
+                        _logger.LogDebug($"Failed to stop {vmName}, VM was not found.");
+                    }
+                    else
+                    {
+                        _logger.LogError(cEx, $"Failed to stop VM with error: {cEx.Message}");
+                        throw;
+                    }
+                }
+            }
         }
     }
 }

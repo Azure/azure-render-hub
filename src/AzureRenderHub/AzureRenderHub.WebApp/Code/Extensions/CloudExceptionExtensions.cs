@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
@@ -12,6 +13,14 @@ namespace WebApp.Code.Extensions
 {
     public static class CloudExceptionExtensions
     {
+        public static bool ResourceNotFound(this CloudException ce)
+        {
+            return ce.Response.StatusCode == HttpStatusCode.NotFound
+                || ce.Body?.Code == "ResourceGroupNotFound"
+                || ce.Body?.Code == "ResourceNotFound"
+                || ce.Body?.Code == "NotFound";
+        }
+
         public static string ToFriendlyString(this CloudException ex, bool includeStack = true)
         {
             StringBuilder sb = new StringBuilder($"Message={ex.Message}");

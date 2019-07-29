@@ -63,6 +63,7 @@ namespace WebApp.BackgroundHosts.Deployment
                     activeDeployment.MessageId = cloudMessage.Id;
                     activeDeployment.PopReceipt = cloudMessage.PopReceipt;
                     activeDeployment.QueueName = QueueName;
+                    activeDeployment.DequeueCount = cloudMessage.DequeueCount;
                     return activeDeployment;
                 }).ToList();
             }

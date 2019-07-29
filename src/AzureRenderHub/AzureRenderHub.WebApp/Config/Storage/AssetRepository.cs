@@ -23,6 +23,8 @@ namespace WebApp.Config.Storage
 
         public string EnvironmentName { get; set; }
 
+        public VirtualNetwork SelectedVNet { get; set; }
+
         public Subnet Subnet { get; set; }
 
         [JsonConverter(typeof(StringEnumConverter))]

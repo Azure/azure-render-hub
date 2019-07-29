@@ -142,7 +142,7 @@ namespace WebApp.Controllers
             var environment = await _environmentCoordinator.GetEnvironment(envId);
             if (environment == null)
             {
-                return NotFound($"Environment with id: '{envId}' could not be found");
+                return RedirectToAction("Index");
             }
 
             if (environment.State == EnvironmentState.Deleting)
@@ -354,35 +354,16 @@ namespace WebApp.Controllers
             var environment = await _environmentCoordinator.GetEnvironment(envId);
             if (environment == null)
             {
-                return RedirectToAction("Step1", new { envId });
+                return RedirectToAction("Index");
             }
 
-            var client = await _managementClientProvider.CreateBatchManagementClient(environment.SubscriptionId);
-            var (account, usage, cost) = await (
-                client.BatchAccount.GetAsync(
-                    environment.BatchAccount.ResourceGroupName,
-                    environment.BatchAccount.Name),
+            var (usage, cost) = await (
                 _poolUsageProvider.GetEnvironmentUsage(environment),
                 _costCoordinator.GetCost(environment, ReportingController.GetQueryPeriod(from: null, to: null)));
 
-            var model = new ViewEnvironmentModel(environment, account, usage, cost);
+            var model = new ViewEnvironmentModel(environment, null, usage, cost);
 
             return View("View/Overview", model);
-        }
-
-        [HttpGet]
-        [Route("Environments/{envId}/Details")]
-        public async Task<IActionResult> Details(string envId)
-        {
-            var environment = await _environmentCoordinator.GetEnvironment(envId);
-            if (environment == null)
-            {
-                return RedirectToAction("Step1", new { envId });
-            }
-
-            var model = new ViewEnvironmentModel(environment);
-
-            return View("View/Details", model);
         }
 
         [HttpGet]
@@ -392,7 +373,7 @@ namespace WebApp.Controllers
             var environment = await _environmentCoordinator.GetEnvironment(envId);
             if (environment == null)
             {
-                return RedirectToAction("Step1", new { envId });
+                return RedirectToAction("Index");
             }
 
             var endpoint = $"{Request.Scheme}://{Request.Host}/api/environments/{envId}";
@@ -414,7 +395,7 @@ namespace WebApp.Controllers
             var environment = await _environmentCoordinator.GetEnvironment(envId);
             if (environment == null)
             {
-                return RedirectToAction("Step1", new { envId });
+                return RedirectToAction("Index");
             }
 
             if (environment.AutoScaleConfiguration == null)
@@ -468,7 +449,7 @@ namespace WebApp.Controllers
             var environment = await _environmentCoordinator.GetEnvironment(envId);
             if (environment == null)
             {
-                return RedirectToAction("Step1", new { envId });
+                return RedirectToAction("Index");
             }
 
             var model = new ViewEnvironmentModel(environment);
@@ -482,7 +463,7 @@ namespace WebApp.Controllers
             var environment = await _environmentCoordinator.GetEnvironment(envId);
             if (environment == null)
             {
-                return NotFound("No new environment configuration in progress");
+                return RedirectToAction("Index");
             }
 
             try
@@ -506,17 +487,23 @@ namespace WebApp.Controllers
         }
 
         [HttpGet]
-        [Route("Environments/{envId}/Resources")]
-        public async Task<IActionResult> Resources(string envId)
+        [Route("Environments/{envId}/AzureResources")]
+        public async Task<IActionResult> AzureResources(string envId)
         {
             var environment = await _environmentCoordinator.GetEnvironment(envId);
             if (environment == null)
             {
-                return RedirectToAction("Step1", new { envId });
+                return RedirectToAction("Index");
             }
 
-            var model = new ViewEnvironmentModel(environment);
-            return View("View/Resources", model);
+            var client = await _managementClientProvider.CreateBatchManagementClient(environment.SubscriptionId);
+            var account = await client.BatchAccount.GetAsync(
+                    environment.BatchAccount.ResourceGroupName,
+                    environment.BatchAccount.Name);
+
+            var model = new ViewEnvironmentModel(environment, account);
+
+            return View("View/AzureResources", model);
         }
 
         [HttpGet]
