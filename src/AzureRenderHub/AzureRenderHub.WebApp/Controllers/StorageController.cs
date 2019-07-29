@@ -349,6 +349,7 @@ namespace WebApp.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, $"Error processing Step1");
                 ModelState.AddModelError("", $"Failed to create repository with error: {ex}");
                 return View("Create/Step1", model);
             }
