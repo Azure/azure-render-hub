@@ -9,7 +9,10 @@
     <span>New</span>
 }
 
-@await Html.PartialAsync("Storage/Create/CreateFormHeaderPartial")
+<div class="page-header">
+    <h2>Add a new storage Repository</h2>
+    <p>Setup a storage repository to manage assets in an Avere Cluster, NFS or SMB File Server.</p>
+</div>
 
 <form asp-controller="Storage" asp-action="Step2" method="post">
     @await Html.PartialAsync("Menu/StorageSubMenu", Model, new ViewDataDictionary(ViewData)

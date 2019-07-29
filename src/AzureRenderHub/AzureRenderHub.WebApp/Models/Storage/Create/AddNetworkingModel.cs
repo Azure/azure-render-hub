@@ -87,7 +87,7 @@ namespace WebApp.Models.Storage.Create
         {
             // If Subnet != null then an existing subnet has already been created for the repo
             var selected = Subnet != null && Subnet.Name.Equals(subnet.Name, StringComparison.InvariantCultureIgnoreCase);
-            return new SelectListItem(subnet.Name, subnet.ToString(), selected);
+            return new SelectListItem($"{subnet.Name} ({subnet.AddressPrefix})", subnet.ToString(), selected);
         }
 
         public bool CreateSubnet { get; set; }
