@@ -3,48 +3,61 @@
     var showLinks = ViewBag.Type == "view";
     var isWizard = ViewBag.Wizard == "true";
 }
-<div class="nav-table sub-menu">
-    @if (!isWizard)
-    {
-        <span class="@(step == 1 ? "current" : "")">
+    <div class="nav-table sub-menu">
+        @if (isWizard)
+        {
+            <span class="@(step == 1 ? "current" : "")">
+                @await Html.PartialAsync("Menu/SubMenuItemLink", Model, new ViewDataDictionary(ViewData)
+                {
+                    {"Id", ""},
+                    {"LinkText", "Subscription"},
+                    {"Controller", "Environments"},
+                    {"Action", "Step1"},
+                    {"IsLink", showLinks}
+                })
+            </span>
+        }
+        else
+        {
+            <span class="@(step == 1 ? "current" : "")">
+                @await Html.PartialAsync("Menu/SubMenuItemLink", Model, new ViewDataDictionary(ViewData)
+                {
+                    {"Id", Model.EnvironmentName},
+                    {"LinkText", "Overview"},
+                    {"Controller", "Environments"},
+                    {"Action", "Overview"},
+                    {"IsLink", showLinks}
+                })
+            </span>
+        }
+        <span class="@(step == 2 ? "current" : "")">
             @await Html.PartialAsync("Menu/SubMenuItemLink", Model, new ViewDataDictionary(ViewData)
             {
                 {"Id", Model.EnvironmentName},
-                {"LinkText", "Overview"},
+                {"LinkText", "Azure Resources"},
                 {"Controller", "Environments"},
-                {"Action", "Overview"},
+                {"Action", "AzureResources"},
                 {"IsLink", showLinks}
             })
         </span>
-    }
-    <span class="@(step == 2 ? "current" : "")">
-        @await Html.PartialAsync("Menu/SubMenuItemLink", Model, new ViewDataDictionary(ViewData)
-        {
-            {"Id", Model.EnvironmentName},
-            {"LinkText", "Azure Resources"},
-            {"Controller", "Environments"},
-            {"Action", "AzureResources"},
-            {"IsLink", showLinks}
-        })
-    </span>
-    <span class="@(step == 3 ? "current" : "")">
-        @await Html.PartialAsync("Menu/SubMenuItemLink", Model, new ViewDataDictionary(ViewData)
-        {
-            {"Id", Model.EnvironmentName},
-            {"LinkText", "Identity"},
-            {"Controller", "Environments"},
-            {"Action", "Identity"},
-            {"IsLink", showLinks}
-        })
-    </span>
-    <span class="@(step == 4 ? "current" : "")">
-        @await Html.PartialAsync("Menu/SubMenuItemLink", Model, new ViewDataDictionary(ViewData)
-        {
-            {"Id", Model.EnvironmentName},
-            {"LinkText", Model.RenderManagerName + " Configuration"},
-            {"Controller", "Environments"},
-            {"Action", "Manager"},
-            {"IsLink", showLinks}
-        })
-    </span>
-</div>
+        <span class="@(step == 3 ? "current" : "")">
+            @await Html.PartialAsync("Menu/SubMenuItemLink", Model, new ViewDataDictionary(ViewData)
+            {
+                {"Id", Model.EnvironmentName},
+                {"LinkText", "Identity"},
+                {"Controller", "Environments"},
+                {"Action", "Identity"},
+                {"IsLink", showLinks}
+            })
+        </span>
+        <span class="@(step == 4 ? "current" : "")">
+            @await Html.PartialAsync("Menu/SubMenuItemLink", Model, new ViewDataDictionary(ViewData)
+            {
+                {"Id", Model.EnvironmentName},
+                {"LinkText", Model.RenderManagerName + " Configuration"},
+                {"Controller", "Environments"},
+                {"Action", "Manager"},
+                {"IsLink", showLinks}
+            })
+        </span>
+    </div>
