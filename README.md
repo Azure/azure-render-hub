@@ -1,6 +1,6 @@
 [![Build Status](https://dev.azure.com/azure/azure-render-hub/_apis/build/status/Azure.azure-render-hub?branchName=master)](https://dev.azure.com/azure/azure-render-hub/_build/latest?definitionId=19&branchName=master)
 
-# Azure Render Hub (Preview)
+# Azure Render Hub
 
 The Azure Render Hub is an Azure Web App that simplifies the creation and managment of your hybrid or cloud rendering infrastructure.  
 Azure Render Hub comes with native support for deploying PipelineFx Qube! (6.10 and 7.0) and Thinkbox Deadline 10. 
@@ -22,8 +22,7 @@ It is a prerequisite that you have an existing Deadline or Qube render farm.
 
 ## What's Supported
 
-Azure Render Hub is currently in Public Preview and therefore a 'work in progress'.  The following scenarios
-are currently supported.
+The following scenarios are currently supported.
 
 **Deadline 10**
 * Windows with Package Installation
