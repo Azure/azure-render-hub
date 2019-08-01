@@ -40,7 +40,7 @@ The unsupported items are in progress and will be available shortly.
 
 ## Deploying
 
-For deployment instructions see [here](docs/00-deployment.md){:target="_blank" rel="noopener"}.
+For deployment instructions see [here](docs/00-deployment.md).
 
 Click the following link to start a deployment into your existing Azure subscription. 
 The required input fields and prerequisites are described in the detailed [deployment instructions](docs/00-deployment.md).
