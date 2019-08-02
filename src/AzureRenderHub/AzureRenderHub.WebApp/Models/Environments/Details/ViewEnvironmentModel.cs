@@ -118,6 +118,7 @@ namespace WebApp.Models.Environments.Details
                             ServicePassword = environment.RenderManagerConfig.Deadline.ServicePassword,
                             UseDeadlineDatabaseCertificate = environment.RenderManagerConfig.Deadline.DeadlineDatabaseCertificate?.FileName != null,
                             DeadlineDatabaseCertificateFileName = environment.RenderManagerConfig.Deadline.DeadlineDatabaseCertificate?.FileName,
+                            ExcludeFromLimitGroups = environment.RenderManagerConfig.Deadline.ExcludeFromLimitGroups,
                         };
                     }
 

@@ -711,10 +711,6 @@ namespace WebApp.Controllers
             environment.RenderManagerConfig.Deadline.RepositoryUser = model.RepositoryUser;
             environment.RenderManagerConfig.Deadline.RepositoryPassword = model.RepositoryPassword;
             environment.RenderManagerConfig.Deadline.ExcludeFromLimitGroups = model.ExcludeFromLimitGroups;
-            environment.RenderManagerConfig.Deadline.ExcludeFromLimitGroups = model.InstallDeadlineClient ?
-                string.IsNullOrWhiteSpace(model.ExcludeFromLimitGroups) ?
-                    null :
-                    model.ExcludeFromLimitGroups.Replace(" ", "") : null;
 
             // Deadline install config
             environment.RenderManagerConfig.Deadline.LicenseMode = model.InstallDeadlineClient ? model.LicenseMode : null;
