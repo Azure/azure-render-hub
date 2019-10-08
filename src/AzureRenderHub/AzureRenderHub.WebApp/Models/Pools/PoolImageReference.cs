@@ -35,6 +35,13 @@ namespace WebApp.Models.Pools
             Os = ParseOperatingSystem(image.StorageProfile.OsDisk.OsType.ToString());
         }
 
+        public PoolImageReference(GalleryImage galleryImage, GalleryImageVersion galleryImageVersion)
+        {
+            CustomImageResourceId = galleryImageVersion.Id;
+            Type = ImageReferenceType.Gallery;
+            Os = ParseOperatingSystem(galleryImage.OsType.ToString());
+        }
+
         public PoolImageReference(string publisher, string offer, string sku, string version = null)
         {
             Publisher = publisher;
@@ -54,11 +61,12 @@ namespace WebApp.Models.Pools
 
             var tokens = concatenatedValue.Split(Delimiter);
 
-            if (tokens.Length == 2)
+            if (tokens.Length == 4)
             {
-                CustomImageResourceId = tokens[0];
-                Os = ParseOperatingSystem(tokens[1]);
-                Type = ImageReferenceType.Custom;
+                Type = Enum.Parse<ImageReferenceType>(tokens[0]);
+                CustomImageResourceId = tokens[1];
+                // name = tokens[2]
+                Os = ParseOperatingSystem(tokens[3]);
             }
             else if (tokens.Length == 6)
             {
@@ -126,6 +134,14 @@ namespace WebApp.Models.Pools
                     return CustomImageResourceId?.Substring(CustomImageResourceId.LastIndexOf('/') + 1);
                 }
 
+                if (Type == ImageReferenceType.Gallery)
+                {
+                    var tokens = CustomImageResourceId?.Split('/', StringSplitOptions.RemoveEmptyEntries);
+                    var imageName = tokens?.Length >= 10 ? tokens[9] : "Unknown";
+                    var imageVersion = tokens?.LastOrDefault();
+                    return $"{imageName} ({imageVersion})";
+                }
+
                 var name = $"{Offer}: {Sku} {(Version == "latest" ? "" : $"({Version})")}";
 
                 foreach (var friendlyNameToImageRef in AllowedMarketplaceImages)
@@ -148,11 +164,10 @@ namespace WebApp.Models.Pools
         {
             get
             {
-                if (Type == ImageReferenceType.Custom)
+                if (Type == ImageReferenceType.Custom || Type == ImageReferenceType.Gallery)
                 {
-                    return $"{CustomImageResourceId}{Delimiter}{Os}";
+                    return $"{Type}{Delimiter}{CustomImageResourceId}{Delimiter}{Name}{Delimiter}{Os}";
                 }
-
                 return string.Join(Delimiter, NodeAgentSku, Publisher, Offer, Sku, Version, Os);
             }
         }
@@ -170,7 +185,8 @@ namespace WebApp.Models.Pools
     public enum ImageReferenceType
     {
         Marketplace,
-        Custom
+        Custom,
+        Gallery,
     }
 
     public enum OperatingSystem

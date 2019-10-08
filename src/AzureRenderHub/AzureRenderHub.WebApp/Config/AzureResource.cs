@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace WebApp.Config
 {
-    public abstract class AzureResource
+    public class AzureResource
     {
         public string ResourceId { get; set; }
 
