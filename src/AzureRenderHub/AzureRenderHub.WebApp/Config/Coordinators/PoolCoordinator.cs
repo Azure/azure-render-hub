@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Azure.Management.Batch;
 using Microsoft.Azure.Management.Batch.Models;
 using Microsoft.Azure.Management.Compute;
+using Microsoft.Azure.Management.Compute.Models;
 using Microsoft.Identity.Web.Client;
 using Microsoft.Rest.Azure;
 using TaskTupleAwaiter;
@@ -137,6 +138,7 @@ namespace WebApp.Config.Coordinators
 
             // these write to different lists so it's okay to run them in parallel
             await (GetOfficialImageReferences(environment, result.SKUs, result.OfficialImages),
+                GetGalleryImageReferences(environment, result.CustomImages),
                 GetCustomImageReferences(environment, result.CustomImages));
 
             return result;
@@ -208,6 +210,49 @@ namespace WebApp.Config.Coordinators
                     images.AddRange(imageResults.Select(img => new PoolImageReference(img)));
                 }
             }
+        }
+
+        private async Task GetGalleryImageReferences(RenderingEnvironment environment, List<PoolImageReference> images)
+        {
+            using (var client = await _managementClient.CreateComputeManagementClient(environment.SubscriptionId))
+            {
+                var galleries = await client.Galleries.ListAsync();
+                foreach (var gallery in galleries)
+                {
+                    var galleryResource = new AzureResource { ResourceId = gallery.Id };
+                    var imageResults = await client.GalleryImages.ListByGalleryAsync(galleryResource.ResourceGroupName, gallery.Name);
+                    foreach (var galleryImage in imageResults)
+                    {
+                        images.AddRange(await GetGalleryImageVersions(client, gallery, galleryImage));
+                    }
+
+                    while (imageResults.NextPageLink != null)
+                    {
+                        imageResults = await client.GalleryImages.ListByGalleryNextAsync(imageResults.NextPageLink);
+                        foreach (var galleryImage in imageResults)
+                        {
+                            images.AddRange(await GetGalleryImageVersions(client, gallery, galleryImage));
+                        }
+                    }
+                }
+            }
+        }
+
+        private async Task<List<PoolImageReference>> GetGalleryImageVersions(IComputeManagementClient client, Gallery gallery, GalleryImage galleryImage) 
+        {
+            var galleryImageVersions = new List<PoolImageReference>();
+
+            var galleryResource = new AzureResource { ResourceId = galleryImage.Id };
+            var versionResults = await client.GalleryImageVersions.ListByGalleryImageAsync(galleryResource.ResourceGroupName, gallery.Name, galleryImage.Name);
+            galleryImageVersions.AddRange(versionResults.Select(galleryImageVersion => new PoolImageReference(galleryImage, galleryImageVersion)));
+
+            while (versionResults.NextPageLink != null)
+            {
+                versionResults = await client.GalleryImageVersions.ListByGalleryImageNextAsync(versionResults.NextPageLink);
+                galleryImageVersions.AddRange(versionResults.Select(galleryImageVersion => new PoolImageReference(galleryImage, galleryImageVersion)));
+            }
+
+            return galleryImageVersions;
         }
     }
 }
