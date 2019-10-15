@@ -50,6 +50,17 @@ We're going to create the AAD application required to host the Azure Render Hub 
  6. Click *Register*
  7. Note the Application ID as you'll need it later
 
+#### Enable ID Tokens
+
+We need to ensure that *ID tokens* are enabled for the AAD application.
+
+1. From the sidebar, select *Authentication*
+2. Scroll down to *Advanced settings*
+
+![ID tokens](images/00-id-tokens.png)
+
+3. Ensure *ID tokens* is checked
+
 #### Assign API Access Permissions
 
 We need to configure your newly created AAD application with access to user profile information. By default, a new application has access to nothing at all.
