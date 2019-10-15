@@ -21,12 +21,12 @@ namespace WebApp.Code.Extensions
                 return;
             }
 
-            AddOrUpdateMetadata(metadata, MetadataKeys.AutoScaleDownPolicy, model.AutoScalePolicy.ToString());
-            AddOrUpdateMetadata(metadata, MetadataKeys.AutoScaleDownTimeout, model.AutoScaleDownIdleTimeout.ToString());
-            AddOrUpdateMetadata(metadata, MetadataKeys.AutoScaleMinimumDedicatedNodes, model.MinimumDedicatedNodes.ToString());
-            AddOrUpdateMetadata(metadata, MetadataKeys.AutoScaleMinimumLowPriorityNodes, model.MinimumLowPriorityNodes.ToString());
-            AddOrUpdateMetadata(metadata, MetadataKeys.AutoScaleMaximumDedicatedNodes, model.MaximumDedicatedNodes.ToString());
-            AddOrUpdateMetadata(metadata, MetadataKeys.AutoScaleMaximumLowPriorityNodes, model.MaximumLowPriorityNodes.ToString());
+            metadata.AddOrUpdateMetadata(MetadataKeys.AutoScaleDownPolicy, model.AutoScalePolicy.ToString());
+            metadata.AddOrUpdateMetadata(MetadataKeys.AutoScaleDownTimeout, model.AutoScaleDownIdleTimeout.ToString());
+            metadata.AddOrUpdateMetadata(MetadataKeys.AutoScaleMinimumDedicatedNodes, model.MinimumDedicatedNodes.ToString());
+            metadata.AddOrUpdateMetadata(MetadataKeys.AutoScaleMinimumLowPriorityNodes, model.MinimumLowPriorityNodes.ToString());
+            metadata.AddOrUpdateMetadata(MetadataKeys.AutoScaleMaximumDedicatedNodes, model.MaximumDedicatedNodes.ToString());
+            metadata.AddOrUpdateMetadata(MetadataKeys.AutoScaleMaximumLowPriorityNodes, model.MaximumLowPriorityNodes.ToString());
         }
 
         public static bool GetAutoScaleEnabled(this CloudPool pool)
@@ -178,7 +178,7 @@ namespace WebApp.Code.Extensions
             return result;
         }
 
-        private static void AddOrUpdateMetadata(IList<MetadataItem> metadata, string name, string value)
+        public static void AddOrUpdateMetadata(this IList<MetadataItem> metadata, string name, string value)
         {
             var item = metadata.FirstOrDefault(m => m.Name == name);
             if (item != null)

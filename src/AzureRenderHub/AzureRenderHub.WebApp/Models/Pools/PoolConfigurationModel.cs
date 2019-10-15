@@ -74,5 +74,9 @@ namespace WebApp.Models.Pools
         // By default we add all compute nodes to a Deadline 'pool' with the same name as the Batch pool name,
         // this behavior can be ovverriden to use Deadline groups instead
         public bool UseDeadlineGroups { get; set; }
+
+        // Exclude these pool nodes from the following limit groups, e.g. license groups
+        [RegularExpression(Validation.RegularExpressions.CommaSeparatedList, ErrorMessage = "Limit groups must be seperated by commas.")]
+        public string ExcludeFromLimitGroups { get; set; }
     }
 }
