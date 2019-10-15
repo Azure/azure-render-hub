@@ -55,10 +55,10 @@ We're going to create the AAD application required to host the Azure Render Hub 
 We need to ensure that *ID tokens* are enabled for the AAD application.
 
 1. From the sidebar, select *Authentication*
+2. Scroll down to *Advanced settings*
 
 ![ID tokens](images/00-id-tokens.png)
 
-2. Scroll down to *Advanced settings*
 3. Ensure *ID tokens* is checked
 
 #### Assign API Access Permissions
