@@ -116,6 +116,7 @@
                                 <input asp-for="DeadlineEnvironment.ExcludeFromLimitGroups" value="@Model.DeadlineEnvironment.ExcludeFromLimitGroups" />
                                 <span asp-validation-for="DeadlineEnvironment.ExcludeFromLimitGroups" class=""></span>
                                 <small>Comma separated list of Deadline limit groups the cloud nodes should be excluded from.  This could be used to exclude cloud nodes from license limit groups for example.</small>
+                                <small>Limit groups set at the environment level will apply to all pools unless a Pool specifies its own.</small>
                             </div>
                         </div>
                     </div>

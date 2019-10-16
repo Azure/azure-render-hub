@@ -4,10 +4,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using AzureRenderHub.WebApp.Code.Extensions;
 using Microsoft.Azure.Management.Batch.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.WindowsAzure.Storage.Blob;
 using WebApp.Config.RenderManager;
+using WebApp.Models.Pools;
 
 namespace WebApp.Config.Pools
 {
@@ -92,15 +94,12 @@ namespace WebApp.Config.Pools
         }
 
         public async Task<StartTask> GetDeadlineStartTask(
-            string poolName,
-            IEnumerable<string> additionalPools,
-            IEnumerable<string> additionalGroups,
+            PoolConfigurationModel poolConfiguration,
             RenderingEnvironment environment,
             InstallationPackage deadlinePackage,
             InstallationPackage gpuPackage,
             IEnumerable<InstallationPackage> generalPackages,
-            bool isWindows,
-            bool useGroups)
+            bool isWindows)
         {
             await Task.CompletedTask;
 
@@ -126,15 +125,12 @@ namespace WebApp.Config.Pools
             AppendGeneralPackages(startTask, generalPackages);
 
             AppendDeadlineSetupToStartTask(
+                poolConfiguration,
                 environment,
-                poolName,
-                additionalPools,
-                additionalGroups,
                 startTask,
                 environment.RenderManagerConfig.Deadline,
                 deadlinePackage,
-                isWindows,
-                useGroups);
+                isWindows);
 
             // Wrap all the start task command
             if (isWindows)
@@ -150,15 +146,12 @@ namespace WebApp.Config.Pools
         }
 
         private void AppendDeadlineSetupToStartTask(
+            PoolConfigurationModel poolConfiguration,
             RenderingEnvironment environment,
-            string poolName,
-            IEnumerable<string> additionalPools,
-            IEnumerable<string> additionalGroups,
             StartTask startTask,
             DeadlineConfig deadlineConfig,
             InstallationPackage deadlinePackage,
-            bool isWindows,
-            bool useGroups)
+            bool isWindows)
         {
             var commandLine = startTask.CommandLine;
             var resourceFiles = new List<ResourceFile>(startTask.ResourceFiles);
@@ -245,33 +238,22 @@ namespace WebApp.Config.Pools
                 commandLine += GetParameterSet(isWindows, "deadlineLicenseServer", deadlineConfig.LicenseServer);
             }
 
-            var pools = useGroups ? "" : poolName;
-            if (additionalPools != null && additionalPools.Any())
-            {
-                pools += string.IsNullOrEmpty(pools) ? "" : ",";
-                pools += string.Join(',', additionalPools);
-            }
-
+            var pools = poolConfiguration.GetDeadlinePoolsString();
             if (!string.IsNullOrEmpty(pools))
             {
                 commandLine += GetParameterSet(isWindows, "deadlinePools", pools);
             }
 
-            var groups = useGroups ? poolName : "";
-            if (additionalGroups != null && additionalGroups.Any())
-            {
-                groups += string.IsNullOrEmpty(groups) ? "" : ",";
-                groups += string.Join(',', additionalGroups);
-            }
-
+            var groups = poolConfiguration.GetDeadlineGroupsString();
             if (!string.IsNullOrEmpty(groups))
             {
                 commandLine += GetParameterSet(isWindows, "deadlineGroups", groups);
             }
 
-            if (!string.IsNullOrWhiteSpace(deadlineConfig.ExcludeFromLimitGroups))
+            var limitGroups = poolConfiguration.GetDeadlineExcludeFromLimitGroupsString(deadlineConfig);
+            if (!string.IsNullOrWhiteSpace(limitGroups))
             {
-                commandLine += GetParameterSet(isWindows, "excludeFromLimitGroups", deadlineConfig.ExcludeFromLimitGroups);
+                commandLine += GetParameterSet(isWindows, "excludeFromLimitGroups", limitGroups);
             }
 
             commandLine += "; ";

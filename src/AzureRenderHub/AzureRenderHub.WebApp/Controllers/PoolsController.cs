@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
-
+using AzureRenderHub.WebApp.Code.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Azure.Management.Batch.Models;
@@ -491,6 +491,12 @@ namespace WebApp.Controllers
             InstallationPackage gpuPackage,
             List<InstallationPackage> generalPackages)
         {
+            var environment = await _environmentCoordinator.GetEnvironment(poolConfiguration.EnvironmentName);
+            if (environment == null)
+            {
+                throw new Exception($"Environment not found with name: {poolConfiguration.EnvironmentName}");
+            }
+
             var metadata = new List<MetadataItem>();
 
             if (poolConfiguration.SelectedRenderManagerPackageId != NoPackageSelected)
@@ -511,11 +517,12 @@ namespace WebApp.Controllers
             metadata.Add(new MetadataItem(MetadataKeys.UseDeadlineGroups, poolConfiguration.UseDeadlineGroups.ToString()));
 
             metadata.AddAutoScaleMetadata(poolConfiguration);
+            metadata.AddDeadlinePoolsAndGroups(poolConfiguration);
 
-            var environment = await _environmentCoordinator.GetEnvironment(poolConfiguration.EnvironmentName);
-            if (environment == null)
+            if (!string.IsNullOrWhiteSpace(poolConfiguration.ExcludeFromLimitGroups))
             {
-                throw new Exception($"Environment not found with name: {poolConfiguration.EnvironmentName}");
+                metadata.Add(new MetadataItem(MetadataKeys.ExcludeFromLimitGroups, 
+                    poolConfiguration.GetDeadlineExcludeFromLimitGroupsString(environment.RenderManagerConfig.Deadline)));
             }
 
             List<CertificateReference> certificates = null;
@@ -591,15 +598,12 @@ namespace WebApp.Controllers
             {
                 case RenderManagerType.Deadline:
                     startTask = await _startTaskProvider.GetDeadlineStartTask(
-                        poolConfiguration.PoolName,
-                        ParseCommaSeperatedList(poolConfiguration.AdditionalPools),
-                        ParseCommaSeperatedList(poolConfiguration.AdditionalGroups),
+                        poolConfiguration,
                         environment,
                         renderManagerPackage,
                         gpuPackage,
                         generalPackages,
-                        isWindows,
-                        poolConfiguration.UseDeadlineGroups);
+                        isWindows);
                     break;
                 case RenderManagerType.Qube610:
                 case RenderManagerType.Qube70:

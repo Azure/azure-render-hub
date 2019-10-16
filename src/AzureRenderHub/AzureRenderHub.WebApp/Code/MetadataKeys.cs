@@ -16,5 +16,8 @@ namespace WebApp.Code
         public const string AutoScaleMaximumDedicatedNodes = "MaximumDedicatedNodes";
         public const string AutoScaleMaximumLowPriorityNodes = "MaximumLowPriorityNodes";
         public const string UseDeadlineGroups = "UseDeadlineGroups";
+        public const string DeadlineGroups = "DeadlineGroups";
+        public const string DeadlinePools = "DeadlinePools";
+        public const string ExcludeFromLimitGroups = "ExcludeFromLimitGroups";
     }
 }

@@ -41,11 +41,11 @@
                         <span asp-validation-for="PoolName" class=""></span>
                         @if (Model.RenderManagerType == RenderManagerType.Deadline)
                         {
-                        <small>The Batch Pool name.  By default compute nodes will automatically join a Deadline pool of the same name.</small>
+                            <small>The Batch Pool name.  By default compute nodes will automatically join a Deadline pool of the same name.</small>
                         }
                         else
                         {
-                        <small>The Batch Pool name.  By default compute nodes will automatically join a Qube worker group of the same name.</small>
+                            <small>The Batch Pool name.  By default compute nodes will automatically join a Qube worker group of the same name.</small>
                         }
                     </div>
 
@@ -100,6 +100,14 @@
                             <input asp-for="ArnoldAppLicense" type="checkbox">
                             <label asp-for="ArnoldAppLicense">Arnold</label>
                         </div>
+                    </div>
+
+                    <div class="form-element">
+                        <label asp-for="ExcludeFromLimitGroups">Limit Groups to exclude</label>
+                        <input asp-for="ExcludeFromLimitGroups" value="@Model.ExcludeFromLimitGroups" />
+                        <span asp-validation-for="ExcludeFromLimitGroups" class=""></span>
+                        <small>Comma separated list of Deadline limit groups the cloud nodes should be excluded from.  This could be used to exclude cloud nodes from license limit groups for example.</small>
+                        <small>Limit groups specified here will override any set at the environment level.</small>
                     </div>
                 </div>
             </div>
