@@ -39,7 +39,7 @@ We're going to create the AAD application required to host the Azure Render Hub 
     - This name will be used as the name for your website, so it needs to be 60 characters or shorter.
 
  3. Under *Supported Account Types*, the default value ("Accounts in this organizational directory only*) should be correct.
- 4. For application type select `Public client (mobile & desktop)`
+ 4. For application type select `Web`
  5. Enter *Redirect URI* - this is the URL of the Web App that you will deploy next.
 
     - The URL will be in the format, https://[MyWebAppName].azurewebsites.net.
