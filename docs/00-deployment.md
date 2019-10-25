@@ -69,7 +69,7 @@ The following permissions are required for the following reasons.
 
 Microsoft Graph
 - User.Read - Read the currently logged in users email and Object Id
-- User.ReadBasic.All* - Read basic user information from the directory - this is used to resolve Object Ids -> email addresses on the User Permissions page and is optional.
+- User.ReadBasic.All - (Optional) Read basic user information from the directory - this is used to resolve Object Ids -> email addresses on the User Permissions page and is optional.
 
 Azure Service Management
 - user_impersonation - Allow access to ARM resources and APIs as the logged in user.
