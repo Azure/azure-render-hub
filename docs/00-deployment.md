@@ -65,6 +65,15 @@ We need to ensure that *ID tokens* are enabled for the AAD application.
 
 We need to configure your newly created AAD application with access to user profile information. By default, a new application has access to nothing at all.
 
+The following permissions are required for the following reasons.
+
+Microsoft Graph
+- User.Read - Read the currently logged in users email and Object Id
+- User.ReadBasic.All* - Read basic user information from the directory - this is used to resolve Object Ids -> email addresses on the User Permissions page and is optional.
+
+Azure Service Management
+- user_impersonation - Allow access to ARM resources and APIs as the logged in user.
+
 1. From the sidebar, select *API permissions*
 
 ![Add permissions](images/00-add-permissions.png)
