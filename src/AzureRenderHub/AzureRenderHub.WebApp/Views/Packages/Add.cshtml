@@ -20,6 +20,8 @@
         <option value="qube70" selected>Qube 7.0</option>
         <option value="qube610">Qube 6.10</option>
         <option value="deadline10">Deadline 10</option>
+        <option value="tractor2">Tractor 2.x</option>
+        <option value="opencue">OpenCue</option>
         <option value="gpu">GPU</option>
         <option value="general">General</option>
     </select>
@@ -160,6 +162,78 @@
                     <div class="form-element">
                         <label asp-for="GeneralPackage.Files">Deadline Client Installer (.exe)</label>
                         <input asp-for="GeneralPackage.Files" type="file" accept=".exe" />
+                        <span asp-validation-for="GeneralPackage.Files" class=""></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="form-footer">
+            <div class="button-bar">
+                <button type="submit">Save Package <i class="fa fa-save"></i></button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div id="tractor2" style="display: none;">
+    <form asp-controller="Packages" asp-action="AddTractor2" method="post" enctype="multipart/form-data" role="form">
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="ModelOnly" class=""></div>
+        <div class="form-section">
+            <div class="section-title">
+                <span class="step-index">1</span>
+                <div class="step-header">
+                    <h3>Tractor 2.x Installer Package</h3>
+                    <p>Specify the package files</p>
+                </div>
+            </div>
+            <div class="section-wrapper">
+                <div class="section-bar"></div>
+                <div class="section-content">
+                    <div class="form-element">
+                        <label asp-for="PackageName">Package Name</label>
+                        <input asp-for="PackageName" placeholder="e.g. Tractor2.3" value="Tractor2.3" />
+                        <span asp-validation-for="PackageName" class=""></span>
+                    </div>
+                    <div class="form-element">
+                        <label asp-for="GeneralPackage.Files">Tractor Installer (e.g. Tractor-2.3_xxx.x86_64.msi or Tractor-2.3_xxx.x86_64.rpm)</label>
+                        <input asp-for="GeneralPackage.Files" type="file" accept=".msi,.rpm" />
+                        <span asp-validation-for="GeneralPackage.Files" class=""></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="form-footer">
+            <div class="button-bar">
+                <button type="submit">Save Package <i class="fa fa-save"></i></button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div id="opencue" style="display: none;">
+    <form asp-controller="Packages" asp-action="AddOpenCue" method="post" enctype="multipart/form-data" role="form">
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="ModelOnly" class=""></div>
+        <div class="form-section">
+            <div class="section-title">
+                <span class="step-index">1</span>
+                <div class="step-header">
+                    <h3>OpenCue RQD Installer Package</h3>
+                    <p>Specify the package files</p>
+                </div>
+            </div>
+            <div class="section-wrapper">
+                <div class="section-bar"></div>
+                <div class="section-content">
+                    <div class="form-element">
+                        <label asp-for="PackageName">Package Name</label>
+                        <input asp-for="PackageName" placeholder="e.g. OpenCueRQD-0.2.119" value="OpenCueRQD" />
+                        <span asp-validation-for="PackageName" class=""></span>
+                    </div>
+                    <div class="form-element">
+                        <label asp-for="GeneralPackage.Files">RQD Installer (e.g. rqd-0.2.119-all.tar.gz)</label>
+                        <input asp-for="GeneralPackage.Files" type="file" accept=".gz" />
                         <span asp-validation-for="GeneralPackage.Files" class=""></span>
                     </div>
                 </div>

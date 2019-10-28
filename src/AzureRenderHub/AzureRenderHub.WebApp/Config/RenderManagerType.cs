@@ -16,7 +16,10 @@ namespace WebApp.Config
         [Description("Qube 7.0")]
         Qube70 = 2,
 
-        [Description("Tractor ?")]
-        Tractor = 3
+        [Description("Tractor 2")]
+        Tractor2 = 3,
+
+        [Description("OpenCue")]
+        OpenCue = 4
     }
 }

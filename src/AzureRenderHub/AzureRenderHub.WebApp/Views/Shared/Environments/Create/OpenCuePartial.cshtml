@@ -6,16 +6,16 @@
         <span class="step-index">4.2</span>
         <div class="step-header">
             <h3>@Model.RenderManager.GetDescription() Configuration</h3>
-            <p>Configure Tractor settings</p>
+            <p>Configure OpenCue settings</p>
         </div>
     </div>
     <div class="section-wrapper">
         <div class="section-bar"></div>
         <div class="section-content">
             <div class="form-element">
-                <label asp-for="TractorEnvironment.EngineIpOrHostnameAndPort">Tractor Engine IP or Hostname and Port, e.g. tractor-engine:80</label>
-                <input asp-for="TractorEnvironment.EngineIpOrHostnameAndPort" value="@Model.TractorEnvironment.EngineIpOrHostnameAndPort" />
-                <span asp-validation-for="TractorEnvironment.EngineIpOrHostnameAndPort" class=""></span>
+                <label asp-for="OpenCueEnvironment.CuebotHostnameOrIp">Cuebot IP or Hostname</label>
+                <input asp-for="OpenCueEnvironment.CuebotHostnameOrIp" value="@Model.OpenCueEnvironment.CuebotHostnameOrIp" />
+                <span asp-validation-for="OpenCueEnvironment.CuebotHostnameOrIp" class=""></span>
             </div>
         </div>
     </div>

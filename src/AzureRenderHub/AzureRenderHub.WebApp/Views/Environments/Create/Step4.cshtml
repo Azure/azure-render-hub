@@ -13,7 +13,7 @@
 
 @await Html.PartialAsync("Environments/Create/CreateFormHeaderPartial")
 
-@using (Html.BeginForm("Step4", "Environments", new {envId = Model.EnvironmentName}, FormMethod.Post, true, new { id = "myForm", enctype = "multipart/form-data" }))
+@using (Html.BeginForm("Step4", "Environments", new { envId = Model.EnvironmentName }, FormMethod.Post, true, new { id = "myForm", enctype = "multipart/form-data" }))
 {
     @await Html.PartialAsync("Menu/EnvironmentSubMenu", Model, new ViewDataDictionary(ViewData)
     {
@@ -83,9 +83,14 @@
                     @await Html.PartialAsync("Environments/Create/QubePartial", Model)
                 </text>
                 break;
-            case RenderManagerType.Tractor:
+            case RenderManagerType.Tractor2:
                 <text>
                     @await Html.PartialAsync("Environments/Create/TractorPartial", Model)
+                </text>
+                break;
+            case RenderManagerType.OpenCue:
+                <text>
+                    @await Html.PartialAsync("Environments/Create/OpenCuePartial", Model)
                 </text>
                 break;
         }

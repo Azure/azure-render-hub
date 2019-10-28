@@ -26,7 +26,8 @@ namespace WebApp.Models.Packages
                         InitQubePackage(package);
                         break;
                     case InstallationPackageType.Deadline10:
-                    case InstallationPackageType.Tractor:
+                    case InstallationPackageType.Tractor2:
+                    case InstallationPackageType.OpenCue:
                     case InstallationPackageType.Gpu:
                     case InstallationPackageType.General:
                         InitGeneralPackage(package);
