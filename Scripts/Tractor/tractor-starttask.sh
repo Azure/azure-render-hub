@@ -10,9 +10,8 @@ KV_NAME=
 KV_CERT_THUMB=
 TRACTOR_ENGINE=
 TRACTOR_GROUPS=
-SKIP_INSTALL=
 
-OPTS=`getopt -n 'parse-options' -o i:t:a:k:c:e:g:s --long installerPath:,tenantId:,applicationId:,keyVaultName:,keyVaultCertificateThumbprint:,engineHost:,groups:,skipInstall -- "$@"`
+OPTS=`getopt -n 'parse-options' -o i:t:a:k:c:e:g: --long installerPath:,tenantId:,applicationId:,keyVaultName:,keyVaultCertificateThumbprint:,engineHost:,groups: -- "$@"`
 if [ $? != 0 ] ; then echo "Failed parsing options." >&2 ; exit 1 ; fi
 
 echo "Arguments: $@"
@@ -27,7 +26,6 @@ while true; do
     -c | --keyVaultCertificateThumbprint ) KV_CERT_THUMB="$2"; shift 2 ;;
     -e | --engineHost ) TRACTOR_ENGINE="$2"; shift 2 ;;
     -g | --groups ) TRACTOR_GROUPS="$2"; shift 2 ;;
-    -s | --skipInstall ) SKIP_INSTALL="true"; shift 2 ;;
     -- ) shift; break ;;
     * ) break ;;
   esac
