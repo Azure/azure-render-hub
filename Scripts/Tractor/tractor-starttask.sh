@@ -42,7 +42,7 @@ fi
 # change, the hostname does and we want to prevent a new host from
 # registering itself in Tractor.  To do this we'll create a hash
 # of the pool and compute node Id which will be predictable.
-HOSTNAME_PREFIX="azure-blade-"
+HOSTNAME_PREFIX="azure-"
 hash=$(echo "$AZ_BATCH_POOL_ID-$AZ_BATCH_NODE_ID" | md5sum | cut -c 1-8)
 newHostname="${HOSTNAME_PREFIX}${hash}"
 echo "Updating hostname `hostname` to $newHostname"
@@ -61,36 +61,36 @@ fi
 
 
 if [ -n "$INSTALLER_PATH" ]; then
-    
+
     # Find the installer RPM
     installer=$(find ./$INSTALLER_PATH -name 'Tractor-2.*.rpm' | head -1)
-    
+
     if [ -e "$installer" ]; then
         # Install Tractor blade
-        
+
         echo "Installing $installer"
-        
+
         rpm -i $installer
-        
+
         # Get Tractor version, 2.2 or 2.3
         version=$(echo $installer | grep -oP 'Tractor-\K(2.[23])')
-        
+
         if [ -n "$TRACTOR_ENGINE" ]; then
             echo "Setting Tractor Engine override to $TRACTOR_ENGINE"
-        
+
             # Tractor 2.3 has a bug in the systemd script that points to Tractor 2.2
             echo "BIN=/opt/pixar/Tractor-${version}/bin" > /etc/sysconfig/tractor-blade
-            
+
             # Override the Tractor engine hostname and port, if specified.
             echo "OPTIONS=\"--engine $TRACTOR_ENGINE\"" >> /etc/sysconfig/tractor-blade
         fi
-        
+
         # Copy the systemd service script
         cp /opt/pixar/Tractor-${version}/lib/SystemServices/systemd/tractor-blade.service /usr/lib/systemd/system
-        
+
         # Enable the service
         systemctl enable tractor-blade.service
-        
+
         systemctl daemon-reload
     else
         echo "No Tractor installer RPM found in $INSTALLER_PATH"
