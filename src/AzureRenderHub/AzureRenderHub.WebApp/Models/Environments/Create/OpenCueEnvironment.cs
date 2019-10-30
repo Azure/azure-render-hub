@@ -8,5 +8,7 @@ namespace WebApp.Models.Environments.Create
     {
         [Required]
         public string CuebotHostnameOrIp { get; set; }
+
+        public string Facility { get; set; }
     }
 }

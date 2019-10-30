@@ -670,6 +670,7 @@ namespace WebApp.Controllers
             if (environment.RenderManager == RenderManagerType.OpenCue)
             {
                 environment.RenderManagerConfig.OpenCue.CuebotHostnameOrIp = model.OpenCueEnvironment.CuebotHostnameOrIp;
+                environment.RenderManagerConfig.OpenCue.Facility = model.OpenCueEnvironment.Facility;
             }
 
             environment.Domain = model.JoinDomain ? new DomainConfig() : null;
@@ -1246,6 +1247,7 @@ namespace WebApp.Controllers
                 }
 
                 environment.RenderManagerConfig.OpenCue.CuebotHostnameOrIp = model.OpenCueEnvironment.CuebotHostnameOrIp;
+                environment.RenderManagerConfig.OpenCue.Facility = model.OpenCueEnvironment.Facility;
             }
 
             environment.InProgress = false;

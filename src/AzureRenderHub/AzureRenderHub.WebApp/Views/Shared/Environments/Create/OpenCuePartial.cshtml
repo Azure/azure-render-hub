@@ -17,6 +17,12 @@
                 <input asp-for="OpenCueEnvironment.CuebotHostnameOrIp" value="@Model.OpenCueEnvironment.CuebotHostnameOrIp" />
                 <span asp-validation-for="OpenCueEnvironment.CuebotHostnameOrIp" class=""></span>
             </div>
+
+            <div class="form-element">
+                <label asp-for="OpenCueEnvironment.Facility">OpenCue Facility Override (Optional)</label>
+                <input asp-for="OpenCueEnvironment.Facility" value="@Model.OpenCueEnvironment.Facility" />
+                <span asp-validation-for="OpenCueEnvironment.Facility" class=""></span>
+            </div>
         </div>
     </div>
 </div>

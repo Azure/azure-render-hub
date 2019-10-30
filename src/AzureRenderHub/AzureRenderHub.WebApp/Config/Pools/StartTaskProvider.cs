@@ -94,7 +94,7 @@ namespace WebApp.Config.Pools
                         isWindows);
                     break;
                 case RenderManagerType.OpenCue:
-                    await AppendOpenCueParamsToStartTask(
+                    AppendOpenCueParamsToStartTask(
                         poolConfiguration,
                         environment,
                         startTask,
@@ -369,7 +369,7 @@ namespace WebApp.Config.Pools
             startTask.ResourceFiles = resourceFiles;
         }
 
-        private async Task AppendOpenCueParamsToStartTask(
+        private void AppendOpenCueParamsToStartTask(
             PoolConfigurationModel poolConfiguration,
             RenderingEnvironment environment,
             StartTask startTask,
@@ -391,6 +391,11 @@ namespace WebApp.Config.Pools
             if (!string.IsNullOrWhiteSpace(openCueConfig.CuebotHostnameOrIp))
             {
                 commandLine += GetParameterSet(isWindows, "cuebotHost", openCueConfig.CuebotHostnameOrIp);
+            }
+
+            if (!string.IsNullOrWhiteSpace(openCueConfig.Facility))
+            {
+                commandLine += GetParameterSet(isWindows, "facility", openCueConfig.Facility);
             }
 
             var groups = $"azure,{poolConfiguration.PoolName}";

@@ -5,5 +5,7 @@ namespace WebApp.Config.RenderManager
     public class OpenCueConfig
     {
         public string CuebotHostnameOrIp { get; set; }
+
+        public string Facility { get; set; }
     }
 }
