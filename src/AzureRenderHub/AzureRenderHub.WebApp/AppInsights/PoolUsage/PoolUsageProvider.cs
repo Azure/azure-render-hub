@@ -58,9 +58,9 @@ customMetrics
                     var poolUsage = new PoolUsageResult {PoolName = poolName};
                     poolUsage.Values = values.Where(p => p.PoolName == poolName).OrderBy(p => p.Timestamp).ToList();
                     var lastUsage = poolUsage.Values.LastOrDefault();
-                    if (lastUsage != null && lastUsage.Timestamp < DateTime.UtcNow.Subtract(TimeSpan.FromMinutes(10)))
+                    if (lastUsage != null && lastUsage.Timestamp < DateTime.UtcNow.Subtract(TimeSpan.FromMinutes(20)))
                     {
-                        // The pools last metric was > 10 minutes ago, hence the nodes are probably gone, so
+                        // The pools last metric was > 20 minutes ago, hence the nodes are probably gone, so
                         // let's append a zero to cleanup the chart
                         poolUsage.Values.Add(new PoolUsageMetric
                         {
@@ -98,9 +98,9 @@ customMetrics
             {
                 usage.Values = GetPoolUsageMetrics(result.Results);
                 var lastUsage = usage.Values.LastOrDefault();
-                if (lastUsage != null && lastUsage.Timestamp < DateTime.UtcNow.Subtract(TimeSpan.FromMinutes(10)))
+                if (lastUsage != null && lastUsage.Timestamp < DateTime.UtcNow.Subtract(TimeSpan.FromMinutes(20)))
                 {
-                    // The pools last metric was > 10 minutes ago, hence the nodes are probably gone, so
+                    // The pools last metric was > 20 minutes ago, hence the nodes are probably gone, so
                     // let's append a zero to cleanup the chart
                     usage.Values.Add(new PoolUsageMetric
                     {

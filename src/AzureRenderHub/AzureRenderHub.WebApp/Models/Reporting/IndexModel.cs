@@ -20,11 +20,25 @@ namespace WebApp.Models.Reporting
 
             From = from;
             To = to;
-            SummaryUsage = squishedCosts.Any() ? squishedCosts.Aggregate(Cost.Aggregate) : null;
+            SummaryUsage = CalculateSummarySafely(squishedCosts);
             UsagePerEnvironment = usages.OrderBy(eu => eu.EnvironmentId).ToList();
             NextMonthLink = nextMonth;
             CurrentMonthLink = currentMonth;
             PreviousMonthLink = prevMonth;
+        }
+
+        // Returns a summary, if possible.  Some circumstances, like different currencies,
+        // prevent us creating a summary.
+        private Cost CalculateSummarySafely(IEnumerable<Cost> squishedCosts)
+        {
+            try
+            {
+                return squishedCosts.Any() ? squishedCosts.Aggregate(Cost.Aggregate) : null;
+            }
+            catch (Exception e)
+            {
+                return null;
+            }
         }
 
         public DateTimeOffset From { get; }
