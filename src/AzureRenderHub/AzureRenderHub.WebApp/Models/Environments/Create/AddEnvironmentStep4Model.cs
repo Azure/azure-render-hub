@@ -58,7 +58,8 @@ namespace WebApp.Models.Environments.Create
                 case RenderManagerType.OpenCue:
                     OpenCueEnvironment = new OpenCueEnvironment
                     {
-                        CuebotHostnameOrIp = environment.RenderManagerConfig?.OpenCue?.CuebotHostnameOrIp
+                        CuebotHostnameOrIp = environment.RenderManagerConfig?.OpenCue?.CuebotHostnameOrIp,
+                        Facility = environment.RenderManagerConfig?.OpenCue?.Facility,
                     };
                     break;
             }

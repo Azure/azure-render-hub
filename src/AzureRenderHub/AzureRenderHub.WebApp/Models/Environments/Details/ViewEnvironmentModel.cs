@@ -143,6 +143,7 @@ namespace WebApp.Models.Environments.Details
                         OpenCueEnvironment = new OpenCueEnvironment
                         {
                             CuebotHostnameOrIp = environment.RenderManagerConfig.OpenCue.CuebotHostnameOrIp,
+                            Facility = environment.RenderManagerConfig.OpenCue.Facility,
                         };
                     }
                 }
