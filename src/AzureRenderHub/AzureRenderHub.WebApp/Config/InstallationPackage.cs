@@ -44,7 +44,8 @@ namespace WebApp.Config
         Qube610,
         Qube70,
         Deadline10,
-        Tractor,
+        Tractor2,
+        OpenCue,
         Gpu,
         General,
     }

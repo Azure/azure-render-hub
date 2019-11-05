@@ -84,7 +84,7 @@
                         <span class="step-index">4.2</span>
                         <div class="step-header">
                             <h3>@Model.RenderManager.GetDescription() configuration</h3>
-                            <p>Configure @Model.RenderManager.GetDescription() render manager settings</p>
+                            <p>Configure @Model.RenderManager.GetDescription() settings</p>
                         </div>
                     </div>
                     <div class="section-wrapper">
@@ -216,7 +216,7 @@
                         <span class="step-index">4.2</span>
                         <div class="step-header">
                             <h3>@Model.RenderManager.GetDescription() configuration</h3>
-                            <p>Configure selected render manager settings</p>
+                            <p>Configure @Model.RenderManager.GetDescription() settings</p>
                         </div>
                     </div>
                     <div class="section-wrapper">
@@ -231,22 +231,49 @@
                     </div>
                 </div>
                 break;
-            case RenderManagerType.Tractor:
+            case RenderManagerType.Tractor2:
                 <div class="form-section">
                     <div class="section-title">
                         <span class="step-index">4.2</span>
                         <div class="step-header">
                             <h3>@Model.RenderManager.GetDescription() configuration</h3>
-                            <p>Configure selected render manager settings</p>
+                            <p>Configure @Model.RenderManager.GetDescription() settings</p>
                         </div>
                     </div>
                     <div class="section-wrapper">
                         <div class="section-bar"></div>
                         <div class="section-content">
                             <div class="form-element">
-                                <label asp-for="TractorEnvironment.TractorSettings">Tractor settings</label>
-                                <input asp-for="TractorEnvironment.TractorSettings" value="@Model.TractorEnvironment.TractorSettings" />
-                                <span asp-validation-for="TractorEnvironment.TractorSettings" class=""></span>
+                                <label asp-for="TractorEnvironment.EngineIpOrHostnameAndPort">Tractor Engine IP or Hostname and Port, e.g. tractor-engine:80</label>
+                                <input asp-for="TractorEnvironment.EngineIpOrHostnameAndPort" value="@Model.TractorEnvironment.EngineIpOrHostnameAndPort" />
+                                <span asp-validation-for="TractorEnvironment.EngineIpOrHostnameAndPort" class=""></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                break;
+            case RenderManagerType.OpenCue:
+                <div class="form-section">
+                    <div class="section-title">
+                        <span class="step-index">4.2</span>
+                        <div class="step-header">
+                            <h3>@Model.RenderManager.GetDescription() configuration</h3>
+                            <p>Configure @Model.RenderManager.GetDescription() settings</p>
+                        </div>
+                    </div>
+                    <div class="section-wrapper">
+                        <div class="section-bar"></div>
+                        <div class="section-content">
+                            <div class="form-element">
+                                <label asp-for="OpenCueEnvironment.CuebotHostnameOrIp">Cuebot IP or Hostname</label>
+                                <input asp-for="OpenCueEnvironment.CuebotHostnameOrIp" value="@Model.OpenCueEnvironment.CuebotHostnameOrIp" />
+                                <span asp-validation-for="OpenCueEnvironment.CuebotHostnameOrIp" class=""></span>
+                            </div>
+
+                            <div class="form-element">
+                                <label asp-for="OpenCueEnvironment.Facility">OpenCue Facility Override (Optional)</label>
+                                <input asp-for="OpenCueEnvironment.Facility" value="@Model.OpenCueEnvironment.Facility" />
+                                <span asp-validation-for="OpenCueEnvironment.Facility" class=""></span>
                             </div>
                         </div>
                     </div>

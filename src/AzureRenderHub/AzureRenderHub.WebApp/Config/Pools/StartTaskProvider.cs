@@ -48,15 +48,15 @@ namespace WebApp.Config.Pools
             {
                 case RenderManagerType.Qube610:
                 case RenderManagerType.Qube70: return "Qube";
+                case RenderManagerType.Tractor2: return "Tractor";
             }
             return type.ToString();
         }
 
-        public async Task<StartTask> GetQubeStartTask(
-            string poolName,
-            IEnumerable<string> additionalGroups,
+        public async Task<StartTask> GetStartTask(
+            PoolConfigurationModel poolConfiguration,
             RenderingEnvironment environment,
-            InstallationPackage qubePackage,
+            InstallationPackage renderManagerPackage,
             InstallationPackage gpuPackage,
             IEnumerable<InstallationPackage> generalPackages,
             bool isWindows)
@@ -78,59 +78,50 @@ namespace WebApp.Config.Pools
 
             AppendGeneralPackages(startTask, generalPackages);
 
-            await AppendQubeSetupToStartTask(
-                environment,
-                poolName,
-                additionalGroups,
-                startTask,
-                environment.RenderManagerConfig.Qube,
-                qubePackage,
-                isWindows);
+            // Appends the start task script, i.e. deadline-starttask.ps1 or tractor-starttask.ps1
+            AppendRenderManagerStartTask(environment, startTask, isWindows);
 
-            // Wrap all the start task command
-            startTask.CommandLine = $"powershell.exe -ExecutionPolicy RemoteSigned -NoProfile \"$ErrorActionPreference='Stop'; {startTask.CommandLine}\"";
-
-            return startTask;
-        }
-
-        public async Task<StartTask> GetDeadlineStartTask(
-            PoolConfigurationModel poolConfiguration,
-            RenderingEnvironment environment,
-            InstallationPackage deadlinePackage,
-            InstallationPackage gpuPackage,
-            IEnumerable<InstallationPackage> generalPackages,
-            bool isWindows)
-        {
-            await Task.CompletedTask;
-
-            if (environment == null ||
-                environment.RenderManagerConfig == null ||
-                environment.RenderManager != RenderManagerType.Deadline)
+            // Appends the render manager specific parameters and package (if specified)
+            switch (environment.RenderManager)
             {
-                throw new Exception("Wrong environment for Deadline.");
+                case RenderManagerType.Deadline:
+                    AppendDeadlineParamsToStartTask(
+                        poolConfiguration,
+                        environment,
+                        startTask,
+                        environment.RenderManagerConfig.Deadline,
+                        renderManagerPackage,
+                        isWindows);
+                    break;
+                case RenderManagerType.OpenCue:
+                    AppendOpenCueParamsToStartTask(
+                        poolConfiguration,
+                        environment,
+                        startTask,
+                        environment.RenderManagerConfig.OpenCue,
+                        renderManagerPackage,
+                        isWindows);
+                    break;
+                case RenderManagerType.Qube610:
+                case RenderManagerType.Qube70:
+                    await AppendQubeParamsToStartTask(
+                        poolConfiguration,
+                        environment,
+                        startTask,
+                        environment.RenderManagerConfig.Qube,
+                        renderManagerPackage,
+                        isWindows);
+                    break;
+                case RenderManagerType.Tractor2:
+                    AppendTractorParamsToStartTask(
+                        poolConfiguration,
+                        environment,
+                        startTask,
+                        environment.RenderManagerConfig.Tractor,
+                        renderManagerPackage,
+                        isWindows);
+                    break;
             }
-
-            var resourceFiles = new List<ResourceFile>();
-
-            var startTask = new StartTask(
-                "",
-                resourceFiles,
-                GetEnvironmentSettings(environment, isWindows),
-                new UserIdentity(
-                    autoUser: new AutoUserSpecification(AutoUserScope.Pool, ElevationLevel.Admin)),
-                3, // retries
-                true); // waitForSuccess
-
-            AppendGpu(startTask, gpuPackage);
-            AppendGeneralPackages(startTask, generalPackages);
-
-            AppendDeadlineSetupToStartTask(
-                poolConfiguration,
-                environment,
-                startTask,
-                environment.RenderManagerConfig.Deadline,
-                deadlinePackage,
-                isWindows);
 
             // Wrap all the start task command
             if (isWindows)
@@ -141,11 +132,38 @@ namespace WebApp.Config.Pools
             {
                 startTask.CommandLine = $"/bin/bash -c 'set -e; set -o pipefail; {startTask.CommandLine}'";
             }
-            
+
             return startTask;
         }
 
-        private void AppendDeadlineSetupToStartTask(
+        private void AppendRenderManagerStartTask(
+            RenderingEnvironment environment,
+            StartTask startTask,
+            bool isWindows)
+        {
+            var startTaskScriptUrl = isWindows
+                ? GetWindowsStartTaskUrl(environment)
+                : GetLinuxStartTaskUrl(environment);
+
+            if (!string.IsNullOrWhiteSpace(startTaskScriptUrl))
+            {
+                var uri = new Uri(startTaskScriptUrl);
+                var filename = uri.AbsolutePath.Split('/').Last();
+                var installScriptResourceFile = new ResourceFile(httpUrl: startTaskScriptUrl, filePath: filename);
+                startTask.ResourceFiles.Add(installScriptResourceFile);
+
+                if (isWindows)
+                {
+                    startTask.CommandLine += $".\\{installScriptResourceFile.FilePath} ";
+                }
+                else
+                {
+                    startTask.CommandLine += $"./{installScriptResourceFile.FilePath} ";
+                }
+            }
+        }
+
+        private void AppendDeadlineParamsToStartTask(
             PoolConfigurationModel poolConfiguration,
             RenderingEnvironment environment,
             StartTask startTask,
@@ -155,24 +173,6 @@ namespace WebApp.Config.Pools
         {
             var commandLine = startTask.CommandLine;
             var resourceFiles = new List<ResourceFile>(startTask.ResourceFiles);
-
-            var startTaskScriptUrl = isWindows
-                ? GetWindowsStartTaskUrl(environment)
-                : GetLinuxStartTaskUrl(environment);
-
-            var uri = new Uri(startTaskScriptUrl);
-            var filename = uri.AbsolutePath.Split('/').Last();
-            var installScriptResourceFile = new ResourceFile(httpUrl: startTaskScriptUrl, filePath: filename);
-            resourceFiles.Add(installScriptResourceFile);
-
-            if (isWindows)
-            {
-                commandLine += $".\\{installScriptResourceFile.FilePath} ";
-            }
-            else
-            {
-                commandLine += $"./{installScriptResourceFile.FilePath} ";
-            }
 
             if (deadlinePackage != null && !string.IsNullOrEmpty(deadlinePackage.Container))
             {
@@ -279,10 +279,9 @@ namespace WebApp.Config.Pools
             return isWindows ? $"-{param} " : $"--{param} ";
         }
 
-        private async Task AppendQubeSetupToStartTask(
+        private async Task AppendQubeParamsToStartTask(
+            PoolConfigurationModel poolConfiguration,
             RenderingEnvironment environment,
-            string poolName,
-            IEnumerable<string> additionalGroups,
             StartTask startTask,
             QubeConfig qubeConfig,
             InstallationPackage qubePackage,
@@ -291,23 +290,13 @@ namespace WebApp.Config.Pools
             var commandLine = startTask.CommandLine;
             var resourceFiles = new List<ResourceFile>(startTask.ResourceFiles);
 
-            var startTaskScriptUrl = isWindows
-                ? GetWindowsStartTaskUrl(environment)
-                : GetLinuxStartTaskUrl(environment);
-
-            var uri = new Uri(startTaskScriptUrl);
-            var filename = uri.AbsolutePath.Split('/').Last();
-            var installScriptResourceFile = new ResourceFile(httpUrl: startTaskScriptUrl, filePath: filename);
-            resourceFiles.Add(installScriptResourceFile);
-
-            var workerGroups = $"azure,{poolName}";
-            if (additionalGroups != null && additionalGroups.Any())
+            var workerGroups = $"azure,{poolConfiguration.PoolName}";
+            if (poolConfiguration.AdditionalGroups != null && poolConfiguration.AdditionalGroups.Any())
             {
-                workerGroups += $",{string.Join(',', additionalGroups)}";
+                workerGroups += $",{string.Join(',', poolConfiguration.AdditionalGroups)}";
             }
 
-            commandLine += $".\\{installScriptResourceFile.FilePath} " +
-                           $"-qubeSupervisorIp {qubeConfig.SupervisorIp} " +
+            commandLine += $"-qubeSupervisorIp {qubeConfig.SupervisorIp} " +
                            $"-workerHostGroups '{workerGroups}'";
 
             if (qubePackage != null && !string.IsNullOrEmpty(qubePackage.Container))
@@ -325,6 +314,105 @@ namespace WebApp.Config.Pools
             {
                 // No package, lets just configure
                 commandLine += " -skipInstall ";
+            }
+
+            commandLine += ";";
+
+            startTask.CommandLine = commandLine;
+            startTask.ResourceFiles = resourceFiles;
+        }
+
+        private void AppendTractorParamsToStartTask(
+            PoolConfigurationModel poolConfiguration,
+            RenderingEnvironment environment,
+            StartTask startTask,
+            TractorConfig tractorConfig,
+            InstallationPackage tractorPackage,
+            bool isWindows)
+        {
+            var commandLine = startTask.CommandLine;
+            var resourceFiles = new List<ResourceFile>(startTask.ResourceFiles);
+
+            if (environment.KeyVaultServicePrincipal != null)
+            {
+                commandLine += GetParameterSet(isWindows, "tenantId", environment.KeyVaultServicePrincipal.TenantId.ToString());
+                commandLine += GetParameterSet(isWindows, "applicationId", environment.KeyVaultServicePrincipal.ApplicationId.ToString());
+                commandLine += GetParameterSet(isWindows, "keyVaultCertificateThumbprint", environment.KeyVaultServicePrincipal.Thumbprint);
+                commandLine += GetParameterSet(isWindows, "keyVaultName", environment.KeyVault.Name);
+            }
+
+            var groups = $"azure,{poolConfiguration.PoolName}";
+            if (poolConfiguration.AdditionalGroups != null && poolConfiguration.AdditionalGroups.Any())
+            {
+                groups += $",{string.Join(',', poolConfiguration.AdditionalGroups)}";
+            }
+
+            if (!string.IsNullOrWhiteSpace(tractorConfig.EngineIpOrHostnameAndPort))
+            {
+                commandLine += GetParameterSet(isWindows, "engineHost", tractorConfig.EngineIpOrHostnameAndPort);
+            }
+
+            if (!string.IsNullOrWhiteSpace(groups))
+            {
+                commandLine += GetParameterSet(isWindows, "groups", groups);
+            }
+
+            if (tractorPackage != null && !string.IsNullOrEmpty(tractorPackage.Container))
+            {
+                resourceFiles.Add(GetContainerResourceFile(tractorPackage.Container, tractorPackage.PackageName));
+                commandLine += GetParameterSet(isWindows, "installerPath", tractorPackage.PackageName);
+            }
+
+            commandLine += ";";
+
+            startTask.CommandLine = commandLine;
+            startTask.ResourceFiles = resourceFiles;
+        }
+
+        private void AppendOpenCueParamsToStartTask(
+            PoolConfigurationModel poolConfiguration,
+            RenderingEnvironment environment,
+            StartTask startTask,
+            OpenCueConfig openCueConfig,
+            InstallationPackage openCuePackage,
+            bool isWindows)
+        {
+            var commandLine = startTask.CommandLine;
+            var resourceFiles = new List<ResourceFile>(startTask.ResourceFiles);
+
+            if (environment.KeyVaultServicePrincipal != null)
+            {
+                commandLine += GetParameterSet(isWindows, "tenantId", environment.KeyVaultServicePrincipal.TenantId.ToString());
+                commandLine += GetParameterSet(isWindows, "applicationId", environment.KeyVaultServicePrincipal.ApplicationId.ToString());
+                commandLine += GetParameterSet(isWindows, "keyVaultCertificateThumbprint", environment.KeyVaultServicePrincipal.Thumbprint);
+                commandLine += GetParameterSet(isWindows, "keyVaultName", environment.KeyVault.Name);
+            }
+
+            if (!string.IsNullOrWhiteSpace(openCueConfig.CuebotHostnameOrIp))
+            {
+                commandLine += GetParameterSet(isWindows, "cuebotHost", openCueConfig.CuebotHostnameOrIp);
+            }
+
+            if (!string.IsNullOrWhiteSpace(openCueConfig.Facility))
+            {
+                commandLine += GetParameterSet(isWindows, "facility", openCueConfig.Facility);
+            }
+
+            var groups = $"azure,{poolConfiguration.PoolName}";
+            if (poolConfiguration.AdditionalGroups != null && poolConfiguration.AdditionalGroups.Any())
+            {
+                groups += $",{string.Join(',', poolConfiguration.AdditionalGroups)}";
+            }
+
+            if (!string.IsNullOrWhiteSpace(groups))
+            {
+                commandLine += GetParameterSet(isWindows, "groups", groups);
+            }
+
+            if (openCuePackage != null && !string.IsNullOrEmpty(openCuePackage.Container))
+            {
+                resourceFiles.Add(GetContainerResourceFile(openCuePackage.Container, openCuePackage.PackageName));
+                commandLine += GetParameterSet(isWindows, "installerPath", openCuePackage.PackageName);
             }
 
             commandLine += ";";

@@ -1,0 +1,28 @@
+﻿@using WebApp.Code.Extensions
+@model WebApp.Models.Environments.Create.AddEnvironmentStep4Model
+
+<div class="form-section">
+    <div class="section-title">
+        <span class="step-index">4.2</span>
+        <div class="step-header">
+            <h3>@Model.RenderManager.GetDescription() Configuration</h3>
+            <p>Configure OpenCue settings</p>
+        </div>
+    </div>
+    <div class="section-wrapper">
+        <div class="section-bar"></div>
+        <div class="section-content">
+            <div class="form-element">
+                <label asp-for="OpenCueEnvironment.CuebotHostnameOrIp">Cuebot IP or Hostname</label>
+                <input asp-for="OpenCueEnvironment.CuebotHostnameOrIp" value="@Model.OpenCueEnvironment.CuebotHostnameOrIp" />
+                <span asp-validation-for="OpenCueEnvironment.CuebotHostnameOrIp" class=""></span>
+            </div>
+
+            <div class="form-element">
+                <label asp-for="OpenCueEnvironment.Facility">OpenCue Facility Override (Optional)</label>
+                <input asp-for="OpenCueEnvironment.Facility" value="@Model.OpenCueEnvironment.Facility" />
+                <span asp-validation-for="OpenCueEnvironment.Facility" class=""></span>
+            </div>
+        </div>
+    </div>
+</div>

@@ -454,9 +454,14 @@ namespace WebApp.Controllers
                         .Where(p => p.Type == InstallationPackageType.Deadline10)
                         .Select(ip => new SelectListItem(ip.PackageName, ip.PackageName)).OrderBy(sli => sli.Text));
                     break;
-                case RenderManagerType.Tractor:
+                case RenderManagerType.Tractor2:
                     result.RenderManagerPackages.AddRange(packages?
-                        .Where(p => p.Type == InstallationPackageType.Tractor)
+                        .Where(p => p.Type == InstallationPackageType.Tractor2)
+                        .Select(ip => new SelectListItem(ip.PackageName, ip.PackageName)).OrderBy(sli => sli.Text));
+                    break;
+                case RenderManagerType.OpenCue:
+                    result.RenderManagerPackages.AddRange(packages?
+                        .Where(p => p.Type == InstallationPackageType.OpenCue)
                         .Select(ip => new SelectListItem(ip.PackageName, ip.PackageName)).OrderBy(sli => sli.Text));
                     break;
             }
@@ -593,33 +598,13 @@ namespace WebApp.Controllers
 
             var isWindows = imageReference.Os == Models.Pools.OperatingSystem.Windows;
 
-            StartTask startTask = null;
-            switch (environment.RenderManager)
-            {
-                case RenderManagerType.Deadline:
-                    startTask = await _startTaskProvider.GetDeadlineStartTask(
+            StartTask startTask = await _startTaskProvider.GetStartTask(
                         poolConfiguration,
                         environment,
                         renderManagerPackage,
                         gpuPackage,
                         generalPackages,
                         isWindows);
-                    break;
-                case RenderManagerType.Qube610:
-                case RenderManagerType.Qube70:
-                    startTask = await _startTaskProvider.GetQubeStartTask(
-                        poolConfiguration.PoolName,
-                        ParseCommaSeperatedList(poolConfiguration.AdditionalGroups),
-                        environment,
-                        renderManagerPackage,
-                        gpuPackage,
-                        generalPackages,
-                        isWindows);
-                    break;
-                case RenderManagerType.Tractor:
-                    // TODO
-                    break;
-            }
 
             var newPool = new Pool(
                 name: poolConfiguration.PoolName,
@@ -642,15 +627,6 @@ namespace WebApp.Controllers
             }
 
             return newPool;
-        }
-
-        private IEnumerable<string> ParseCommaSeperatedList(string list)
-        {
-            if (string.IsNullOrWhiteSpace(list))
-            {
-                return null;
-            }
-            return list.Split(',').ToList();
         }
 
         private List<string> GetSelectedGeneralPackages(IEnumerable<string> selectedGeneralPackageIds)

@@ -612,11 +612,19 @@ namespace WebApp.Controllers
                 ValidateDeadlineForm(model.DeadlineEnvironment, environment);
             }
 
-            if (environment.RenderManager == RenderManagerType.Tractor)
+            if (environment.RenderManager == RenderManagerType.Tractor2)
             {
-                if (string.IsNullOrWhiteSpace(model.TractorEnvironment?.TractorSettings))
+                if (string.IsNullOrWhiteSpace(model.TractorEnvironment?.EngineIpOrHostnameAndPort))
                 {
-                    ModelState.AddModelError(nameof(TractorEnvironment.TractorSettings), $"The Tractor manager cannot be empty.");
+                    ModelState.AddModelError(nameof(TractorEnvironment.EngineIpOrHostnameAndPort), $"The Tractor engine IP or hostname cannot be empty.");
+                }
+            }
+
+            if (environment.RenderManager == RenderManagerType.OpenCue)
+            {
+                if (string.IsNullOrWhiteSpace(model.OpenCueEnvironment?.CuebotHostnameOrIp))
+                {
+                    ModelState.AddModelError(nameof(OpenCueEnvironment.CuebotHostnameOrIp), $"The OpenCue Cuebot IP or hostname cannot be empty.");
                 }
             }
 
@@ -654,9 +662,15 @@ namespace WebApp.Controllers
                 environment.RenderManagerConfig.Qube.SupervisorIp = model.QubeEnvironment.QubeSupervisor;
             }
 
-            if (environment.RenderManager == RenderManagerType.Tractor)
+            if (environment.RenderManager == RenderManagerType.Tractor2)
             {
-                environment.RenderManagerConfig.Tractor.TractorSettings = model.TractorEnvironment.TractorSettings;
+                environment.RenderManagerConfig.Tractor.EngineIpOrHostnameAndPort = model.TractorEnvironment.EngineIpOrHostnameAndPort;
+            }
+
+            if (environment.RenderManager == RenderManagerType.OpenCue)
+            {
+                environment.RenderManagerConfig.OpenCue.CuebotHostnameOrIp = model.OpenCueEnvironment.CuebotHostnameOrIp;
+                environment.RenderManagerConfig.OpenCue.Facility = model.OpenCueEnvironment.Facility;
             }
 
             environment.Domain = model.JoinDomain ? new DomainConfig() : null;
@@ -1163,11 +1177,19 @@ namespace WebApp.Controllers
                 ValidateDeadlineForm(model.DeadlineEnvironment, environment);
             }
 
-            if (environment.RenderManager == RenderManagerType.Tractor)
+            if (environment.RenderManager == RenderManagerType.Tractor2)
             {
-                if (string.IsNullOrWhiteSpace(model.TractorEnvironment?.TractorSettings))
+                if (string.IsNullOrWhiteSpace(model.TractorEnvironment?.EngineIpOrHostnameAndPort))
                 {
-                    ModelState.AddModelError(nameof(TractorEnvironment.TractorSettings), $"The Tractor manager cannot be empty.");
+                    ModelState.AddModelError(nameof(TractorEnvironment.EngineIpOrHostnameAndPort), $"The Tractor engine IP or hostname cannot be empty.");
+                }
+            }
+
+            if (environment.RenderManager == RenderManagerType.OpenCue)
+            {
+                if (string.IsNullOrWhiteSpace(model.OpenCueEnvironment?.CuebotHostnameOrIp))
+                {
+                    ModelState.AddModelError(nameof(OpenCueEnvironment.CuebotHostnameOrIp), $"The OpenCue Cuebot IP or hostname cannot be empty.");
                 }
             }
 
@@ -1207,8 +1229,6 @@ namespace WebApp.Controllers
                 environment.RenderManagerConfig.Qube.SupervisorIp = model.QubeEnvironment.QubeSupervisor;
             }
 
-            // TODO: Added this one just to complete the available options. Probably needs to change.
-
             if (model.TractorEnvironment != null)
             {
                 if (environment.RenderManagerConfig.Tractor == null)
@@ -1216,7 +1236,18 @@ namespace WebApp.Controllers
                     environment.RenderManagerConfig.Tractor = new TractorConfig();
                 }
 
-                environment.RenderManagerConfig.Tractor.TractorSettings = model.TractorEnvironment.TractorSettings;
+                environment.RenderManagerConfig.Tractor.EngineIpOrHostnameAndPort = model.TractorEnvironment.EngineIpOrHostnameAndPort;
+            }
+
+            if (model.OpenCueEnvironment != null)
+            {
+                if (environment.RenderManagerConfig.OpenCue == null)
+                {
+                    environment.RenderManagerConfig.OpenCue = new OpenCueConfig();
+                }
+
+                environment.RenderManagerConfig.OpenCue.CuebotHostnameOrIp = model.OpenCueEnvironment.CuebotHostnameOrIp;
+                environment.RenderManagerConfig.OpenCue.Facility = model.OpenCueEnvironment.Facility;
             }
 
             environment.InProgress = false;

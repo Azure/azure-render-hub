@@ -9,5 +9,7 @@ namespace WebApp.Config.RenderManager
         public DeadlineConfig Deadline { get; set; }
 
         public TractorConfig Tractor { get; set; }
+
+        public OpenCueConfig OpenCue { get; set; }
     }
 }

@@ -2,10 +2,10 @@
 // Licensed under the MIT License.
 namespace WebApp.Config.RenderManager
 {
-    public class TractorConfig
+    public class OpenCueConfig
     {
-        // IP:Port
-        // Hostname:Port
-        public string EngineIpOrHostnameAndPort { get; set; }
+        public string CuebotHostnameOrIp { get; set; }
+
+        public string Facility { get; set; }
     }
 }

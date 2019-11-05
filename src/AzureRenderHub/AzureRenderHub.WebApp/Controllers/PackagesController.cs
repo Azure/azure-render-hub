@@ -127,6 +127,20 @@ namespace WebApp.Controllers
 
         [HttpPost]
         [RequestSizeLimit(Constants.MaxRequestSizeLimit)]
+        public async Task<ActionResult> AddTractor2(AddPackageModel model)
+        {
+            return await AddGeneralPackageImpl(model.PackageName, model.GeneralPackage, InstallationPackageType.Tractor2);
+        }
+
+        [HttpPost]
+        [RequestSizeLimit(Constants.MaxRequestSizeLimit)]
+        public async Task<ActionResult> AddOpenCue(AddPackageModel model)
+        {
+            return await AddGeneralPackageImpl(model.PackageName, model.GeneralPackage, InstallationPackageType.OpenCue);
+        }
+
+        [HttpPost]
+        [RequestSizeLimit(Constants.MaxRequestSizeLimit)]
         public async Task<ActionResult> AddQube610(AddPackageModel model)
         {
             return await AddQube(model.PackageName, model.QubePackage, InstallationPackageType.Qube610);

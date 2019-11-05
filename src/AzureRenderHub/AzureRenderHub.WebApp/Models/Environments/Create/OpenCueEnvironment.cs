@@ -4,9 +4,11 @@ using System.ComponentModel.DataAnnotations;
 
 namespace WebApp.Models.Environments.Create
 {
-    public class TractorEnvironment
+    public class OpenCueEnvironment
     {
         [Required]
-        public string EngineIpOrHostnameAndPort { get; set; }
+        public string CuebotHostnameOrIp { get; set; }
+
+        public string Facility { get; set; }
     }
 }

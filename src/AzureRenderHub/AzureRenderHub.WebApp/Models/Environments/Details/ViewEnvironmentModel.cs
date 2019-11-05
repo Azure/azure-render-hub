@@ -134,7 +134,16 @@ namespace WebApp.Models.Environments.Details
                     {
                         TractorEnvironment = new TractorEnvironment
                         {
-                            TractorSettings = environment.RenderManagerConfig.Tractor.TractorSettings,
+                            EngineIpOrHostnameAndPort = environment.RenderManagerConfig.Tractor.EngineIpOrHostnameAndPort,
+                        };
+                    }
+
+                    if (environment.RenderManagerConfig.OpenCue != null)
+                    {
+                        OpenCueEnvironment = new OpenCueEnvironment
+                        {
+                            CuebotHostnameOrIp = environment.RenderManagerConfig.OpenCue.CuebotHostnameOrIp,
+                            Facility = environment.RenderManagerConfig.OpenCue.Facility,
                         };
                     }
                 }
@@ -217,6 +226,8 @@ namespace WebApp.Models.Environments.Details
         public QubeEnvironment QubeEnvironment { get; set; }
 
         public TractorEnvironment TractorEnvironment { get; set; }
+
+        public OpenCueEnvironment OpenCueEnvironment { get; set; }
 
         // Domain
         public bool JoinDomain { get; set; }

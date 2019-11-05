@@ -48,10 +48,18 @@ namespace WebApp.Models.Environments.Create
                     };
                     break;
 
-                case RenderManagerType.Tractor:
+                case RenderManagerType.Tractor2:
                     TractorEnvironment = new TractorEnvironment
                     {
-                        TractorSettings = environment.RenderManagerConfig?.Tractor?.TractorSettings
+                        EngineIpOrHostnameAndPort = environment.RenderManagerConfig?.Tractor?.EngineIpOrHostnameAndPort
+                    };
+                    break;
+
+                case RenderManagerType.OpenCue:
+                    OpenCueEnvironment = new OpenCueEnvironment
+                    {
+                        CuebotHostnameOrIp = environment.RenderManagerConfig?.OpenCue?.CuebotHostnameOrIp,
+                        Facility = environment.RenderManagerConfig?.OpenCue?.Facility,
                     };
                     break;
             }
@@ -64,6 +72,8 @@ namespace WebApp.Models.Environments.Create
         public QubeEnvironment QubeEnvironment { get; set; }
 
         public TractorEnvironment TractorEnvironment { get; set; }
+
+        public OpenCueEnvironment OpenCueEnvironment { get; set; }
 
         public bool JoinDomain { get; set; }
 
