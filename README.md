@@ -38,6 +38,16 @@ The following scenarios are currently supported.
 * Linux with Package Installation - **Not Supported**
 * Linux with Custom Image - **Not Supported**
 
+**OpenCue**
+* Linux with Package Installation
+* Linux with Custom Image
+
+**Tractor 2.x**
+* Windows with Package Installation
+* Windows with Custom Image
+* Linux with Package Installation
+* Linux with Custom Image
+
 The unsupported items are in progress and will be available shortly.
 
 ## Deploying
