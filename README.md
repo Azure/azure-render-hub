@@ -8,6 +8,8 @@ Support for other render farm managers, like OpenCue, will be added in the futur
 
 The portal Web App can be easily deployed into your existing Azure subscription as per the instructions referenced below.
 
+![Render Hub Screenshot](docs/images/00-renderhub-overview.png)
+
 ## What Render Hub Does
 
 * Create Azure infrastructure to extend your existing render farm
