@@ -20,7 +20,7 @@ The portal Web App can be easily deployed into your existing Azure subscription 
 
 * A Render Manager, Queue Manager or Scheduler
 
-It is a prerequisite that you have an existing Deadline or Qube render farm.
+It is a prerequisite that you have an existing render farm manager like Deadline, Qube, OpenCue or Tractor.
 
 ## What's Supported
 
