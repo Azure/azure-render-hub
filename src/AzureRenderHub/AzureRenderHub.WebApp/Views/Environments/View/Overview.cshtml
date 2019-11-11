@@ -1,4 +1,5 @@
-﻿@model WebApp.Models.Environments.Details.ViewEnvironmentModel
+﻿@using WebApp.Models.Reporting;
+@model WebApp.Models.Environments.Details.ViewEnvironmentModel;
 @{
     ViewBag.Title = Model.EnvironmentName;
 }
@@ -68,6 +69,9 @@
                     </select>
                 </div>
                 <div id="canvas-container">
+                    <div id="UsageSpinner" class="chart-loading">
+                        <i class="fa fa-spinner fa-2x fa-spin"></i>
+                    </div>
                     <canvas id="env-usage"></canvas>
                 </div>
             </div>
@@ -85,7 +89,7 @@
         <div class="section-wrapper">
             <div class="section-bar"></div>
             <div class="section-content">
-                @{ await Html.RenderPartialAsync("Cost/Chart", Model.EnvironmentCost); }
+                @{ await Html.RenderPartialAsync("Cost/Chart", new EnvironmentCost(@Model.EnvironmentName, null)); }
             </div>
         </div>
     </div>
@@ -103,30 +107,43 @@
 @section Scripts
 {
     <script>
+        var poolUsageResults = null;
+
         function getAllData() {
             return @Html.Raw(Json.Serialize(Model.PoolUsageResults));
         }
 
         function updateChart(days) {
-            var envName = "@Model.EnvironmentName";
-            var poolUsageResults = getAllData();
-            var config = getTimeChartForEnvironment(envName, poolUsageResults);
-            var now = new Date();
-            var min = new Date();
-            min.setDate(min.getDate() - days);
-            config.options.scales.xAxes[0].time.min = min;
-            config.options.scales.xAxes[0].time.max = now;
-            var ctx = document.getElementById('env-usage').getContext('2d');
-            ctx.canvas.parentNode.style.height = '300px';
-            ctx.canvas.parentNode.style.width = '680px';
-            window.chart = new Chart(ctx, config);
+            if (poolUsageResults) {
+                var envName = "@Model.EnvironmentName";
+                var config = getTimeChartForEnvironment(envName, poolUsageResults);
+                var now = new Date();
+                var min = new Date();
+                min.setDate(min.getDate() - days);
+                config.options.scales.xAxes[0].time.min = min;
+                config.options.scales.xAxes[0].time.max = now;
+                var ctx = document.getElementById('env-usage').getContext('2d');
+                ctx.canvas.parentNode.style.height = '300px';
+                ctx.canvas.parentNode.style.width = '680px';
+                window.chart = new Chart(ctx, config);
+            }
         }
 
         $(document).ready(function () {
+
             $("#ChartRange").change(function(){
                 var days = $(this).children("option:selected").val();
                 updateChart(days);
             });
+
+            $("#UsageSpinner").css({ display: "block" });
+            $.get('/api/environments/@Model.EnvironmentName/poolUsage',
+                function (poolUsage) {
+                    poolUsageResults = poolUsage;
+                    var days = $(this).children("option:selected").val();
+                    $("#UsageSpinner").css({ display: "none" });
+                    updateChart(days);
+                });
 
             // Show a warning if the sub is locked
             var deleteErrors = '@Model.DeleteErrors';

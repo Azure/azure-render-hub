@@ -46,9 +46,7 @@ namespace WebApp.Controllers
         private readonly IKeyVaultMsiClient _keyVaultMsiClient;
         private readonly IIdentityProvider _identityProvider;
         private readonly IManagementClientProvider _managementClientProvider;
-        private readonly IPoolUsageProvider _poolUsageProvider;
         private readonly StartTaskProvider _startTaskProvider;
-        private readonly ICostCoordinator _costCoordinator;
         private readonly ILogger _logger;
 
         public EnvironmentsController(
@@ -59,11 +57,9 @@ namespace WebApp.Controllers
             IIdentityProvider identityProvider,
             IEnvironmentCoordinator environmentCoordinator,
             IManagementClientProvider managementClientProvider,
-            IPoolUsageProvider poolUsageProvider,
             IPackageCoordinator packageCoordinator,
             IAssetRepoCoordinator assetRepoCoordinator,
             StartTaskProvider startTaskProvider,
-            ICostCoordinator costCoordinator,
             ITokenAcquisition tokenAcquisition,
             ILogger<EnvironmentsController> logger)
             : base(environmentCoordinator, packageCoordinator, assetRepoCoordinator, tokenAcquisition)
@@ -74,9 +70,7 @@ namespace WebApp.Controllers
             _keyVaultMsiClient = keyVaultMsiClient;
             _identityProvider = identityProvider;
             _managementClientProvider = managementClientProvider;
-            _poolUsageProvider = poolUsageProvider;
             _startTaskProvider = startTaskProvider;
-            _costCoordinator = costCoordinator;
             _logger = logger;
         }
 
@@ -130,9 +124,7 @@ namespace WebApp.Controllers
                 return null;
             }
 
-            var usage = await _poolUsageProvider.GetEnvironmentUsage(environment);
-
-            return new ViewEnvironmentModel(environment, poolUsageResults: usage);
+            return new ViewEnvironmentModel(environment);
         }
 
         [HttpGet]
@@ -357,13 +349,7 @@ namespace WebApp.Controllers
                 return RedirectToAction("Index");
             }
 
-            var (usage, cost) = await (
-                _poolUsageProvider.GetEnvironmentUsage(environment),
-                _costCoordinator.GetCost(environment, ReportingController.GetQueryPeriod(from: null, to: null)));
-
-            var model = new ViewEnvironmentModel(environment, null, usage, cost);
-
-            return View("View/Overview", model);
+            return View("View/Overview", new ViewEnvironmentModel(environment));
         }
 
         [HttpGet]
