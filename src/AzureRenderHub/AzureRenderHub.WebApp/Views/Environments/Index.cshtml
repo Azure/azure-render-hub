@@ -76,8 +76,8 @@
                     config.options.scales.xAxes[0].time.min = min;
                     config.options.scales.xAxes[0].time.max = now;
                     var ctx = document.getElementById(envName + '-canvas').getContext('2d');
-                    ctx.canvas.parentNode.style.height = '300px';
-                    ctx.canvas.parentNode.style.width = '680px';
+                    ctx.canvas.parentNode.style.height = '360px';
+                    ctx.canvas.parentNode.style.width = '800px';
                     window.chart = new Chart(ctx, config);
                 }
             }
@@ -85,10 +85,7 @@
 
         function renderPoolUsage(envName, poolUsage) {
             if (poolUsage) {
-                console.log('envName', envName);
-                console.log('poolUsage', poolUsage);
                 environments[envName] = poolUsage;
-
                 var days = $(this).children("option:selected").val();
                 $(`#${envName}-UsageSpinner`).css({ display: "none" });
                 updateChart(days);

@@ -131,8 +131,8 @@
             var poolUsage = @Html.Raw(Json.Serialize(Model.PoolUsageMetrics));
             config = getTimeChartForPool("Pool Usage", poolUsage);
             var ctx = document.getElementById('pool-usage').getContext('2d');
-            ctx.canvas.parentNode.style.height = '300px';
-            ctx.canvas.parentNode.style.width = '680px';
+            ctx.canvas.parentNode.style.height = '360px';
+            ctx.canvas.parentNode.style.width = '800px';
             window.chart = new Chart(ctx, config);
         };
     </script>

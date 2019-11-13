@@ -15,7 +15,7 @@
 
 <div class="page-header">
     <h1>Reporting</h1>
-    <p>Date range: <input type="date" id="fromInput" value="@Model.From.ToString("yyyy-MM-dd")"/> &ndash; <input type="date" id="toInput" value="@Model.To.ToString("yyyy-MM-dd")"/></p>
+    <p>Date range: <input type="date" id="fromInput" value="@Model.From.ToString("yyyy-MM-dd")" /> &ndash; <input type="date" id="toInput" value="@Model.To.ToString("yyyy-MM-dd")" /></p>
 
     <script>
         var fromInput = document.getElementById("fromInput");
@@ -44,14 +44,20 @@
         }
     </p>
 
-    @if(Model.SummaryUsage != null)
-    {
-        await Html.RenderPartialAsync("Cost/Chart", new EnvironmentCost("Total Costs", Model.SummaryUsage));
+    <h2>Overall Costs</h2>
+    @{
+        await Html.RenderPartialAsync("Cost/Chart", new { Title = "All Environments", Url = $"/api/reporting/costs?from={Model.From.ToString("yyyy-MM-dd")}&to={Model.To.ToString("yyyy-MM-dd")}" });
     }
 
+    <p></p>
     <h2>Per-environment Costs</h2>
-    @foreach (var envUsage in Model.UsagePerEnvironment)
+    <p></p>
+    @foreach (var env in Model.Environments)
     {
-        await Html.RenderPartialAsync("Cost/Chart", envUsage);
+        <p />
+        <p />
+        await Html.RenderPartialAsync("Cost/Chart", new { Title = env.Name, Url = $"/api/environments/{env.Name}/costs?from={Model.From.ToString("yyyy-MM-dd")}&to={Model.To.ToString("yyyy-MM-dd")}" });
+        <p />
+        <p />
     }
 </div>

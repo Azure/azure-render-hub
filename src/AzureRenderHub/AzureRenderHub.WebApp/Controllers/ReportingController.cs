@@ -38,10 +38,6 @@ namespace WebApp.Controllers
 
             var period = GetQueryPeriod(from, to);
 
-            var usages = await Task.WhenAll(envs
-                .Where(env => !env.InProgress)
-                .Select(env => _costCoordinator.GetCost(env, period)));
-
             var nextMonthLink = GetNextMonthLink(period);
             var currentMonthLink = GetCurrentMonthLink();
             var prevMonthLink = GetPrevMonthLink(period);
@@ -50,7 +46,7 @@ namespace WebApp.Controllers
                 new IndexModel(
                     period.From,
                     period.To,
-                    usages,
+                    envs,
                     nextMonthLink,
                     currentMonthLink,
                     prevMonthLink));

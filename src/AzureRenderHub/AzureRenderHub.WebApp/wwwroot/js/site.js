@@ -39,7 +39,7 @@ function getChartJsConfig(title, label) {
                 mode: 'x'
             },
             zoom: {
-                enabled: true,
+                enabled: false,
                 drag: false, // Enable to support 'zoom to selection'
                 mode: 'x'
             },
@@ -213,4 +213,23 @@ function registerCheckboxEnabledFormSection(masterCheckboxId, checkboxId, outerD
     });
 
     $(id).change();
+}
+
+Date.prototype.addDays = function (days) {
+    var date = new Date(this.valueOf());
+    date.setDate(date.getDate() + days);
+    return date;
+}
+
+Number.prototype.pad = function () {
+    var size = 2;
+    return new Array(size).concat([Math.abs(this)]).join('0').slice(-size);
+}
+
+Date.prototype.toYearMonthDayString = function () {
+    var date = new Date(this.valueOf());
+    var year = `20${date.getUTCFullYear().pad()}`;
+    var month = `${(date.getUTCMonth() + 1).pad()}`;
+    var day = `${date.getUTCDate().pad()}`;
+    return `${year}${month}${day}`;
 }
