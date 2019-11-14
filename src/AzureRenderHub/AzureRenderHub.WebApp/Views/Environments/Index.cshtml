@@ -42,6 +42,9 @@
             <div class="section-bar"></div>
             <div class="section-content">
                 <div id="canvas-container">
+                    <div id="@env.EnvironmentName-UsageSpinner" class="chart-loading">
+                        <i class="fa fa-spinner fa-2x fa-spin"></i>
+                    </div>
                     <canvas id="@env.EnvironmentName-canvas"></canvas>
                 </div>
             </div>
@@ -58,35 +61,56 @@
 @section Scripts
 {
     <script>
-        function getAllData() {
-            var environments = {};
 
-            @foreach (var environment in Model.Environments)
-            {
-                @:environments["@environment.EnvironmentName"] = @Html.Raw(Json.Serialize(environment.PoolUsageResults));
-            }
-
-            return environments;
-        }
+        var environments = {};
 
         function updateChart(days) {
-            var environments = getAllData();
+            console.log('Updating chart');
             for (var envName in environments) {
                 var poolUsageResults = environments[envName];
-                var config = getTimeChartForEnvironment(envName, poolUsageResults);
-                var now = new Date();
-                var min = new Date();
-                min.setDate(min.getDate() - days);
-                config.options.scales.xAxes[0].time.min = min;
-                config.options.scales.xAxes[0].time.max = now;
-                var ctx = document.getElementById(envName + '-canvas').getContext('2d');
-                ctx.canvas.parentNode.style.height = '300px';
-                ctx.canvas.parentNode.style.width = '680px';
-                window.chart = new Chart(ctx, config);
+                if (poolUsageResults) {
+                    var config = getTimeChartForEnvironment(envName, poolUsageResults);
+                    var now = new Date();
+                    var min = new Date();
+                    min.setDate(min.getDate() - days);
+                    config.options.scales.xAxes[0].time.min = min;
+                    config.options.scales.xAxes[0].time.max = now;
+                    var ctx = document.getElementById(envName + '-canvas').getContext('2d');
+                    ctx.canvas.parentNode.style.height = '360px';
+                    ctx.canvas.parentNode.style.width = '800px';
+                    window.chart = new Chart(ctx, config);
+                }
             }
+        }
+
+        function renderPoolUsage(envName, poolUsage) {
+            if (poolUsage) {
+                environments[envName] = poolUsage;
+                var days = $(this).children("option:selected").val();
+                $(`#${envName}-UsageSpinner`).css({ display: "none" });
+                updateChart(days);
+            }
+        }
+
+        function fetchPoolUsage(envName) {
+            $(`#${envName}-UsageSpinner`).css({ display: "block" });
+            $.get(`/api/environments/${envName}/poolUsage`,
+                function (poolUsage) {
+                    renderPoolUsage(envName, poolUsage)
+                });
         }
 
         $(document).ready(function () {
+
+            @foreach (var environment in Model.Environments)
+            {
+                @:environments["@environment.EnvironmentName"] = null;
+            }
+
+            for (var envName in environments) {
+                fetchPoolUsage(envName);
+            }
+
             $("#ChartRange").change(function(){
                 var days = $(this).children("option:selected").val();
                 updateChart(days);

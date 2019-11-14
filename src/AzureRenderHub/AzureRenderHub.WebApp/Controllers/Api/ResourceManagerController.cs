@@ -27,6 +27,7 @@ using WebApp.Models.Api;
 
 namespace WebApp.Controllers.Api
 {
+    [ApiController]
     public class ResourceManagerController : BaseController
     {
         private readonly IConfiguration _configuration;

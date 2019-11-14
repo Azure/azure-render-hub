@@ -1,84 +1,122 @@
-﻿@model WebApp.Models.Reporting.EnvironmentCost
-
-@if (Model.Cost == null)
-{
-    <h3>@Model.EnvironmentId</h3>
-    <p>Cost management is not supported for this environment.</p>
-    return;
-}
-
-@if (!Model.Cost.Categorized.Any())
-{
-    <h3>@Model.EnvironmentId</h3>
-    <p>No cost data is available for this period.</p>
-    return;
-}
-
-<h3>@Model.EnvironmentId (@Model.Cost.Total.ToString("F2") @Model.Cost.Currency)</h3>
-
-@{ 
+﻿@{
     var id = Guid.NewGuid().ToString();
-    var usage = Model.Cost;
-    var period = usage.Period;
+    var title = Model.Title;
+    var url = Model.Url;
 }
+
+<h3 id="header-@id">@Model.Title</h3>
 
 <div class="chart-container" style="width: 100%">
+    <div id="CostSpinner-@id" class="chart-loading">
+        <i class="fa fa-spinner fa-2x fa-spin"></i>
+    </div>
     <canvas id="graph-@id"></canvas>
 </div>
 
 <script type="text/javascript">
-var ctx = document.getElementById("graph-@id").getContext('2d');
 
-var datasets = [
-@foreach (var category in usage.Categorized)
-{
-    <text>{ label: '@category.Key', data: [@string.Join(", ", category.Value.Select(x => x.Value))] }, </text>
-} ];
-
-var cfg = {
-    type: 'bar',
-    data: {
-        labels: [
-            @for (var day = period.From; day <= period.To; day = day.AddDays(1))
-            {
-                <text>"@day.ToString("yyyyMMdd")",</text>
-            }
-        ],
-        datasets: datasets
-    },
-    options: {
-        legend: {
-            position: 'bottom'
-        },
-        scales: {
-            xAxes: [{
-                stacked: true,
-                type: 'time',
-                time: {
-                    unit: 'day',
-                    min: '@period.From.ToString("yyyyMMdd")',
-                    max: '@period.To.ToString("yyyyMMdd")'
-                }
-            }],
-            yAxes: [{
-                stacked: true,
-                scaleLabel: {
-                    display: true,
-                    labelString: 'Cost (@Model.Cost.Currency)'
+    function getConfig(labels, datasets) {
+        return {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: datasets
+            },
+            options: {
+                legend: {
+                    position: 'bottom'
                 },
-                ticks: {
-                    precision: 2,
-                    beginAtZero: true
+                scales: {
+                    xAxes: [{
+                        stacked: true,
+                        type: 'time',
+                        time: {
+                            unit: 'day',
+                            min: null,
+                            max: null
+                        }
+                    }],
+                    yAxes: [{
+                        stacked: true,
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Cost '
+                        },
+                        ticks: {
+                            precision: 2,
+                            beginAtZero: true
+                        }
+                    }]
+                },
+                plugins: {
+                    colorschemes: {
+                        scheme: 'brewer.Paired12'
+                    }
                 }
-            }]
-        },
-        plugins: {
-            colorschemes: {
-                scheme: 'brewer.Paired12'
             }
-        }
+        };
     }
-};
 
-var chart = new Chart(ctx, cfg);
+            $(document).ready(function () {
+
+            $("#CostSpinner-@id").css({ display: "block" });
+            $.get('@Model.Url',
+                function (result) {
+                    /**
+                     * {
+                           cost: {
+                                categorized: {
+                                    bandwidth: {2019-11-02T00:00:00+00:00: 0.00006, 2019-11-03T00:00:00+00:00: 0.000108, …}
+                                    key vault: {2019-11-02T00:00:00+00:00: 0.000004, 2019-11-03T00:00:00+00:00: 0.000053, …}
+                                    log analytics: {2019-11-02T00:00:00+00:00: 0, 2019-11-03T00:00:00+00:00: 0, …}
+                                    storage: {2019-11-02T00:00:00+00:00: 1.020358, …}
+                                    virtual machines: {2019-11-02T00:00:00+00:00: 1.54224, …}
+                                    virtual machines licenses: {2019-11-02T00:00:00+00:00: 0, …}
+                                },
+                                currency: "USD",
+                                period: {from: "2019-11-01T00:00:00+00:00", to: "2019-11-30T23:59:59+00:00"},
+                                total: 22.391280000000002
+                            },
+                            environmentId: "MyEnv"
+                        }
+                     */
+
+                    if (result && result.cost && result.cost.categorized) {
+
+                        var ctx = document.getElementById("graph-@id").getContext('2d');
+                        //ctx.canvas.parentNode.style.height = '360px';
+                        ctx.canvas.parentNode.style.width = '800px';
+
+                        var datasets = Object.keys(result.cost.categorized).map((categoryName) => {
+                            return {
+                                label: categoryName,
+                                data: Object.keys(result.cost.categorized[categoryName]).map((timestamp) => result.cost.categorized[categoryName][timestamp]),
+                            };
+                        });
+
+                        var from = new Date(result.cost.period.from);
+                        var to = new Date(result.cost.period.to);
+
+                        var labels = [];
+
+                        for (var day = new Date(result.cost.period.from); day <= new Date(result.cost.period.to); day = day.addDays(1))
+                        {
+                            labels.push(day.toYearMonthDayString());
+                        }
+
+                        var cfg = getConfig(labels, datasets);
+
+                        cfg.options.scales.xAxes[0].time.min = from.toYearMonthDayString();
+                        cfg.options.scales.xAxes[0].time.max = to.toYearMonthDayString();
+                        cfg.options.scales.yAxes[0].scaleLabel.labelString = `Cost (${result.cost.currency})`;
+
+                        new Chart(ctx, cfg);
+
+                        $("#header-@id").text(`@Model.Title (${result.cost.total.toFixed(2)} ${result.cost.currency})`);
+                    }
+
+                    $("#CostSpinner-@id").css({ display: "none" });
+                });
+        });
+
 </script>

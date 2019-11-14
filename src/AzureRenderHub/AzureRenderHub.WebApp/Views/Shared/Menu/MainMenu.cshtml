@@ -138,9 +138,6 @@
     }
 
     function doDelete(id, actionUrl, redirectUrl) {
-        // TODO: Remove log
-        console.log(`doDelete :: id: ${id}, actionUrl: ${actionUrl}, redirectUrl: ${redirectUrl}`);
-        console.log("href :: ", window.location.href);
         if (confirm("Are you sure you want to delete: '" + id + "'?")) {
             $.ajax({
                 type: "DELETE",

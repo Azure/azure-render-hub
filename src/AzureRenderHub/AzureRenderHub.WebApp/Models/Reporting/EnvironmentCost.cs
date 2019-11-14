@@ -13,6 +13,12 @@ namespace WebApp.Models.Reporting
 
         public string EnvironmentId { get; }
 
+        public string NextMonthLink { get; set;  }
+
+        public string CurrentMonthLink { get; set;  }
+
+        public string PreviousMonthLink { get; set;  }
+
         public Cost Cost { get; }
     }
 }
