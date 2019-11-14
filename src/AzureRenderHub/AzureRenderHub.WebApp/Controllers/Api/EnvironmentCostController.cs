@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using AzureRenderHub.WebApp.Models.Reporting;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using WebApp.Code.Contract;
@@ -17,9 +16,7 @@ using WebApp.Models.Reporting;
 namespace WebApp.Controllers.Api
 {
     [ApiController] // performs model validation automatically
-    [RequireHttps]
-    [Authorize]
-    public class EnvironmentCostController : Controller
+    public class EnvironmentCostController : BaseController
     {
         private readonly IEnvironmentCoordinator _environmentCoordinator;
         private readonly ICostCoordinator _costCoordinator;

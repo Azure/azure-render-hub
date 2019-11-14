@@ -12,9 +12,7 @@ using WebApp.Code.Contract;
 namespace WebApp.Controllers.Api
 {
     [ApiController] // performs model validation automatically
-    [RequireHttps]
-    [Authorize]
-    public class PoolUsageController : Controller
+    public class PoolUsageController : BaseController
     {
         private readonly IEnvironmentCoordinator _environmentCoordinator;
         private readonly IPoolUsageProvider _poolUsageProvider;

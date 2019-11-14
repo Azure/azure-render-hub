@@ -1,11 +1,9 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-using System.Threading.Tasks;
 
-using Microsoft.AspNetCore.Authentication;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Identity.Web.Client;
 
 namespace WebApp.Controllers
@@ -17,7 +15,7 @@ namespace WebApp.Controllers
     {
         private readonly ITokenAcquisition _tokenAcquisition;
 
-        public BaseController(ITokenAcquisition tokenAcquisition)
+        public BaseController(ITokenAcquisition tokenAcquisition = null)
         {
             _tokenAcquisition = tokenAcquisition;
         }
