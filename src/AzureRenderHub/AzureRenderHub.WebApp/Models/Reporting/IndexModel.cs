@@ -29,8 +29,6 @@ namespace WebApp.Models.Reporting
 
         public DateTimeOffset To { get; }
 
-        public Cost SummaryUsage { get; }
-
         public IEnumerable<RenderingEnvironment> Environments { get; }
 
         public string NextMonthLink { get; }

@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using AzureRenderHub.WebApp.Models.Reporting;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -39,25 +40,21 @@ namespace WebApp.Controllers.Api
         {
             var envs = (await Environments()).Where(env => !env.InProgress);
 
-            var period = GetQueryPeriod(from, to);
+            var period = new CostPeriod(nameof(AllCosts), Url, from, to);
 
             var usages = await Task.WhenAll(envs
                 .Where(env => !env.InProgress)
-                .Select(env => _costCoordinator.GetCost(env, period)));
+                .Select(env => _costCoordinator.GetCost(env, period.QueryTimePeriod)));
 
             var squishedCosts = usages?.Where(u => u.Cost != null).Select(u => u.Cost.Recategorize(u.EnvironmentId));
 
             var summaryCost = CalculateSummarySafely(squishedCosts);
 
-            var nextMonthLink = GetNextMonthLink(period, nameof(AllCosts));
-            var currentMonthLink = GetCurrentMonthLink(nameof(AllCosts));
-            var prevMonthLink = GetPrevMonthLink(period, nameof(AllCosts));
-
             return Ok(new EnvironmentCost("Total Costs", summaryCost)
             {
-                CurrentMonthLink = currentMonthLink,
-                NextMonthLink = nextMonthLink,
-                PreviousMonthLink = prevMonthLink,
+                CurrentMonthLink = period.GetCurrentMonthLink(),
+                NextMonthLink = period.GetNextMonthLink(),
+                PreviousMonthLink = period.GetPrevMonthLink(),
             });
         }
 
@@ -70,16 +67,13 @@ namespace WebApp.Controllers.Api
                 return NotFound();
             }
 
-            var period = GetQueryPeriod(from, to);
-            var nextMonthLink = GetNextMonthLink(period, nameof(EnvironmentCosts));
-            var currentMonthLink = GetCurrentMonthLink(nameof(EnvironmentCosts));
-            var prevMonthLink = GetPrevMonthLink(period, nameof(EnvironmentCosts));
+            var period = new CostPeriod(nameof(EnvironmentCosts), Url, from, to);
 
-            var cost = await _costCoordinator.GetCost(environment, ReportingController.GetQueryPeriod(from: from, to: to));
+            var cost = await _costCoordinator.GetCost(environment, period.QueryTimePeriod);
 
-            cost.CurrentMonthLink = currentMonthLink;
-            cost.NextMonthLink = nextMonthLink;
-            cost.PreviousMonthLink = prevMonthLink;
+            cost.CurrentMonthLink = period.GetCurrentMonthLink();
+            cost.NextMonthLink = period.GetNextMonthLink();
+            cost.PreviousMonthLink = period.GetPrevMonthLink();
 
             return Ok(cost);
         }
@@ -92,26 +86,6 @@ namespace WebApp.Controllers.Api
             return envs.Where(re => re != null).OrderBy(re => re.Name).ToList();
         }
 
-        private string GetCurrentMonthLink(string routeName)
-        {
-            var thisMonth = ThisMonth();
-            return Url.RouteUrl(routeName, new { from = thisMonth.From, to = thisMonth.To });
-        }
-
-        private string GetPrevMonthLink(QueryTimePeriod period, string routeName)
-            => Url.RouteUrl(routeName, new { from = PrevMonthStart(period.From), to = PrevMonthEnd(period.From) });
-
-        private string GetNextMonthLink(QueryTimePeriod period, string routeName)
-        {
-            var now = DateTimeOffset.UtcNow;
-            if (period.To >= now)
-            {
-                return null;
-            }
-
-            return Url.RouteUrl(routeName, new { from = NextMonthStart(period.To), to = NextMonthEnd(period.To) });
-        }
-
         private Cost CalculateSummarySafely(IEnumerable<Cost> squishedCosts)
         {
             try
@@ -122,50 +96,6 @@ namespace WebApp.Controllers.Api
             {
                 return null;
             }
-        }
-
-        private static QueryTimePeriod GetQueryPeriod(DateTimeOffset? from, DateTimeOffset? to)
-        {
-            if (from == null && to == null)
-            {
-                return ThisMonth();
-            }
-            else if (to == null)
-            {
-                return new QueryTimePeriod(from: from.Value, to: EndOfMonth(from.Value));
-            }
-            else if (from == null)
-            {
-                return new QueryTimePeriod(from: StartOfMonth(to.Value), to: to.Value);
-            }
-            else
-            {
-                return new QueryTimePeriod(from: from.Value, to: to.Value);
-            }
-        }
-
-        private static DateTimeOffset NextMonthStart(DateTimeOffset value)
-            => StartOfMonth(value).AddMonths(1);
-
-        private static DateTimeOffset NextMonthEnd(DateTimeOffset value)
-            => EndOfMonth(NextMonthStart(value));
-
-        private static DateTimeOffset PrevMonthStart(DateTimeOffset value)
-            => StartOfMonth(value).AddMonths(-1);
-
-        private static DateTimeOffset PrevMonthEnd(DateTimeOffset value)
-            => EndOfMonth(PrevMonthStart(value));
-
-        private static DateTimeOffset StartOfMonth(DateTimeOffset value)
-            => new DateTimeOffset(value.Year, value.Month, 1, 0, 0, 0, value.Offset);
-
-        private static DateTimeOffset EndOfMonth(DateTimeOffset value)
-            => NextMonthStart(value) - TimeSpan.FromSeconds(1);
-
-        private static QueryTimePeriod ThisMonth()
-        {
-            var today = DateTimeOffset.UtcNow;
-            return new QueryTimePeriod(from: StartOfMonth(today), to: EndOfMonth(today));
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+using AzureRenderHub.WebApp.Models.Reporting;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using System;
@@ -183,7 +184,7 @@ namespace WebApp.Tests
             var dto = ParseDate(input);
             var expectedDTO = ParseDate(expected);
 
-            var actual = ReportingController.StartOfMonth(dto);
+            var actual = CostPeriod.StartOfMonth(dto);
 
             Assert.Equal(expectedDTO, actual);
         }
@@ -199,16 +200,9 @@ namespace WebApp.Tests
             var dto = ParseDate(input);
             var expectedDTO = ParseDate(expected);
 
-            var actual = ReportingController.EndOfMonth(dto);
+            var actual = CostPeriod.EndOfMonth(dto);
 
             Assert.Equal(expectedDTO, actual);
-        }
-
-        [Fact]
-        public void CanHaveNoCostDataInViewModel()
-        {
-            var model = new IndexModel(DateTimeOffset.Now, DateTimeOffset.Now, new EnvironmentCost[0], "", "", "");
-            Assert.Null(model.SummaryUsage);
         }
 
         [Fact]
