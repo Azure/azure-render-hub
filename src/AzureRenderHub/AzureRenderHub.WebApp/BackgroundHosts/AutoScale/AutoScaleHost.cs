@@ -67,9 +67,15 @@ namespace WebApp.BackgroundHosts.AutoScale
 
             try
             {
+                if (environment == null)
+                {
+                    _logger.LogTrace($"Skipping null environment");
+                }
+
                 if (environment.InProgress ||
                     environment.BatchAccount == null)
                 {
+                    _logger.LogTrace($"Skipping environment {environment.Name}, InProgress={environment.InProgress}, HasBatchAccount={environment.BatchAccount != null}");
                     return;
                 }
 
@@ -104,13 +110,18 @@ namespace WebApp.BackgroundHosts.AutoScale
                     var minDedicated = pool.GetAutoScaleMinimumDedicatedNodes();
                     var minLowPriority = pool.GetAutoScaleMinimumLowPriorityNodes();
 
+                    var maxIdleCpuPercent = environment.AutoScaleConfiguration.MaxIdleCpuPercent;
+                    var maxIdleGpuPercent = environment.AutoScaleConfiguration.MaxIdleGpuPercent;
+
                     _logger.LogInformation($"Autoscale for Env {environment.Name} and Pool {pool.Id}: " +
                                       $"policy {policy}, " +
                                       $"timeout {timeout}, " +
                                       $"currentDedicated {pool.CurrentDedicatedComputeNodes.Value}, " +
                                       $"currentLowPriority {pool.CurrentLowPriorityComputeNodes.Value}, " +
                                       $"minimumDedicated {minDedicated}, " +
-                                      $"minimumLowPriority {minLowPriority}");
+                                      $"minimumLowPriority {minLowPriority}, " + 
+                                      $"maxIdleCpuPercent {maxIdleCpuPercent}, " +
+                                      $"maxIdleGpuPercent {maxIdleGpuPercent}");
 
                     // Last acceptable active timestamp
                     var idleTimeCutoff = DateTime.UtcNow.Subtract(TimeSpan.FromMinutes(timeout));
@@ -147,14 +158,14 @@ namespace WebApp.BackgroundHosts.AutoScale
                         activeNodeByCpuNames = poolNodeCpuAndProcessEvents.Where(an =>
                                 !an.TrackedProcess && // Grab nodes with CPU usage (not whitelisted)
                                 an.CpuPercent >=
-                                environment.AutoScaleConfiguration.MaxIdleCpuPercent) // Over the idle CPU % limit
+                                maxIdleCpuPercent) // Over the idle CPU % limit
                             .Select(an => an.ComputeNodeName)
                             .ToHashSet();
 
                         activeNodeByGpuNames = poolNodeCpuAndProcessEvents.Where(an =>
                                 !an.TrackedProcess && // Grab nodes with GPU usage (not whitelisted)
                                 an.GpuPercent >=
-                                environment.AutoScaleConfiguration.MaxIdleGpuPercent) // Over the idle GPU % limit
+                                maxIdleGpuPercent) // Over the idle GPU % limit
                             .Select(an => an.ComputeNodeName)
                             .ToHashSet();
                     }
@@ -172,13 +183,13 @@ namespace WebApp.BackgroundHosts.AutoScale
                               !activeNodeByCpuNames.Contains(cn.Id) &&
                               !activeNodeByGpuNames.Contains(cn.Id)).ToList();
 
+                    _logger.LogInformation($"Autoscale for Env {environment.Name} and Pool {pool.Id}: " +
+                            $"All Selected Idle nodes " +
+                            $"{idleNodesToShutdown.Count}");
+
                     // Remove the idle nodes
                     if (idleNodesToShutdown.Any())
                     {
-                        _logger.LogInformation($"Autoscale for Env {environment.Name} and Pool {pool.Id}: " +
-                                          $"All Selected Idle nodes " +
-                                          $"{idleNodesToShutdown.Count}");
-
                         var dedicatedNodesToShutdown = idleNodesToShutdown.Where(n => n.IsDedicated.HasValue && n.IsDedicated.Value);
                         var lowPriorityNodesToShutdown = idleNodesToShutdown.Where(n => n.IsDedicated.HasValue && !n.IsDedicated.Value);
 
@@ -219,7 +230,7 @@ namespace WebApp.BackgroundHosts.AutoScale
             }
             catch (Exception e)
             {
-                _logger.LogError(e, $"Error executing auto scale for environment {environment.Name}");
+                _logger.LogError(e, $"Error executing auto scale for environment {environment?.Name}");
             }
             finally
             {

@@ -93,9 +93,20 @@ namespace WebApp
             services.AddApplicationInsightsTelemetry(Configuration);
             services.AddLogging(builder =>
             {
-                builder.AddFilter<Microsoft.Extensions.Logging.ApplicationInsights.ApplicationInsightsLoggerProvider>(
-                    "", Microsoft.Extensions.Logging.LogLevel.Trace);
                 builder.AddApplicationInsights();
+
+                // Adding the filter below to ensure logs of all severity from Program.cs
+                // is sent to ApplicationInsights.
+                builder.AddFilter<Microsoft.Extensions.Logging.ApplicationInsights.ApplicationInsightsLoggerProvider>(
+                    typeof(Program).FullName, Microsoft.Extensions.Logging.LogLevel.Trace);
+
+                // Adding the filter below to ensure logs of all severity from Startup.cs
+                // is sent to ApplicationInsights.
+                builder.AddFilter<Microsoft.Extensions.Logging.ApplicationInsights.ApplicationInsightsLoggerProvider>(
+                    typeof(Startup).FullName, Microsoft.Extensions.Logging.LogLevel.Trace);
+
+                builder.AddFilter<Microsoft.Extensions.Logging.ApplicationInsights.ApplicationInsightsLoggerProvider>(
+                    "WebApp", Microsoft.Extensions.Logging.LogLevel.Trace);
             });
 
             services.AddSingleton(

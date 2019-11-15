@@ -9,6 +9,7 @@ using Microsoft.Azure.Management.Batch;
 using Microsoft.Azure.Management.Batch.Models;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Rest.Azure;
 using Microsoft.WindowsAzure.Storage;
 using WebApp.Code.Contract;
 using WebApp.Code.Extensions;
@@ -123,65 +124,73 @@ namespace WebApp.BackgroundHosts.ScaleUpProcessor
 
             using (var batchClient = await _clientProvider.CreateBatchManagementClient(env.SubscriptionId))
             {
-                var pool = await batchClient.Pool.GetAsync(env.BatchAccount.ResourceGroupName, env.BatchAccount.Name, request.PoolName);
-                if (pool == null || pool.ProvisioningState == PoolProvisioningState.Deleting)
-                {
-                    _logger.LogInformation(
-                        "Pool '{0}' (in environment '{1}') has been deleted, discarding scale request '{2}'",
-                        request.PoolName,
-                        request.EnvironmentName,
-                        request.ETag);
 
-                    return RequestStatus.Completed;
-                }
-
-                if (pool.AllocationState == AllocationState.Resizing)
+                try
                 {
-                    var op = pool.ResizeOperationStatus;
-                    if (op != null && ((op.TargetDedicatedNodes ?? 0) + (op.TargetLowPriorityNodes ?? 0)) >= request.TargetNodes)
+                    var pool = await batchClient.Pool.GetAsync(env.BatchAccount.ResourceGroupName, env.BatchAccount.Name, request.PoolName);
+                    if (pool == null || pool.ProvisioningState == PoolProvisioningState.Deleting)
                     {
                         _logger.LogInformation(
-                            "A resize operation on pool '{0}' (in environment '{1}') has made scale request '{2}' redundant, discarding it",
+                            "Pool '{0}' (in environment '{1}') has been deleted, discarding scale request '{2}'",
                             request.PoolName,
                             request.EnvironmentName,
                             request.ETag);
 
                         return RequestStatus.Completed;
                     }
-                    else
-                    {
-                        _logger.LogInformation(
-                            "Pool '{0}' (in environment '{1}') is already being resized. Waiting to apply scale request '{2}'",
-                            request.PoolName,
-                            request.EnvironmentName,
-                            request.ETag);
 
-                        return RequestStatus.InProgress;
+                    if (pool.AllocationState == AllocationState.Resizing)
+                    {
+                        var op = pool.ResizeOperationStatus;
+                        if (op != null && ((op.TargetDedicatedNodes ?? 0) + (op.TargetLowPriorityNodes ?? 0)) >= request.TargetNodes)
+                        {
+                            _logger.LogInformation(
+                                "A resize operation on pool '{0}' (in environment '{1}') has made scale request '{2}' redundant, discarding it",
+                                request.PoolName,
+                                request.EnvironmentName,
+                                request.ETag);
+
+                            return RequestStatus.Completed;
+                        }
+                        else
+                        {
+                            _logger.LogInformation(
+                                "Pool '{0}' (in environment '{1}') is already being resized. Waiting to apply scale request '{2}'",
+                                request.PoolName,
+                                request.EnvironmentName,
+                                request.ETag);
+
+                            return RequestStatus.InProgress;
+                        }
                     }
+
+                    var targets = CalculateNodeTargets(request, pool);
+
+                    var newPool =
+                        new Pool(name: pool.Name)
+                        {
+                            ScaleSettings =
+                                new ScaleSettings
+                                {
+                                    FixedScale =
+                                        new FixedScaleSettings(
+                                            targetLowPriorityNodes: targets.lowPriority,
+                                            targetDedicatedNodes: targets.dedicated)
+                                }
+                        };
+
+                    await batchClient.Pool.UpdateAsync(env.BatchAccount.ResourceGroupName, env.BatchAccount.Name, request.PoolName, newPool);
+
+                    _logger.LogInformation(
+                        "Successfully applied scale request '{0}' to pool '{1}' (in environment '{2}')",
+                        request.ETag,
+                        request.PoolName,
+                        request.EnvironmentName);
                 }
-
-                var targets = CalculateNodeTargets(request, pool);
-
-                var newPool =
-                    new Pool(name: pool.Name)
-                    {
-                        ScaleSettings =
-                            new ScaleSettings
-                            {
-                                FixedScale =
-                                    new FixedScaleSettings(
-                                        targetLowPriorityNodes: targets.lowPriority,
-                                        targetDedicatedNodes: targets.dedicated)
-                            }
-                    };
-
-                await batchClient.Pool.UpdateAsync(env.BatchAccount.ResourceGroupName, env.BatchAccount.Name, request.PoolName, newPool);
-
-                _logger.LogInformation(
-                    "Successfully applied scale request '{0}' to pool '{1}' (in environment '{2}')",
-                    request.ETag,
-                    request.PoolName,
-                    request.EnvironmentName);
+                catch (CloudException ce) when (ce.ResourceNotFound())
+                {
+                    // Pool is gone - complete the request to remove it.
+                }
 
                 return RequestStatus.Completed;
             }
