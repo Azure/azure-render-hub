@@ -178,6 +178,18 @@ namespace WebApp.BackgroundHosts.AutoScale
                             .ToHashSet();
                     }
 
+                    _logger.LogInformation($"Autoscale for Env {environment.Name} and Pool {pool.Id}: " +
+                            $"Active Nodes by Process ({activeNodesByProcess.Count}): " +
+                            $"{string.Join(",", activeNodesByProcess.Take(5))}...");
+
+                    _logger.LogInformation($"Autoscale for Env {environment.Name} and Pool {pool.Id}: " +
+                            $"Active Nodes by CPU ({activeNodeByCpuNames.Count}): " +
+                            $"{string.Join(",", activeNodeByCpuNames.Take(5))}...");
+
+                    _logger.LogInformation($"Autoscale for Env {environment.Name} and Pool {pool.Id}: " +
+                            $"Active Nodes by GPU ({activeNodeByGpuNames.Count}): " +
+                            $"{string.Join(",", activeNodeByGpuNames.Take(5))}...");
+
                     var idleNodesToShutdown = eligibleNodes.Where(
                         cn => !activeNodesByProcess.Contains(cn.Id) &&
                               !activeNodeByCpuNames.Contains(cn.Id) &&
