@@ -107,6 +107,9 @@ namespace WebApp
 
                 builder.AddFilter<Microsoft.Extensions.Logging.ApplicationInsights.ApplicationInsightsLoggerProvider>(
                     "WebApp", Microsoft.Extensions.Logging.LogLevel.Trace);
+
+                builder.AddFilter<Microsoft.Extensions.Logging.ApplicationInsights.ApplicationInsightsLoggerProvider>(
+                    "", Microsoft.Extensions.Logging.LogLevel.Error);
             });
 
             services.AddSingleton(
