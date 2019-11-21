@@ -1,8 +1,8 @@
 # Auto Scale Down
 
-Render Hub has the ability to automatically scale pools down when nodes (virtual machines) become idle.  This can significantly reduce costs and the risk that unused nodes are left running.  The Auto Scale Down only scales pools down, not up.  The latter requires deeper integration with render managers such as Deadline or Qube.  For more information on plugins for scaling up please contact rendering@microsoft.com.
+Render Hub can automatically scale pools down when nodes (virtual machines) become idle.  This can significantly reduce costs and the risk that unused nodes are left running.  The Auto Scale Down only scales pools down, not up.  The latter requires deeper integration with render managers such as Deadline or Qube.  For more information on plugins for scaling up please contact rendering@microsoft.com.
 
-Auto scale down relies on CPU, GPU and process telemetry emitted from each render node.  Render Hub install an Application Insights agent (Batch Insights) on each node.  CPU, GPU and rendering process telemetry is sent to Application Insights.
+Auto Scale Down relies on CPU, GPU and process telemetry emitted from each render node.  Render Hub install an Application Insights agent (Batch Insights) on each node.  CPU, GPU and rendering process telemetry is sent to Application Insights.
 
 For more information on Batch Insights see [here](https://github.com/Azure/batch-insights).
 
@@ -19,7 +19,7 @@ Each Pool can specify an Auto Scale down policy from the following.
 
 ### Idle Threshold
 
-The CPU and GPU idle percentage can be specified in the Environment -> Configuration page.  The default avlues are 5% and 2% respectively.
+The CPU and GPU idle percentage can be specified in the Environment -> Configuration page.  The default values are 5% and 2% respectively.
 
 ### Specific Processes
 
@@ -39,4 +39,4 @@ Each pool can specify the minimum number of nodes in the pool.  This value affec
 
 #### Maximum number of nodes
 
-This value specifies the maximum nodes the pool can scale to via the Scale Up API to ensure 3rd party plugins don't exceed safe limits.  The pool can still be manually scalled beyond this value.
+This value specifies the maximum nodes the pool can scale to via the Scale Up API to ensure 3rd party plugins don't exceed safe limits.  The pool can still be manually scaled beyond this value.
