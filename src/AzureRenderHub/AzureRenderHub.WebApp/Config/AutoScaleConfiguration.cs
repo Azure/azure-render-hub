@@ -10,12 +10,14 @@ namespace WebApp.Config
 {
     public class AutoScaleConfiguration
     {
-        private const int DefaultIdlePercent = 5;
+        private const int DefaultIdleCpuPercent = 5;
+        private const int DefaultIdleGpuPercent = 2;
 
         public AutoScaleConfiguration()
         {
             Policy = AutoScalePolicy.Disabled;
-            MaxIdleCpuPercent = DefaultIdlePercent;
+            MaxIdleCpuPercent = DefaultIdleCpuPercent;
+            MaxIdleGpuPercent = DefaultIdleGpuPercent;
         }
 
         public AutoScalePolicy Policy { get; set; }

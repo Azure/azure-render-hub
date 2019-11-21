@@ -110,8 +110,15 @@ namespace WebApp.BackgroundHosts.AutoScale
                     var minDedicated = pool.GetAutoScaleMinimumDedicatedNodes();
                     var minLowPriority = pool.GetAutoScaleMinimumLowPriorityNodes();
 
-                    var maxIdleCpuPercent = environment.AutoScaleConfiguration.MaxIdleCpuPercent;
-                    var maxIdleGpuPercent = environment.AutoScaleConfiguration.MaxIdleGpuPercent;
+                    // Ensure it cannot be zero
+                    var maxIdleCpuPercent = environment.AutoScaleConfiguration.MaxIdleCpuPercent > 0
+                        ? environment.AutoScaleConfiguration.MaxIdleCpuPercent
+                        : 1;
+
+                    // Ensure it cannot be zero
+                    var maxIdleGpuPercent = environment.AutoScaleConfiguration.MaxIdleGpuPercent > 0
+                        ? environment.AutoScaleConfiguration.MaxIdleGpuPercent
+                        : 1;
 
                     _logger.LogInformation($"Autoscale for Env {environment.Name} and Pool {pool.Id}: " +
                                       $"policy {policy}, " +

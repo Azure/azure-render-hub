@@ -28,3 +28,9 @@ checkout the setup guide [here](https://docs.microsoft.com/en-us/azure/vpn-gatew
 4. [Create Avere vFXT or File Server](30-storage-overview.md) (Optional)
 
 5. [Create a Custom Image](40-customimages-overview.md)
+
+# Advanced Configuration
+
+[Custom Images](40-customimages-overview.md)
+
+[Auto Scale](50-autoscale-overview.md)
