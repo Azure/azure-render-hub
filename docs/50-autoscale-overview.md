@@ -1,6 +1,6 @@
 # Auto Scale Down
 
-Render Hub has the ability to automatically scale pools down when nodes (virtual machines) become idle.  This can significantly reduce costs and the risk that unused nodes are left running.  The Auto Scale Down only scales pools down, not up.  The latter requires deeper integration with render managers such as Deadline.  For more information on plugins for scaling up using Deadline or Qube please contact rendering@microsoft.com.
+Render Hub has the ability to automatically scale pools down when nodes (virtual machines) become idle.  This can significantly reduce costs and the risk that unused nodes are left running.  The Auto Scale Down only scales pools down, not up.  The latter requires deeper integration with render managers such as Deadline or Qube.  For more information on plugins for scaling up please contact rendering@microsoft.com.
 
 Auto scale down relies on CPU, GPU and process telemetry emitted from each render node.  Render Hub install an Application Insights agent (Batch Insights) on each node.  CPU, GPU and rendering process telemetry is sent to Application Insights.
 
