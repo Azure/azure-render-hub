@@ -91,8 +91,7 @@
         "storageAccountType": "Standard_LRS",
         "applicationInsightsName": "[concat('arh-ai-', uniqueString(parameters('webSiteName')))]",
         "keyVaultName": "[concat('arh-kv-', uniqueString(parameters('webSiteName')))]", 
-        "keyVaultUri": "[concat('https://', variables('keyVaultName'), '.vault.azure.net')]",
-        "identityResourceId": "[concat(resourceId('Microsoft.Web/sites', parameters('webSiteName')),'/providers/Microsoft.ManagedIdentity/Identities/default')]"
+        "keyVaultUri": "[concat('https://', variables('keyVaultName'), '.vault.azure.net')]"
     },
     "resources": [
         {
@@ -172,8 +171,8 @@
                     "name": "appsettings",
                     "apiVersion": "2015-08-01",
                     "properties": {
-                        "PortalManagedIdentity:ObjectId": "[reference(variables('identityResourceId'), '2015-08-31-PREVIEW').principalId]",
-                        "PortalManagedIdentity:TenantId": "[reference(variables('identityResourceId'), '2015-08-31-PREVIEW').tenantId]",
+                        "PortalManagedIdentity:ObjectId": "[reference(concat('Microsoft.Web/sites/', parameters('webSiteName')), '2018-02-01', 'Full').Identity.principalId]",
+                        "PortalManagedIdentity:TenantId": "[reference(concat('Microsoft.Web/sites/', parameters('webSiteName')), '2018-02-01', 'Full').Identity.tenantId]",
                         "ASPNETCORE_HOSTINGSTARTUP__KEYVAULT__CONFIGURATIONENABLED": "true",
                         "SubscriptionId": "[subscription().subscriptionId]",
                         "Location": "[resourceGroup().location]",
@@ -220,8 +219,8 @@
                 },
                 "accessPolicies": [
                     {
-                        "tenantId": "[reference(variables('identityResourceId'), '2015-08-31-PREVIEW').tenantId]",
-                        "objectId": "[reference(variables('identityResourceId'), '2015-08-31-PREVIEW').principalId]",
+                        "tenantId": "[reference(concat('Microsoft.Web/sites/', parameters('webSiteName')), '2018-02-01', 'Full').Identity.tenantId]",
+                        "objectId": "[reference(concat('Microsoft.Web/sites/', parameters('webSiteName')), '2018-02-01', 'Full').Identity.principalId]",
                         "permissions": {
                             "secrets": [
                                 "get",
