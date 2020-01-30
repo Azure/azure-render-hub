@@ -93,6 +93,11 @@
                     @await Html.PartialAsync("Environments/Create/OpenCuePartial", Model)
                 </text>
                 break;
+            case RenderManagerType.BYOS:
+                <text>
+                    @await Html.PartialAsync("Environments/Create/BYOSPartial", Model)
+                </text>
+                break;
         }
     }
     <div class="form-footer">

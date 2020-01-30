@@ -659,6 +659,11 @@ namespace WebApp.Controllers
                 environment.RenderManagerConfig.OpenCue.Facility = model.OpenCueEnvironment.Facility;
             }
 
+            if (environment.RenderManager == RenderManagerType.BYOS)
+            {
+                environment.RenderManagerConfig.BYOS.SchedulerHostnameOrIp = model.BYOSEnvironment.SchedulerHostnameOrIp;
+            }
+
             environment.Domain = model.JoinDomain ? new DomainConfig() : null;
 
             if (model.JoinDomain)
@@ -1234,6 +1239,16 @@ namespace WebApp.Controllers
 
                 environment.RenderManagerConfig.OpenCue.CuebotHostnameOrIp = model.OpenCueEnvironment.CuebotHostnameOrIp;
                 environment.RenderManagerConfig.OpenCue.Facility = model.OpenCueEnvironment.Facility;
+            }
+
+            if (model.BYOSEnvironment != null)
+            {
+                if (environment.RenderManagerConfig.BYOS == null)
+                {
+                    environment.RenderManagerConfig.BYOS = new BYOSConfig();
+                }
+
+                environment.RenderManagerConfig.BYOS.SchedulerHostnameOrIp = model.BYOSEnvironment.SchedulerHostnameOrIp;
             }
 
             environment.InProgress = false;

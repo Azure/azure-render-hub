@@ -129,6 +129,9 @@
     <Content Update="Views\Shared\Environments\Create\OpenCuePartial.cshtml">
       <Pack>$(IncludeRazorContentInPack)</Pack>
     </Content>
+    <Content Update="Views\Shared\Environments\Create\BYOSPartial.cshtml">
+      <Pack>$(IncludeRazorContentInPack)</Pack>
+    </Content>
     <Content Update="Views\Shared\Menu\EnvironmentMainMenu.cshtml">
       <Pack>$(IncludeRazorContentInPack)</Pack>
     </Content>

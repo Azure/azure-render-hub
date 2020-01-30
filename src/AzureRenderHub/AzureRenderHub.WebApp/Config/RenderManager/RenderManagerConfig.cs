@@ -11,5 +11,7 @@ namespace WebApp.Config.RenderManager
         public TractorConfig Tractor { get; set; }
 
         public OpenCueConfig OpenCue { get; set; }
+
+        public BYOSConfig BYOS { get; set; }
     }
 }

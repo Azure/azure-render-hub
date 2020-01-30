@@ -1,0 +1,22 @@
+﻿@using WebApp.Code.Extensions
+@model WebApp.Models.Environments.Create.AddEnvironmentStep4Model
+
+<div class="form-section">
+    <div class="section-title">
+        <span class="step-index">4.2</span>
+        <div class="step-header">
+            <h3>@Model.RenderManager.GetDescription() Configuration</h3>
+            <p>Configure scheduler settings</p>
+        </div>
+    </div>
+    <div class="section-wrapper">
+        <div class="section-bar"></div>
+        <div class="section-content">
+            <div class="form-element">
+                <label asp-for="BYOSEnvironment.SchedulerHostnameOrIp">Optional scheduler IP or Hostname and Port, e.g. myscheduler:80</label>
+                <input asp-for="BYOSEnvironment.SchedulerHostnameOrIp" value="@Model.BYOSEnvironment.SchedulerHostnameOrIp" />
+                <span asp-validation-for="BYOSEnvironment.SchedulerHostnameOrIp" class=""></span>
+            </div>
+        </div>
+    </div>
+</div>

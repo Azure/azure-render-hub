@@ -229,6 +229,8 @@ namespace WebApp.Models.Environments.Details
 
         public OpenCueEnvironment OpenCueEnvironment { get; set; }
 
+        public BYOSEnvironment BYOSEnvironment { get; set; }
+
         // Domain
         public bool JoinDomain { get; set; }
 
