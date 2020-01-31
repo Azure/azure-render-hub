@@ -146,6 +146,14 @@ namespace WebApp.Models.Environments.Details
                             Facility = environment.RenderManagerConfig.OpenCue.Facility,
                         };
                     }
+
+                    if (environment.RenderManagerConfig.BYOS != null)
+                    {
+                        BYOSEnvironment = new BYOSEnvironment
+                        {
+                            SchedulerHostnameOrIp = environment.RenderManagerConfig.BYOS.SchedulerHostnameOrIp,
+                        };
+                    }
                 }
             }
 
