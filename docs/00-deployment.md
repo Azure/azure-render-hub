@@ -150,7 +150,7 @@ You can create the application via the Azure Cloud Shell [here](https://shell.az
 
 Copy the script snippet shown below, update the `$webAppName` variable, and paste the script below into the cloud shell to create a new AAD application.
 
-Keep in mind the Web App name must be globally unique, and must be a valid DNS name as it becomes the host in your website's URL, e.g. `https://<webAppName>.azurewebsites.net`.
+Keep in mind the Web App name must be globally unique, and must be a valid DNS name as it becomes the host in your website's URL, e.g. `https://<webAppName>.azurewebsites.net`.  The $webAppName value must match the webSiteName that you provide when you deploy the Render Hub portal.
 
 ```
 $webAppName = "MyAzureRenderHub"
