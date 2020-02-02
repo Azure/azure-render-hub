@@ -134,30 +134,6 @@ We should check the Redirect URI configured for the application is correct - it 
 
  3. Press *Save* 
 
-#### Set Application Access Permissions
-
-The following instructions allow you to restrict access to specific users in your organization.
-
- 1. In the Azure portal navigate to *Azure Active Directory* -> *Enterprise Applications*
- 2. Search for the AAD Application you created above using the Application ID noted earlier
-
-![AAD Enterprise Applications](images/00-enterprise-applications.png)
-
- 3. Press the name of the application to open it
- 4. Select on *Properties* and turn on *User Assignment Required*
-
-![User assignment required](images/00-user-assignment-required.png)
-
- 5. Press *Save*
-
-
- 6. Select *Users and Groups* from the sidebar
- 7. Add each user or group that requires access to the portal
-
-When you are finished, all the users with access to your Azure Render Hub will be listed.
-
-![Users and Groups](images/00-assign-users.png)
-
 #### Get the AAD Tenant ID
 
 In the Azure Portal navigate to *Azure Active Directory* -> *Properties*.
@@ -189,17 +165,46 @@ az ad sp create --id ($app | ConvertFrom-Json).appId
 
 # Windows Azure Active Directory - Sign in and read user profile
 az ad app permission add --id ($app | ConvertFrom-Json).appId --api 00000002-0000-0000-c000-000000000000 --api-permissions 311a71cc-e848-46a1-bdf8-97ff7156d8e6=Scope
+az ad app permission grant --id ($app | ConvertFrom-Json).appId --api 00000002-0000-0000-c000-000000000000
 
 # Graph API - Sign in and read user profile
 az ad app permission add --id ($app | ConvertFrom-Json).appId --api 00000003-0000-0000-c000-000000000000 --api-permissions e1fe6dd8-ba31-4d61-89e7-88639da4683d=Scope
+az ad app permission grant --id ($app | ConvertFrom-Json).appId --api 00000003-0000-0000-c000-000000000000
 
 # Windows Azure Service Management API - Access Azure Service Management as organization users (preview)
 az ad app permission add --id ($app | ConvertFrom-Json).appId --api 797f4846-ba00-4fd7-ba43-dac1f8f63013 --api-permissions 41094075-9dad-400e-a0bd-54e686782033=Scope
+az ad app permission grant --id ($app | ConvertFrom-Json).appId --api 797f4846-ba00-4fd7-ba43-dac1f8f63013
 
 # Print the app details to the shell
 $app
 
 ```
+
+## Assign Users and Groups to the Azure AD Application
+
+It's good practice to limit access to the Azure AD application to restrict Render Hub access to those that need it.
+
+The following instructions allow you to restrict access to specific users or groups in your organization.
+
+ 1. In the Azure portal navigate to *Azure Active Directory* -> *Enterprise Applications*
+ 2. Search for the AAD Application you created above using the Application ID noted earlier
+
+![AAD Enterprise Applications](images/00-enterprise-applications.png)
+
+ 3. Press the name of the application to open it
+ 4. Select on *Properties* and turn on *User Assignment Required*
+
+![User assignment required](images/00-user-assignment-required.png)
+
+ 5. Press *Save*
+
+
+ 6. Select *Users and Groups* from the sidebar
+ 7. Add each user or group that requires access to the portal
+
+When you are finished, all the users with access to your Azure Render Hub will be listed.
+
+![Users and Groups](images/00-assign-users.png)
 
 ## Deploying the Portal
 
