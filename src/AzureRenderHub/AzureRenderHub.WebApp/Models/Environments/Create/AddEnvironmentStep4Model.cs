@@ -62,6 +62,13 @@ namespace WebApp.Models.Environments.Create
                         Facility = environment.RenderManagerConfig?.OpenCue?.Facility,
                     };
                     break;
+
+                case RenderManagerType.BYOS:
+                    BYOSEnvironment = new BYOSEnvironment
+                    {
+                        SchedulerHostnameOrIp = environment.RenderManagerConfig?.BYOS?.SchedulerHostnameOrIp,
+                    };
+                    break;
             }
         }
 
@@ -74,6 +81,8 @@ namespace WebApp.Models.Environments.Create
         public TractorEnvironment TractorEnvironment { get; set; }
 
         public OpenCueEnvironment OpenCueEnvironment { get; set; }
+
+        public BYOSEnvironment BYOSEnvironment { get; set; }
 
         public bool JoinDomain { get; set; }
 

@@ -95,11 +95,11 @@ namespace WebApp.Models.Pools
 
         // Updateable
         [Required]
-        [Range(0, 1_000)]
+        [Range(0, 10_000)]
         public int DedicatedNodes { get; set; }
 
         [Required]
-        [Range(0, 1_000)]
+        [Range(0, 10_000)]
         public int LowPriorityNodes { get; set; }
 
         public int CurrentDedicatedNodes { get; set; }

@@ -146,6 +146,14 @@ namespace WebApp.Models.Environments.Details
                             Facility = environment.RenderManagerConfig.OpenCue.Facility,
                         };
                     }
+
+                    if (environment.RenderManagerConfig.BYOS != null)
+                    {
+                        BYOSEnvironment = new BYOSEnvironment
+                        {
+                            SchedulerHostnameOrIp = environment.RenderManagerConfig.BYOS.SchedulerHostnameOrIp,
+                        };
+                    }
                 }
             }
 
@@ -228,6 +236,8 @@ namespace WebApp.Models.Environments.Details
         public TractorEnvironment TractorEnvironment { get; set; }
 
         public OpenCueEnvironment OpenCueEnvironment { get; set; }
+
+        public BYOSEnvironment BYOSEnvironment { get; set; }
 
         // Domain
         public bool JoinDomain { get; set; }

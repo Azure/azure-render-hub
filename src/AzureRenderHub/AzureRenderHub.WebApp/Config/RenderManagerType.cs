@@ -20,6 +20,9 @@ namespace WebApp.Config
         Tractor2 = 3,
 
         [Description("OpenCue")]
-        OpenCue = 4
+        OpenCue = 4,
+
+        [Description("Bring Your Own Scheduler")]
+        BYOS = 5,
     }
 }

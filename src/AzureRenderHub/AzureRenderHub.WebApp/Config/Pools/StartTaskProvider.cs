@@ -121,6 +121,14 @@ namespace WebApp.Config.Pools
                         renderManagerPackage,
                         isWindows);
                     break;
+                case RenderManagerType.BYOS:
+                    AppendBYOSParamsToStartTask(
+                        poolConfiguration,
+                        environment,
+                        startTask,
+                        environment.RenderManagerConfig.BYOS,
+                        isWindows);
+                    break;
             }
 
             // Wrap all the start task command
@@ -413,6 +421,46 @@ namespace WebApp.Config.Pools
             {
                 resourceFiles.Add(GetContainerResourceFile(openCuePackage.Container, openCuePackage.PackageName));
                 commandLine += GetParameterSet(isWindows, "installerPath", openCuePackage.PackageName);
+            }
+
+            commandLine += ";";
+
+            startTask.CommandLine = commandLine;
+            startTask.ResourceFiles = resourceFiles;
+        }
+
+        private void AppendBYOSParamsToStartTask(
+            PoolConfigurationModel poolConfiguration,
+            RenderingEnvironment environment,
+            StartTask startTask,
+            BYOSConfig byosConfig,
+            bool isWindows)
+        {
+            var commandLine = startTask.CommandLine;
+            var resourceFiles = new List<ResourceFile>(startTask.ResourceFiles);
+
+            if (environment.KeyVaultServicePrincipal != null)
+            {
+                commandLine += GetParameterSet(isWindows, "tenantId", environment.KeyVaultServicePrincipal.TenantId.ToString());
+                commandLine += GetParameterSet(isWindows, "applicationId", environment.KeyVaultServicePrincipal.ApplicationId.ToString());
+                commandLine += GetParameterSet(isWindows, "keyVaultCertificateThumbprint", environment.KeyVaultServicePrincipal.Thumbprint);
+                commandLine += GetParameterSet(isWindows, "keyVaultName", environment.KeyVault.Name);
+            }
+
+            if (!string.IsNullOrWhiteSpace(byosConfig.SchedulerHostnameOrIp))
+            {
+                commandLine += GetParameterSet(isWindows, "host", byosConfig.SchedulerHostnameOrIp);
+            }
+
+            var groups = $"azure,{poolConfiguration.PoolName}";
+            if (poolConfiguration.AdditionalGroups != null && poolConfiguration.AdditionalGroups.Any())
+            {
+                groups += $",{string.Join(',', poolConfiguration.AdditionalGroups)}";
+            }
+
+            if (!string.IsNullOrWhiteSpace(groups))
+            {
+                commandLine += GetParameterSet(isWindows, "groups", groups);
             }
 
             commandLine += ";";
